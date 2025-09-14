@@ -30,3 +30,10 @@ Following console commands are for testing and debugging purposes.
 
 - `ccSkipAnimation` : Skip animation when entering or exiting a vehicle.
 - `ccDebugPlayerCamera` : Toggle debug information for the cameras.
+
+## Preview
+
+https://github.com/user-attachments/assets/7f043281-0dec-4092-a99d-3eba4f6f2eaa
+
+https://github.com/user-attachments/assets/2410b4d6-6498-486b-be15-b04df5f95abc
+
