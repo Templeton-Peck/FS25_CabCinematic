@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="98"
+  xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
+  <author>TempletonPeck</author>
+  <version>1.0.0.0</version>
+
+  <title>
+    <en>Cab Cinematic</en>
+    <fr>Cab Cinematic</fr>
+  </title>
+
+  <description>
+    <en>TODO</en>
+    <fr>TODO</fr>
+  </description>
+
+  <iconFilename>icon.png</iconFilename>
+
+  <actions>
+    <action name="CAB_CINEMATIC_DEBUG" category="ONFOOT" axisType="HALF" />
+  </actions>
+
+  <inputBinding>
+    <actionBinding action="CAB_CINEMATIC_DEBUG">
+      <binding device="KB_MOUSE_DEFAULT" input="KEY_j" />
+    </actionBinding>
+  </inputBinding>
+
+  <specializations>
+    <specialization name="cabCinematicSpec" className="CabCinematicSpec"
+      filename="scripts/specs/CabCinematicSpec.lua" />
+  </specializations>
+
+  <extraSourceFiles>
+    <sourceFile filename="scripts/lib/LogHelper.lua" />
+    <sourceFile filename="scripts/lib/ModHelper.lua" />
+    <sourceFile filename="scripts/resources/Cinematics.lua" />
+    <sourceFile filename="scripts/CabCinematicCamera.lua" />
+    <sourceFile filename="scripts/CabCinematicAnimation.lua" />
+    <sourceFile filename="scripts/CabCinematic.lua" />
+  </extraSourceFiles>
+</modDesc>
