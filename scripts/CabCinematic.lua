@@ -5,7 +5,7 @@ CabCinematic.cinematicAnimation = nil
 CabCinematic.vehicle = nil
 CabCinematic.finishCallback = nil
 CabCinematic.debug = {
-  skipAnimation = true,
+  skipAnimation = false,
 }
 
 function CabCinematic:initialize()

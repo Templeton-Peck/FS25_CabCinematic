@@ -3,17 +3,17 @@ Cinematics = {}
 local bobbing = {
   walk = {
     amp = { x = 0.001, y = 0.01, z = 0.001 },
-    freq = 0.8,
+    freq = 1.6,
     phase = { x = 0, y = math.pi / 4, z = math.pi / 2 }
   },
   climb = {
     amp = { x = 0.002, y = 0.020, z = 0.0015 },
-    freq = 1.1,
+    freq = 2.2,
     phase = { x = 0, y = math.pi / 6, z = math.pi / 3 }
   },
   seat = {
     amp = { x = 0.002, y = 0.010, z = 0.001 },
-    freq = 1.0,
+    freq = 2.0,
     phase = { x = 0, y = math.pi / 8, z = math.pi / 4 }
   }
 }
@@ -32,19 +32,19 @@ local profiles = {
   tractor = {
     segments = {
       {
-        duration = 2600,
+        duration = 1800,
         axes = { x = 0.25, y = 0.7, z = 0.20 },
         bob = bobbing.climb,
-        offset = nil
-      },
-      {
-        duration = 3300,
-        axes = { x = 0.71, y = 0.3, z = 0.76 },
-        bob = bobbing.walk,
-        offset = { x = 0, y = 0.075, z = 0.4 },
+        offset = { x = 0, y = 0.075, z = 0 },
       },
       {
         duration = 1000,
+        axes = { x = 0.71, y = 0.3, z = 0.76 },
+        bob = bobbing.walk,
+        offset = { x = 0, y = 0, z = 0.4 },
+      },
+      {
+        duration = 675,
         axes = { x = 0.04, y = 0, z = 0.04 },
         bob = bobbing.seat,
         offset = { x = 0, y = -0.075, z = -0.4 },
