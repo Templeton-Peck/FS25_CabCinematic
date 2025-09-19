@@ -66,12 +66,27 @@ end
 
 function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccSkipAnimation", "Skip cab cinematic animation", "consoleCommandSkipCabCinematicAnimation", self)
+  addConsoleCommand("ccPauseAnimation", "Pause cab cinematic animation", "consoleCommandPauseCabCinematicAnimation", self)
+  addConsoleCommand("ccResumeAnimation", "Resume cab cinematic animation", "consoleCommandResumeCabCinematicAnimation",
+    self)
   addConsoleCommand("ccDebugPlayerCamera", "Debug player camera", "consoleCommandDebugPlayerCamera", self)
 end
 
 function CabCinematic:consoleCommandSkipCabCinematicAnimation()
   self.debug.skipAnimation = not self.debug.skipAnimation
   Log:info("Cab cinematic animation skip is now " .. tostring(self.debug.skipAnimation))
+end
+
+function CabCinematic:consoleCommandPauseCabCinematicAnimation()
+  if self.cinematicAnimation ~= nil then
+    self.cinematicAnimation:pause()
+  end
+end
+
+function CabCinematic:consoleCommandResumeCabCinematicAnimation()
+  if self.cinematicAnimation ~= nil then
+    self.cinematicAnimation:resume()
+  end
 end
 
 function CabCinematic:consoleCommandDebugPlayerCamera()

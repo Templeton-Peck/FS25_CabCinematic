@@ -1,5 +1,6 @@
 CabCinematicAnimation = {
   isActive = false,
+  isPaused = false,
   isEnded = false,
   animationType = nil,
   player = nil,
@@ -53,6 +54,7 @@ end
 
 function CabCinematicAnimation:reset()
   self.isActive = false
+  self.isPaused = false
   self.isEnded = false
   self.animationType = nil
   self.player = nil
@@ -88,6 +90,20 @@ function CabCinematicAnimation:start()
 
   Log:info(string.format("Start cab cinematic animation from (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f)", sx,
     sy, sz, tx, ty, tz))
+end
+
+function CabCinematicAnimation:pause()
+  if self.isActive then
+    self.isPaused = true
+    Log:info(string.format("Pause cab cinematic animation"))
+  end
+end
+
+function CabCinematicAnimation:resume()
+  if self.isActive and self.isPaused then
+    self.isPaused = false
+    Log:info(string.format("Resume cab cinematic animation"))
+  end
 end
 
 function CabCinematicAnimation:stop()
@@ -198,6 +214,10 @@ end
 
 function CabCinematicAnimation:update(dt)
   if not self.isActive then
+    return
+  end
+
+  if self.isPaused then
     return
   end
 
