@@ -69,7 +69,7 @@ function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccPauseAnimation", "Pause cab cinematic animation", "consoleCommandPauseCabCinematicAnimation", self)
   addConsoleCommand("ccResumeAnimation", "Resume cab cinematic animation", "consoleCommandResumeCabCinematicAnimation",
     self)
-  addConsoleCommand("ccDebugPlayerCamera", "Debug player camera", "consoleCommandDebugPlayerCamera", self)
+  addConsoleCommand("ccDebugCameras", "Debug cameras", "consoleCommandDebugCameras", self)
 end
 
 function CabCinematic:consoleCommandSkipCabCinematicAnimation()
@@ -89,9 +89,16 @@ function CabCinematic:consoleCommandResumeCabCinematicAnimation()
   end
 end
 
-function CabCinematic:consoleCommandDebugPlayerCamera()
+function CabCinematic:consoleCommandDebugCameras()
   local rx, ry, rz = g_localPlayer.camera:getRotation()
   Log:info(string.format("Player camera rotation (rx, ry, rz): (%.2f, %.2f, %.2f)", rx, ry, rz))
+
+  if g_activeVehicleCamera ~= nil then
+    Log:info(string.format("Active vehicle camera rotation (rx, ry, rz): (%.2f, %.2f, %.2f)", g_activeVehicleCamera.rotX,
+      g_activeVehicleCamera.rotY, g_activeVehicleCamera.rotZ))
+  else
+    Log:info("No active vehicle camera")
+  end
 end
 
 function CabCinematic:onVehicleCameraActivate(superFunc)

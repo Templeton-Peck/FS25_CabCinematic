@@ -171,26 +171,8 @@ function CabCinematicAnimation:syncCamerasAtAnimationStart()
   local originCamera = self:getOriginCamera()
   local targetCamera = self:getTargetCamera()
 
-  if self:getIsLeaveAnimation() then
-    if isVehicleCamera(originCamera) then
-      local dx, dy, dz = localDirectionToWorld(getCameraId(originCamera), 0, 0, 1)
-
-      local pitch = math.asin(dy)
-      local yaw = math.atan2(dx, dz) + math.pi
-
-      targetCamera:setRotation(pitch, yaw, 0)
-    else
-      Log:warning("syncCamerasAtAnimationStart: origin camera is not a vehicle camera during leave animation")
-    end
-  else
-    setFovY(targetCamera.cameraNode, fovY)
-  end
-end
-
-function CabCinematicAnimation:syncCamerasAtAnimationStop()
   if self:getIsEnterAnimation() then
-    local originCamera = self:getOriginCamera()
-    local targetCamera = self:getTargetCamera()
+    setFovY(targetCamera.cameraNode, fovY)
 
     if isVehicleCamera(targetCamera) then
       local dx, dy, dz = localDirectionToWorld(getCameraId(originCamera), 0, 0, 1)
@@ -205,9 +187,30 @@ function CabCinematicAnimation:syncCamerasAtAnimationStop()
       targetCamera.rotY = rotY
       targetCamera.rotZ = 0
 
+      Log:info(string.format("syncCamerasAtAnimationStart: setting target camera rotation to (%.2f, %.2f, %.2f)",
+        rotX, rotY, 0))
+
       targetCamera:updateRotateNodeRotation()
     else
       Log:warning("syncCamerasAtAnimationStop: target camera is not a vehicle camera during enter animation")
+    end
+  end
+end
+
+function CabCinematicAnimation:syncCamerasAtAnimationStop()
+  if self:getIsLeaveAnimation() then
+    local originCamera = self:getOriginCamera()
+    local targetCamera = self:getTargetCamera()
+
+    if isVehicleCamera(originCamera) then
+      local dx, dy, dz = localDirectionToWorld(getCameraId(originCamera), 0, 0, 1)
+
+      local pitch = math.asin(dy)
+      local yaw = math.atan2(dx, dz) + math.pi
+
+      targetCamera:setRotation(pitch, yaw, 0)
+    else
+      Log:warning("syncCamerasAtAnimationStart: origin camera is not a vehicle camera during leave animation")
     end
   end
 end
@@ -216,6 +219,9 @@ function CabCinematicAnimation:update(dt)
   if not self.isActive then
     return
   end
+
+  local vehicleCamera = self:getVehicleInteriorCamera()
+  self.cinematicCamera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
 
   if self.isPaused then
     return

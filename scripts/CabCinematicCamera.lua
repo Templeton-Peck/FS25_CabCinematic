@@ -5,6 +5,9 @@ CabCinematicCamera = {
   cameraX = 0,
   cameraY = 0,
   cameraZ = 0,
+  cameraPitch = 0,
+  cameraYaw = 0,
+  cameraRoll = 0,
 }
 
 local CabCinematicCamera_mt = Class(CabCinematicCamera)
@@ -14,7 +17,7 @@ local function createCameraNodeIds()
   local cameraBaseNodeId = createTransformGroup("cabCinematicCameraBaseNode")
 
   link(cameraBaseNodeId, cameraId)
-  setRotation(cameraId, 0, math.rad(180), 0)
+  setRotation(cameraId, 0, 0, 0)
   setTranslation(cameraId, 0, 0, 0)
   setRotation(cameraBaseNodeId, 0, 0, 0)
   setTranslation(cameraBaseNodeId, 0, 0, 0)
@@ -47,6 +50,9 @@ function CabCinematicCamera:reset()
   self.cameraY = 0
   self.cameraX = 0
   self.cameraZ = 0
+  self.cameraPitch = 0
+  self.cameraYaw = 0
+  self.cameraRoll = 0
 end
 
 function CabCinematicCamera:activate()
@@ -78,14 +84,14 @@ function CabCinematicCamera:setPosition(x, y, z)
   self.cameraZ = z
 end
 
-function CabCinematicCamera:getWorldRotation()
-  return getWorldRotation(self.cameraBaseNodeId)
+function CabCinematicCamera:setRotation(pitch, yaw, roll)
+  self.cameraPitch = pitch
+  self.cameraYaw = yaw
+  self.cameraRoll = roll
 end
 
 function CabCinematicCamera:syncRotation()
-  local pitch, _, _ = getRotation(g_localPlayer.camera.pitchNode)
-  local _, yaw, _ = getRotation(g_localPlayer.camera.yawNode)
-  setRotation(self.cameraBaseNodeId, pitch or 0, yaw or 0, 0)
+  setRotation(self.cameraBaseNodeId, self.cameraPitch, self.cameraYaw, self.cameraRoll)
 end
 
 function CabCinematicCamera:syncPosition()
