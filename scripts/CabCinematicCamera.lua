@@ -1,6 +1,5 @@
 CabCinematicCamera = {
   cameraId = nil,
-  cameraBaseNodeId = nil,
   isActive = false,
   cameraX = 0,
   cameraY = 0,
@@ -8,26 +7,21 @@ CabCinematicCamera = {
   cameraPitch = 0,
   cameraYaw = 0,
   cameraRoll = 0,
+  linkedVehicle = nil,
 }
 
 local CabCinematicCamera_mt = Class(CabCinematicCamera)
 
-local function createCameraNodeIds()
+local function createCameraId()
   local cameraId = createCamera("CabCinematicCamera", math.rad(90), 0.1, 5000)
-  local cameraBaseNodeId = createTransformGroup("cabCinematicCameraBaseNode")
-
-  link(cameraBaseNodeId, cameraId)
   setRotation(cameraId, 0, 0, 0)
   setTranslation(cameraId, 0, 0, 0)
-  setRotation(cameraBaseNodeId, 0, 0, 0)
-  setTranslation(cameraBaseNodeId, 0, 0, 0)
-
-  return cameraId, cameraBaseNodeId
+  return cameraId
 end
 
 function CabCinematicCamera.new()
   local self = setmetatable({}, CabCinematicCamera_mt)
-  self.cameraId, self.cameraBaseNodeId = createCameraNodeIds()
+  self.cameraId = createCameraId()
   g_cameraManager:addCamera(self.cameraId, nil, false)
   return self
 end
@@ -37,10 +31,10 @@ function CabCinematicCamera:delete()
     self:deactivate()
   end
 
+  self:unlinkFromVehicle()
   g_cameraManager:removeCamera(self.cameraId)
-  delete(self.cameraBaseNodeId)
+  delete(self.cameraId)
   self.cameraId = nil
-  self.cameraBaseNodeId = nil
 
   self:reset()
 end
@@ -53,6 +47,7 @@ function CabCinematicCamera:reset()
   self.cameraPitch = 0
   self.cameraYaw = 0
   self.cameraRoll = 0
+  self.linkedVehicle = nil
 end
 
 function CabCinematicCamera:activate()
@@ -91,11 +86,61 @@ function CabCinematicCamera:setRotation(pitch, yaw, roll)
 end
 
 function CabCinematicCamera:syncRotation()
-  setRotation(self.cameraBaseNodeId, self.cameraPitch, self.cameraYaw, self.cameraRoll)
+  setRotation(self.cameraId, self.cameraPitch, self.cameraYaw, self.cameraRoll)
 end
 
 function CabCinematicCamera:syncPosition()
-  setTranslation(self.cameraBaseNodeId, self.cameraX, self.cameraY, self.cameraZ)
+  setTranslation(self.cameraId, self.cameraX, self.cameraY, self.cameraZ)
+end
+
+function CabCinematicCamera:linkToVehicle(vehicle)
+  if self.linkedVehicle ~= nil then
+    self:unlinkFromVehicle()
+  end
+
+  local interiorCamera = vehicle:getVehicleInteriorCamera()
+  if interiorCamera == nil then
+    Log:error("Cannot find interior camera for vehicle")
+    return false
+  end
+
+  local cameraNode = interiorCamera.cameraPositionNode or interiorCamera.cameraNode
+  if cameraNode == nil then
+    Log:error("Cannot find camera node for interior camera")
+    return false
+  end
+
+  local vehicleParentNode = getParent(cameraNode)
+  if vehicleParentNode == nil then
+    Log:error("Cannot find parent node for interior camera")
+    return false
+  end
+
+  link(vehicleParentNode, self.cameraId)
+  self.linkedVehicle = vehicle
+
+  Log:info("Successfully linked cinematic camera to vehicle")
+  return true
+end
+
+function CabCinematicCamera:unlinkFromVehicle()
+  if self.linkedVehicle ~= nil and self.cameraId ~= nil then
+    unlink(self.cameraId)
+    self.linkedVehicle = nil
+    Log:info("Unlinked cinematic camera from vehicle")
+  end
+end
+
+function CabCinematicCamera:getIsLinkedToVehicle()
+  return self.linkedVehicle ~= nil
+end
+
+function CabCinematicCamera:getParentNode()
+  if not self:getIsLinkedToVehicle() then
+    return nil
+  end
+
+  return getParent(self.cameraId)
 end
 
 function CabCinematicCamera:update()

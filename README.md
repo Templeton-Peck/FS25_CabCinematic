@@ -8,7 +8,10 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Enter/leave cinematics game hook
 - [x] Cinematic system with keyframes and bobbing
 - [x] FOV standardization across cameras
-- [ ] WIP: Allow free camera movement during cinematics
+- [x] Allow free camera movement during cinematics
+- [ ] WIP: Fix cinematics with moving vehicles
+- [ ] WIP: Implement vehicle freezing during cinematics
+- [ ] Improve enter/interact trigger detection (currently too restrictive)
 - [ ] Third-person camera fix
 - [ ] Tab-switching fix
 - [ ] Cinematic speed-multiplier game setting

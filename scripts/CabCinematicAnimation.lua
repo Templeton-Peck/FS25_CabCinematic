@@ -7,8 +7,8 @@ CabCinematicAnimation = {
   vehicle = nil,
   cinematicCamera = nil,
   cinematic = nil,
-  originPosition = { 0, 0, 0 },
-  targetPosition = { 0, 0, 0 },
+  originLocalPosition = { 0, 0, 0 },
+  targetLocalPosition = { 0, 0, 0 },
   timer = 0,
   finishCallback = nil,
 }
@@ -61,8 +61,8 @@ function CabCinematicAnimation:reset()
   self.vehicle = nil
   self.cinematicCamera = nil
   self.cinematic = nil
-  self.originPosition = { 0, 0, 0 }
-  self.targetPosition = { 0, 0, 0 }
+  self.originLocalPosition = { 0, 0, 0 }
+  self.targetLocalPosition = { 0, 0, 0 }
   self.timer = 0
   self.finishCallback = nil
 end
@@ -76,11 +76,24 @@ function CabCinematicAnimation:start()
     return
   end
 
+  if not self.cinematicCamera:linkToVehicle(self.vehicle) then
+    Log:error("Failed to link cinematic camera to vehicle")
+    return
+  end
+
+  local vehicleParentNode = self.cinematicCamera:getParentNode()
+  if vehicleParentNode == nil then
+    Log:error("Cannot get vehicle parent node for local calculations")
+    return
+  end
+
   local sx, sy, sz = getWorldTranslation(originCameraId)
   local tx, ty, tz = getWorldTranslation(targetCameraId)
 
-  self.originPosition = { sx, sy, sz }
-  self.targetPosition = { tx, ty, tz }
+  local originLocalX, originLocalY, originLocalZ = worldToLocal(vehicleParentNode, sx, sy, sz)
+  local targetLocalX, targetLocalY, targetLocalZ = worldToLocal(vehicleParentNode, tx, ty, tz)
+  self.originLocalPosition = { originLocalX, originLocalY, originLocalZ }
+  self.targetLocalPosition = { targetLocalX, targetLocalY, targetLocalZ }
   self.cinematic = Cinematics.getCinematic(self.vehicle.typeName, self:getIsLeaveAnimation())
   self.timer = 0
   self.isActive = true
@@ -88,8 +101,8 @@ function CabCinematicAnimation:start()
   self:syncCamerasAtAnimationStart()
   self.cinematicCamera:activate()
 
-  Log:info(string.format("Start cab cinematic animation from (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f)", sx,
-    sy, sz, tx, ty, tz))
+  Log:info(string.format("Start cab cinematic animation from local (%.2f, %.2f, %.2f) to local (%.2f, %.2f, %.2f)",
+    originLocalX, originLocalY, originLocalZ, targetLocalX, targetLocalY, targetLocalZ))
 end
 
 function CabCinematicAnimation:pause()
@@ -116,13 +129,13 @@ function CabCinematicAnimation:stop()
     self.finishCallback()
   end
 
-  self.originPosition = { 0, 0, 0 }
-  self.targetPosition = { 0, 0, 0 }
-  self.cinematic      = nil
-  self.timer          = 0
-  self.finishCallback = nil
-  self.isActive       = false
-  self.isEnded        = true
+  self.originLocalPosition = { 0, 0, 0 }
+  self.targetLocalPosition = { 0, 0, 0 }
+  self.cinematic           = nil
+  self.timer               = 0
+  self.finishCallback      = nil
+  self.isActive            = false
+  self.isEnded             = true
 end
 
 function CabCinematicAnimation:getIsActive()
@@ -141,26 +154,12 @@ function CabCinematicAnimation:getIsLeaveAnimation()
   return self.animationType == CabCinematicAnimation.ANIMATION_TYPE.LEAVE
 end
 
-function CabCinematicAnimation:getPlayerCamera()
-  return self.player.camera
-end
-
-function CabCinematicAnimation:getVehicleInteriorCamera()
-  if self.vehicle and self.vehicle.spec_enterable and self.vehicle.spec_enterable.cameras then
-    for _, camera in ipairs(self.vehicle.spec_enterable.cameras) do
-      if camera.isInside then return camera end
-    end
-  end
-
-  return nil
-end
-
 function CabCinematicAnimation:getOriginCamera()
-  return self:getIsEnterAnimation() and self:getPlayerCamera() or self:getVehicleInteriorCamera()
+  return self:getIsEnterAnimation() and self.player.camera or self.vehicle:getVehicleInteriorCamera()
 end
 
 function CabCinematicAnimation:getTargetCamera()
-  return self:getIsEnterAnimation() and self:getVehicleInteriorCamera() or self:getPlayerCamera()
+  return self:getIsEnterAnimation() and self.vehicle:getVehicleInteriorCamera() or self.player.camera
 end
 
 function CabCinematicAnimation:syncCamerasAtAnimationStart()
@@ -220,7 +219,7 @@ function CabCinematicAnimation:update(dt)
     return
   end
 
-  local vehicleCamera = self:getVehicleInteriorCamera()
+  local vehicleCamera = self.vehicle:getVehicleInteriorCamera()
   self.cinematicCamera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
 
   if self.isPaused then
@@ -231,25 +230,16 @@ function CabCinematicAnimation:update(dt)
   local cinematicDuration = self.cinematic.totalDuration
   local t = math.min(1.0, self.timer / cinematicDuration)
 
-  local sx, sy, sz = self.originPosition[1], self.originPosition[2], self.originPosition[3]
-  local tx, ty, tz = self.targetPosition[1], self.targetPosition[2], self.targetPosition[3]
+  local sx, sy, sz = self.originLocalPosition[1], self.originLocalPosition[2], self.originLocalPosition[3]
+  local tx, ty, tz = self.targetLocalPosition[1], self.targetLocalPosition[2], self.targetLocalPosition[3]
 
   local axisProgress = self.cinematic:getAxisProgressAtTime(t)
   local offset = self.cinematic:getOffsetAtTime(t)
   local bobbing = self.cinematic:getBobbingAtTime(t)
 
-  local worldOffset = { x = 0, y = 0, z = 0 }
-  local rightX, rightY, rightZ = localDirectionToWorld(self.vehicle.rootNode, 1, 0, 0)       -- Droite
-  local upX, upY, upZ = localDirectionToWorld(self.vehicle.rootNode, 0, 1, 0)                -- Haut
-  local forwardX, forwardY, forwardZ = localDirectionToWorld(self.vehicle.rootNode, 0, 0, 1) -- Avant
-
-  worldOffset.x = offset.x * rightX + offset.y * upX + offset.z * forwardX
-  worldOffset.y = offset.x * rightY + offset.y * upY + offset.z * forwardY
-  worldOffset.z = offset.x * rightZ + offset.y * upZ + offset.z * forwardZ
-
-  local cx = sx + (tx - sx) * axisProgress.x + worldOffset.x + bobbing.x
-  local cy = sy + (ty - sy) * axisProgress.y + worldOffset.y + bobbing.y
-  local cz = sz + (tz - sz) * axisProgress.z + worldOffset.z + bobbing.z
+  local cx = sx + (tx - sx) * axisProgress.x + offset.x + bobbing.x
+  local cy = sy + (ty - sy) * axisProgress.y + offset.y + bobbing.y
+  local cz = sz + (tz - sz) * axisProgress.z + offset.z + bobbing.z
 
   -- Log:info(string.format("CabCinematicAnimation t=%.2f, pos=(%.2f, %.2f, %.2f)", t, cx, cy, cz))
 

@@ -20,6 +20,10 @@ function CabCinematicSpec.prerequisitesPresent(specializations)
   return SpecializationUtil.hasSpecialization(Enterable, specializations)
 end
 
+function CabCinematicSpec.registerFunctions(vehicleType)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCamera", CabCinematicSpec.getVehicleInteriorCamera)
+end
+
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "interact", CabCinematicSpec.interact)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "onPlayerEnterVehicle",
@@ -76,6 +80,17 @@ function CabCinematicSpec:doLeaveVehicle(superFunc)
     spec:restoreVehicleCharacter()
     return superFunc(self)
   end)
+end
+
+function CabCinematicSpec:getVehicleInteriorCamera()
+  if self.spec_enterable and self.spec_enterable.cameras then
+    for _, camera in ipairs(self.spec_enterable.cameras) do
+      if camera.isInside then
+        return camera
+      end
+    end
+  end
+  return nil
 end
 
 function CabCinematicSpec:onLoad()
