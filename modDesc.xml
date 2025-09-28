@@ -14,7 +14,7 @@
     <fr>TODO</fr>
   </description>
 
-  <iconFilename>icon.png</iconFilename>
+  <iconFilename>icon.dds</iconFilename>
 
   <actions>
     <action name="CAB_CINEMATIC_DEBUG" category="ONFOOT" axisType="HALF" />
