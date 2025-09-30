@@ -9,7 +9,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Cinematic system with keyframes and bobbing
 - [x] FOV standardization across cameras
 - [x] Allow free camera movement during cinematics
-- [ ] WIP: Fix cinematics with moving vehicles
+- [x] Fix cinematics with moving vehicles
 - [ ] WIP: Implement vehicle freezing during cinematics
 - [ ] Improve enter/interact trigger detection (currently too restrictive)
 - [ ] Third-person camera fix
