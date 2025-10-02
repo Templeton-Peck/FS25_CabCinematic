@@ -250,3 +250,72 @@ function Cinematics.getCinematic(typeName, reverse)
 
   return reverse and reversedProfiles["default"] or profiles["default"]
 end
+
+function Cinematics.createCompositeAnimation(profileA, profileB)
+  Log:info("Creating composite animation with pre-movement")
+
+  local compositeProfile = {
+    segments = {},
+    totalDuration = 0,
+    isReversed = profileB.isReversed or false,
+    hasPreMovement = true
+  }
+
+  for _, segment in ipairs(profileA.segments) do
+    table.insert(compositeProfile.segments, {
+      duration = segment.duration,
+      axes = segment.axes,
+      bob = segment.bob,
+      offset = segment.offset,
+      isPreMovement = true
+    })
+    compositeProfile.totalDuration = compositeProfile.totalDuration + segment.duration
+  end
+
+  for _, segment in ipairs(profileB.segments) do
+    table.insert(compositeProfile.segments, {
+      duration = segment.duration,
+      axes = segment.axes,
+      bob = segment.bob,
+      offset = segment.offset,
+      isPreMovement = false
+    })
+    compositeProfile.totalDuration = compositeProfile.totalDuration + segment.duration
+  end
+
+  return addCinematicMethods(compositeProfile, compositeProfile.isReversed)
+end
+
+function Cinematics.createDynamicWalkProfile(distance)
+  local walkingSpeed = 1.2
+  local walkDuration = math.max(500, math.min(2000, (distance / walkingSpeed) * 1000))
+
+  Log:info(string.format("Creating dynamic walk profile: distance=%.2fm, duration=%dms", distance, walkDuration))
+
+  local dynamicWalkProfile = {
+    segments = {
+      {
+        duration = walkDuration,
+        axes = { x = 1, y = 0, z = 1 },
+        bob = bobbing.walk,
+        offset = nil
+      }
+    }
+  }
+
+  return addCinematicMethods(dynamicWalkProfile, false)
+end
+
+function Cinematics.getCinematicWithPreMovement(typeName, reverse, playerDistance)
+  Log:info(string.format("Get cinematic with pre-movement called (reversed: %s): %s, distance: %.2fm",
+    tostring(reverse), typeName, playerDistance or 0))
+
+  if playerDistance and playerDistance > 0 then
+    local walkProfile = Cinematics.createDynamicWalkProfile(playerDistance)
+    local mainProfile = Cinematics.getCinematic(typeName, reverse)
+
+    return Cinematics.createCompositeAnimation(walkProfile, mainProfile)
+  end
+
+  return Cinematics.getCinematic(typeName, reverse)
+end

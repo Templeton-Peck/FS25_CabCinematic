@@ -10,6 +10,8 @@ CabCinematicAnimation = {
   originLocalPosition = { 0, 0, 0 },
   targetLocalPosition = { 0, 0, 0 },
   timer = 0,
+  playerDistance = 0,
+  withPreMovement = false,
   finishCallback = nil,
 }
 
@@ -36,15 +38,19 @@ local function getCameraId(camera)
   return camera.cameraRootNode
 end
 
-function CabCinematicAnimation.new(animationType, player, vehicle, cinematicCamera, finishCallback)
+function CabCinematicAnimation.new(animationType, player, vehicle, cinematicCamera, withPreMovement, playerDistance,
+                                   finishCallback)
   local self = setmetatable({}, CabCinematicAnimation_mt)
   self.animationType = animationType
   self.player = player
   self.vehicle = vehicle
   self.cinematicCamera = cinematicCamera
+  self.withPreMovement = withPreMovement or false
+  self.playerDistance = playerDistance or 0
   self.finishCallback = finishCallback
-  Log:info(string.format("Created CabCinematicAnimation of type %s for vehicle %s", animationType,
-    vehicle.typeName))
+  Log:info(string.format(
+    "Created CabCinematicAnimation of type %s for vehicle %s (withPreMovement: %s, distance: %.2fm)",
+    animationType, vehicle.typeName, tostring(withPreMovement), playerDistance or 0))
   return self
 end
 
@@ -64,6 +70,8 @@ function CabCinematicAnimation:reset()
   self.originLocalPosition = { 0, 0, 0 }
   self.targetLocalPosition = { 0, 0, 0 }
   self.timer = 0
+  self.withPreMovement = false
+  self.playerDistance = 0
   self.finishCallback = nil
 end
 
@@ -104,7 +112,15 @@ function CabCinematicAnimation:start()
   local targetLocalX, targetLocalY, targetLocalZ = worldToLocal(vehicleParentNode, tx, ty, tz)
   self.originLocalPosition = { originLocalX, originLocalY, originLocalZ }
   self.targetLocalPosition = { targetLocalX, targetLocalY, targetLocalZ }
-  self.cinematic = Cinematics.getCinematic(self.vehicle.typeName, self:getIsLeaveAnimation())
+
+  if self.withPreMovement and self:getIsEnterAnimation() then
+    self.cinematic = Cinematics.getCinematicWithPreMovement(self.vehicle.typeName, self:getIsLeaveAnimation(),
+      self.playerDistance)
+    Log:info(string.format("Using composite animation with pre-movement (distance: %.2fm)", self.playerDistance))
+  else
+    self.cinematic = Cinematics.getCinematic(self.vehicle.typeName, self:getIsLeaveAnimation())
+  end
+
   self.timer = 0
   self.isActive = true
 
@@ -174,25 +190,34 @@ end
 
 function CabCinematicAnimation:getOriginPosition()
   if self:getIsEnterAnimation() then
-    local exitNode = self.vehicle:getExitNode()
-    local originCamera = self:getOriginCamera()
-    local cameraNode = getCameraId(originCamera)
+    if self.withPreMovement then
+      local originCamera = self:getOriginCamera()
+      local cameraNode = getCameraId(originCamera)
 
-    if exitNode == nil or cameraNode == nil then
-      Log:warning("getOriginPosition: exitNode ou cameraNode est nil pour animation d'entrée")
-      return nil, nil, nil
+      if cameraNode == nil then
+        return nil, nil, nil
+      end
+
+      local playerX, playerY, playerZ = getWorldTranslation(cameraNode)
+      return playerX, playerY, playerZ
+    else
+      local exitNode = self.vehicle:getExitNode()
+      local originCamera = self:getOriginCamera()
+      local cameraNode = getCameraId(originCamera)
+
+      if exitNode == nil or cameraNode == nil then
+        return nil, nil, nil
+      end
+
+      local exitX, _, exitZ = getWorldTranslation(exitNode)
+      local _, camY, _ = getWorldTranslation(cameraNode)
+
+      if exitX == nil or exitZ == nil or camY == nil then
+        return nil, nil, nil
+      end
+
+      return exitX, camY, exitZ
     end
-
-    local exitX, _, exitZ = getWorldTranslation(exitNode)
-    local _, camY, _ = getWorldTranslation(cameraNode)
-
-    if exitX == nil or exitZ == nil or camY == nil then
-      Log:warning("getOriginPosition: impossible de récupérer les coordonnées")
-      return nil, nil, nil
-    end
-
-    Log:info(string.format("Position hybride origine: exitNode XZ(%.2f, %.2f) + camera Y(%.2f)", exitX, exitZ, camY))
-    return exitX, camY, exitZ
   else
     local originCamera = self:getOriginCamera()
     return getWorldTranslation(getCameraId(originCamera))
@@ -209,7 +234,6 @@ function CabCinematicAnimation:getTargetPosition()
     local cameraNode = getCameraId(targetCamera)
 
     if exitNode == nil or cameraNode == nil then
-      Log:warning("getTargetPosition: exitNode ou cameraNode est nil pour animation de sortie")
       return nil, nil, nil
     end
 
@@ -217,11 +241,9 @@ function CabCinematicAnimation:getTargetPosition()
     local _, camY, _ = getWorldTranslation(cameraNode)
 
     if exitX == nil or exitZ == nil or camY == nil then
-      Log:warning("getTargetPosition: impossible de récupérer les coordonnées")
       return nil, nil, nil
     end
 
-    Log:info(string.format("Position hybride cible: exitNode XZ(%.2f, %.2f) + camera Y(%.2f)", exitX, exitZ, camY))
     return exitX, camY, exitZ
   end
 end

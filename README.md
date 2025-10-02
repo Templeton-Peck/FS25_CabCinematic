@@ -11,7 +11,11 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Allow free camera movement during cinematics
 - [x] Fix cinematics with moving vehicles
 - [ ] WIP: Implement vehicle freezing during cinematics
-- [ ] Improve enter/interact trigger detection (currently too restrictive)
+- [ ] WIP: Improve enter/interact trigger detection (currently too restrictive)
+  - [x] Walk to vehicle if not close enough
+  - [ ] Better handling transition between walking and entering
+  - [ ] Better handling with moving vehicles
+  - [ ] If close enough, start enter animation directly from current position
 - [ ] Third-person camera fix
 - [ ] Tab-switching fix
 - [ ] Cinematic speed-multiplier game setting

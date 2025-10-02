@@ -21,15 +21,16 @@ function CabCinematic:getIsActive()
   return self.cinematicAnimation ~= nil and self.cinematicAnimation:getIsActive()
 end
 
-function CabCinematic:startEnterAnimation(vehicle, finishCallback)
-  Log:info("CabCinematic:startEnterAnimation called")
+function CabCinematic:startEnterAnimation(vehicle, withPreMovement, playerDistance, finishCallback)
+  Log:info(string.format("CabCinematic:startEnterAnimation called (withPreMovement: %s, distance: %.2fm)",
+    tostring(withPreMovement), playerDistance or 0))
 
   if self:getIsActive() then
     return
   end
 
   self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.ANIMATION_TYPE.ENTER, g_localPlayer, vehicle,
-    self.camera, finishCallback)
+    self.camera, withPreMovement, playerDistance, finishCallback)
 end
 
 function CabCinematic:startLeaveAnimation(vehicle, finishCallback)
@@ -40,7 +41,7 @@ function CabCinematic:startLeaveAnimation(vehicle, finishCallback)
   end
 
   self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.ANIMATION_TYPE.LEAVE, g_localPlayer, vehicle,
-    self.camera, finishCallback)
+    self.camera, false, 0, finishCallback)
 end
 
 function CabCinematic:update(dt)
