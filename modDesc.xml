@@ -36,6 +36,8 @@
     <sourceFile filename="scripts/lib/ModHelper.lua" />
     <sourceFile filename="scripts/resources/Cinematics.lua" />
     <sourceFile filename="scripts/CabCinematicCamera.lua" />
+    <sourceFile filename="scripts/CabCinematicAnimationKeyframe.lua" />
+    <sourceFile filename="scripts/CabCinematicPlayerSnapshot.lua" />
     <sourceFile filename="scripts/CabCinematicAnimation.lua" />
     <sourceFile filename="scripts/CabCinematic.lua" />
   </extraSourceFiles>

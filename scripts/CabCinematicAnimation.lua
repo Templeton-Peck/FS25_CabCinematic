@@ -1,167 +1,47 @@
 CabCinematicAnimation = {
+  timer = 0,
   isActive = false,
   isPaused = false,
   isEnded = false,
-  animationType = nil,
-  player = nil,
+  type = nil,
   vehicle = nil,
-  cinematicCamera = nil,
-  cinematic = nil,
-  originLocalPosition = { 0, 0, 0 },
-  targetLocalPosition = { 0, 0, 0 },
-  timer = 0,
-  playerDistance = 0,
-  withPreMovement = false,
+  camera = nil,
   finishCallback = nil,
+  keyframes = nil,
+
+  playerSnapshot = nil,
+  duration = 0.0,
+  currentKeyFrameIndex = 1,
 }
 
-CabCinematicAnimation.ANIMATION_TYPE = {
+CabCinematicAnimation.TYPES = {
   ENTER = "enter",
   LEAVE = "leave",
 }
 
+CabCinematicAnimation.PRESETS = {
+  combineDrivable = { CabCinematicAnimationKeyframe.TYPES.CLIMB, CabCinematicAnimationKeyframe.TYPES.WALK, CabCinematicAnimationKeyframe.TYPES.SEAT },
+  tractor = { CabCinematicAnimationKeyframe.TYPES.CLIMB, CabCinematicAnimationKeyframe.TYPES.WALK, CabCinematicAnimationKeyframe.TYPES.SEAT },
+}
+
+CabCinematicAnimation.PRE_MOVEMENT_DISTANCE = 1.0
+CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED = 8.0
+
 local CabCinematicAnimation_mt = Class(CabCinematicAnimation)
 
-local function isVehicleCamera(camera)
-  return camera ~= nil and camera.vehicle ~= nil
-end
+function CabCinematicAnimation.new(type, vehicle, camera, finishCallback)
+  Log:info(string.format("Created CabCinematicAnimation of type %s for vehicle %s", type, vehicle.typeName))
 
-local function getCameraId(camera)
-  if camera == nil then
-    return nil
-  end
-
-  if isVehicleCamera(camera) then
-    return camera.cameraPositionNode
-  end
-
-  return camera.cameraRootNode
-end
-
-function CabCinematicAnimation.new(animationType, player, vehicle, cinematicCamera, withPreMovement, playerDistance,
-                                   finishCallback)
   local self = setmetatable({}, CabCinematicAnimation_mt)
-  self.animationType = animationType
-  self.player = player
+  self.type = type
   self.vehicle = vehicle
-  self.cinematicCamera = cinematicCamera
-  self.withPreMovement = withPreMovement or false
-  self.playerDistance = playerDistance or 0
+  self.camera = camera
   self.finishCallback = finishCallback
-  Log:info(string.format(
-    "Created CabCinematicAnimation of type %s for vehicle %s (withPreMovement: %s, distance: %.2fm)",
-    animationType, vehicle.typeName, tostring(withPreMovement), playerDistance or 0))
   return self
 end
 
 function CabCinematicAnimation:delete()
-  self:reset()
-end
 
-function CabCinematicAnimation:reset()
-  self.isActive = false
-  self.isPaused = false
-  self.isEnded = false
-  self.animationType = nil
-  self.player = nil
-  self.vehicle = nil
-  self.cinematicCamera = nil
-  self.cinematic = nil
-  self.originLocalPosition = { 0, 0, 0 }
-  self.targetLocalPosition = { 0, 0, 0 }
-  self.timer = 0
-  self.withPreMovement = false
-  self.playerDistance = 0
-  self.finishCallback = nil
-end
-
-function CabCinematicAnimation:start()
-  local originCameraId = getCameraId(self:getOriginCamera())
-  local targetCameraId = getCameraId(self:getTargetCamera())
-
-  if originCameraId == nil or targetCameraId == nil then
-    Log:error("Cannot start cab cinematic animation: missing camera")
-    return
-  end
-
-  if not self.cinematicCamera:linkToVehicle(self.vehicle) then
-    Log:error("Failed to link cinematic camera to vehicle")
-    return
-  end
-
-  local vehicleParentNode = self.cinematicCamera:getParentNode()
-  if vehicleParentNode == nil then
-    Log:error("Cannot get vehicle parent node for local calculations")
-    return
-  end
-
-  local sx, sy, sz = self:getOriginPosition()
-  local tx, ty, tz = self:getTargetPosition()
-
-  if sx == nil or sy == nil or sz == nil then
-    Log:error("Cannot get world translation for origin position")
-    return
-  end
-
-  if tx == nil or ty == nil or tz == nil then
-    Log:error("Cannot get world translation for target position")
-    return
-  end
-
-  local originLocalX, originLocalY, originLocalZ = worldToLocal(vehicleParentNode, sx, sy, sz)
-  local targetLocalX, targetLocalY, targetLocalZ = worldToLocal(vehicleParentNode, tx, ty, tz)
-  self.originLocalPosition = { originLocalX, originLocalY, originLocalZ }
-  self.targetLocalPosition = { targetLocalX, targetLocalY, targetLocalZ }
-
-  if self.withPreMovement and self:getIsEnterAnimation() then
-    self.cinematic = Cinematics.getCinematicWithPreMovement(self.vehicle.typeName, self:getIsLeaveAnimation(),
-      self.playerDistance)
-    Log:info(string.format("Using composite animation with pre-movement (distance: %.2fm)", self.playerDistance))
-  else
-    self.cinematic = Cinematics.getCinematic(self.vehicle.typeName, self:getIsLeaveAnimation())
-  end
-
-  self.timer = 0
-  self.isActive = true
-
-  self:syncCamerasAtAnimationStart()
-  self.cinematicCamera:activate()
-
-  Log:info(string.format("Start cab cinematic animation from local (%.2f, %.2f, %.2f) to local (%.2f, %.2f, %.2f)",
-    originLocalX, originLocalY, originLocalZ, targetLocalX, targetLocalY, targetLocalZ))
-end
-
-function CabCinematicAnimation:pause()
-  if self.isActive then
-    self.isPaused = true
-    Log:info(string.format("Pause cab cinematic animation"))
-  end
-end
-
-function CabCinematicAnimation:resume()
-  if self.isActive and self.isPaused then
-    self.isPaused = false
-    Log:info(string.format("Resume cab cinematic animation"))
-  end
-end
-
-function CabCinematicAnimation:stop()
-  Log:info(string.format("Stop cab cinematic animation"))
-
-  self:syncCamerasAtAnimationStop()
-  self.cinematicCamera:deactivate()
-
-  if self.finishCallback ~= nil then
-    self.finishCallback()
-  end
-
-  self.originLocalPosition = { 0, 0, 0 }
-  self.targetLocalPosition = { 0, 0, 0 }
-  self.cinematic           = nil
-  self.timer               = 0
-  self.finishCallback      = nil
-  self.isActive            = false
-  self.isEnded             = true
 end
 
 function CabCinematicAnimation:getIsActive()
@@ -172,132 +52,165 @@ function CabCinematicAnimation:getIsEnded()
   return self.isEnded
 end
 
-function CabCinematicAnimation:getIsEnterAnimation()
-  return self.animationType == CabCinematicAnimation.ANIMATION_TYPE.ENTER
+function CabCinematicAnimation:getIsPaused()
+  return self.isPaused
 end
 
-function CabCinematicAnimation:getIsLeaveAnimation()
-  return self.animationType == CabCinematicAnimation.ANIMATION_TYPE.LEAVE
-end
+function CabCinematicAnimation:getPreMovementKeyframe(playerSnapshot)
+  local plx, ply, plz = playerSnapshot:getLocalPosition(self.vehicle.rootNode)
+  local elx, ely, elz = self:getVehicleExitNodeFixedPosition()
 
-function CabCinematicAnimation:getOriginCamera()
-  return self:getIsEnterAnimation() and self.player.camera or self.vehicle:getVehicleInteriorCamera()
-end
+  local playerDistance = MathUtil.vector3Length(elx - plx, ely - ply, elz - plz)
 
-function CabCinematicAnimation:getTargetCamera()
-  return self:getIsEnterAnimation() and self.vehicle:getVehicleInteriorCamera() or self.player.camera
-end
+  if playerDistance > CabCinematicAnimation.PRE_MOVEMENT_DISTANCE then
+    Log:info(string.format(
+      "Calculating pre-movement keyframe - Player position (%.2f, %.2f, %.2f), ExitNode position (%.2f, %.2f, %.2f) - Distance: %.2f",
+      plx, ply, plz, elx, ely, elz, playerDistance))
 
-function CabCinematicAnimation:getOriginPosition()
-  if self:getIsEnterAnimation() then
-    if self.withPreMovement then
-      local originCamera = self:getOriginCamera()
-      local cameraNode = getCameraId(originCamera)
-
-      if cameraNode == nil then
-        return nil, nil, nil
-      end
-
-      local playerX, playerY, playerZ = getWorldTranslation(cameraNode)
-      return playerX, playerY, playerZ
+    if self.vehicle:getLastSpeed() > CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED then
+      return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.RUN, { plx, ply, plz },
+        { elx, ely, elz })
     else
-      local exitNode = self.vehicle:getExitNode()
-      local originCamera = self:getOriginCamera()
-      local cameraNode = getCameraId(originCamera)
-
-      if exitNode == nil or cameraNode == nil then
-        return nil, nil, nil
-      end
-
-      local exitX, _, exitZ = getWorldTranslation(exitNode)
-      local _, camY, _ = getWorldTranslation(cameraNode)
-
-      if exitX == nil or exitZ == nil or camY == nil then
-        return nil, nil, nil
-      end
-
-      return exitX, camY, exitZ
+      return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.WALK, { plx, ply, plz },
+        { elx, ely, elz })
     end
   else
-    local originCamera = self:getOriginCamera()
-    return getWorldTranslation(getCameraId(originCamera))
+    Log:info(string.format("No pre-movement keyframe needed - distance: %.2f", playerDistance))
+  end
+
+  return nil
+end
+
+function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
+  Log:info(string.format(
+    "Building keyframes from start position (%.2f, %.2f, %.2f) to end position (%.2f, %.2f, %.2f)",
+    startPosition[1], startPosition[2], startPosition[3],
+    endPosition[1], endPosition[2], endPosition[3]))
+
+  local preset = CabCinematicAnimation.PRESETS[self.vehicle.typeName]
+  local keyframes = {}
+
+  -- Analyze x/y/z distances and variations from exitNode to vehicle interior camera
+  -- Use preset to create keyframes (y variations for climb, x/z for walk, seat at the end with no movement)
+  -- Example: [climb, walk, seat] : [y:100%, x/z:0%], [y:0%, x/z:100%], [y:0%, x/z:0%]
+  -- Example: [climb, walk, climb, seat] : incremental y:50% each climb, x/z:100% for walk, seat:0%
+
+  local keyframeTypesCounts = {}
+  for _, keyframeType in ipairs(preset) do
+    keyframeTypesCounts[keyframeType] = (keyframeTypesCounts[keyframeType] or 0) + 1
+  end
+
+  local keyframeTypesProgress = {}
+  local previousProgress = {}
+  for keyframeType, _ in pairs(keyframeTypesCounts) do
+    keyframeTypesProgress[keyframeType] = 0
+    previousProgress[keyframeType] = 0
+  end
+
+  local deltaX = endPosition[1] - startPosition[1]
+  local deltaY = endPosition[2] - startPosition[2]
+  local deltaZ = endPosition[3] - startPosition[3]
+
+  local currentPosition = { startPosition[1], startPosition[2], startPosition[3] }
+  for _, keyframeType in ipairs(preset) do
+    keyframeTypesProgress[keyframeType] = keyframeTypesProgress[keyframeType] + 1
+    local currentProgress = keyframeTypesProgress[keyframeType] / keyframeTypesCounts[keyframeType]
+    local incrementalProgress = currentProgress - previousProgress[keyframeType]
+    previousProgress[keyframeType] = currentProgress
+
+    local progressX = 0
+    local progressY = 0
+    local progressZ = 0
+    if keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB then
+      progressY = incrementalProgress
+    elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.WALK then
+      progressX = incrementalProgress
+      progressZ = incrementalProgress
+    elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.SEAT then
+      -- No movement for seat
+    end
+
+    local nextPosition = {
+      currentPosition[1] + deltaX * progressX,
+      currentPosition[2] + deltaY * progressY,
+      currentPosition[3] + deltaZ * progressZ,
+    }
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(keyframeType, currentPosition, nextPosition))
+    currentPosition = nextPosition
+  end
+
+  return keyframes
+end
+
+function CabCinematicAnimation:getVehicleExitNodeFixedPosition()
+  local wex, _, wez = getWorldTranslation(self.vehicle:getExitNode())
+  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, 0, wez) + 0.1
+  return worldToLocal(self.vehicle.rootNode, wex, wty, wez)
+end
+
+function CabCinematicAnimation:prepare()
+  local startPosition = { self:getVehicleExitNodeFixedPosition() }
+  local endPosition = { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  self.keyframes = self:buildKeyframes(startPosition, endPosition)
+
+  if (self.type == CabCinematicAnimation.TYPES.ENTER and self.playerSnapshot ~= nil) then
+    local preMovementKeyframe = self:getPreMovementKeyframe(self.playerSnapshot)
+    if (preMovementKeyframe ~= nil) then
+      table.insert(self.keyframes, 1, preMovementKeyframe)
+    end
+  end
+
+  self.duration = 0
+  for _, keyframe in ipairs(self.keyframes) do
+    self.duration = self.duration + keyframe:getDuration()
   end
 end
 
-function CabCinematicAnimation:getTargetPosition()
-  if self:getIsEnterAnimation() then
-    local targetCamera = self:getTargetCamera()
-    return getWorldTranslation(getCameraId(targetCamera))
-  else
-    local exitNode = self.vehicle:getExitNode()
-    local targetCamera = self:getTargetCamera()
-    local cameraNode = getCameraId(targetCamera)
+function CabCinematicAnimation:start()
+  Log:info("Starting CabCinematicAnimation")
 
-    if exitNode == nil or cameraNode == nil then
-      return nil, nil, nil
-    end
-
-    local exitX, _, exitZ = getWorldTranslation(exitNode)
-    local _, camY, _ = getWorldTranslation(cameraNode)
-
-    if exitX == nil or exitZ == nil or camY == nil then
-      return nil, nil, nil
-    end
-
-    return exitX, camY, exitZ
+  if not self.camera:link(self.vehicle.rootNode) then
+    Log:error("Failed to link cinematic camera to vehicle")
+    return
   end
+
+  self:prepare()
+
+  Log:info(string.format("CabCinematicAnimation total duration: %.2f seconds", self.duration))
+
+  for _, keyframe in ipairs(self.keyframes) do
+    Log:info(string.format(
+      "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
+      keyframe.type,
+      keyframe.startPosition[1], keyframe.startPosition[2], keyframe.startPosition[3],
+      keyframe.endPosition[1], keyframe.endPosition[2], keyframe.endPosition[3],
+      keyframe.speed,
+      keyframe.distance,
+      keyframe:getDuration()))
+  end
+
+  self.timer = 0
+  self.currentKeyFrameIndex = 1
+  self.isActive = true
+  self.camera:activate()
 end
 
-function CabCinematicAnimation:syncCamerasAtAnimationStart()
-  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
-  setFovY(self.player:getCurrentCameraNode(), fovY)
-  setFovY(self.cinematicCamera.cameraId, fovY)
+function CabCinematicAnimation:stop()
+  Log:info("Stopping CabCinematicAnimation")
 
-  local originCamera = self:getOriginCamera()
-  local targetCamera = self:getTargetCamera()
+  self.camera:deactivate()
 
-  if self:getIsEnterAnimation() then
-    setFovY(targetCamera.cameraNode, fovY)
-
-    if isVehicleCamera(targetCamera) then
-      local dx, dy, dz = localDirectionToWorld(getCameraId(originCamera), 0, 0, 1)
-
-      local rotateNodeParent = getParent(targetCamera.rotateNode)
-      local localDx, localDy, localDz = worldDirectionToLocal(rotateNodeParent, dx, dy, dz)
-
-      local rotX = -math.asin(localDy)
-      local rotY = math.atan2(localDx, localDz)
-
-      targetCamera.rotX = rotX
-      targetCamera.rotY = rotY
-      targetCamera.rotZ = 0
-
-      Log:info(string.format("syncCamerasAtAnimationStart: setting target camera rotation to (%.2f, %.2f, %.2f)",
-        rotX, rotY, 0))
-
-      targetCamera:updateRotateNodeRotation()
-    else
-      Log:warning("syncCamerasAtAnimationStop: target camera is not a vehicle camera during enter animation")
-    end
+  if self.finishCallback ~= nil then
+    self.finishCallback()
   end
-end
 
-function CabCinematicAnimation:syncCamerasAtAnimationStop()
-  if self:getIsLeaveAnimation() then
-    local originCamera = self:getOriginCamera()
-    local targetCamera = self:getTargetCamera()
+  self.camera:unlink()
 
-    if isVehicleCamera(originCamera) then
-      local dx, dy, dz = localDirectionToWorld(getCameraId(originCamera), 0, 0, 1)
-
-      local pitch = math.asin(dy)
-      local yaw = math.atan2(dx, dz) + math.pi
-
-      targetCamera:setRotation(pitch, yaw, 0)
-    else
-      Log:warning("syncCamerasAtAnimationStart: origin camera is not a vehicle camera during leave animation")
-    end
-  end
+  self.timer          = 0
+  self.finishCallback = nil
+  self.isActive       = false
+  self.isEnded        = true
 end
 
 function CabCinematicAnimation:update(dt)
@@ -306,32 +219,50 @@ function CabCinematicAnimation:update(dt)
   end
 
   local vehicleCamera = self.vehicle:getVehicleInteriorCamera()
-  self.cinematicCamera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
+  self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
 
   if self.isPaused then
     return
   end
 
-  self.timer = self.timer + dt
-  local cinematicDuration = self.cinematic.totalDuration
-  local t = math.min(1.0, self.timer / cinematicDuration)
+  self.timer = self.timer + (dt / 1000.0)
+  local progress = self.timer / self.duration
 
-  local sx, sy, sz = self.originLocalPosition[1], self.originLocalPosition[2], self.originLocalPosition[3]
-  local tx, ty, tz = self.targetLocalPosition[1], self.targetLocalPosition[2], self.targetLocalPosition[3]
+  local accumulatedDuration = 0.0
+  for i = 1, self.currentKeyFrameIndex do
+    accumulatedDuration = accumulatedDuration + self.keyframes[i]:getDuration()
+  end
 
-  local axisProgress = self.cinematic:getAxisProgressAtTime(t)
-  local offset = self.cinematic:getOffsetAtTime(t)
-  local bobbing = self.cinematic:getBobbingAtTime(t)
+  if self.timer > accumulatedDuration then
+    self.currentKeyFrameIndex = self.currentKeyFrameIndex + 1
+  end
 
-  local cx = sx + (tx - sx) * axisProgress.x + offset.x + bobbing.x
-  local cy = sy + (ty - sy) * axisProgress.y + offset.y + bobbing.y
-  local cz = sz + (tz - sz) * axisProgress.z + offset.z + bobbing.z
-
-  -- Log:info(string.format("CabCinematicAnimation t=%.2f, pos=(%.2f, %.2f, %.2f)", t, cx, cy, cz))
-
-  self.cinematicCamera:setPosition(cx, cy, cz)
-
-  if t >= 1.0 or CabCinematic.debug.skipAnimation then
+  local currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
+  if currentKeyFrame == nil then
+    Log:error("No current keyframe found during update")
     self:stop()
+    return
+  end
+
+  local keyframeTime = self.timer - (accumulatedDuration - currentKeyFrame:getDuration())
+  local cx, cy, cz = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
+
+  Log:info(string.format("CabCinematicAnimation progress=%.2f, timer=%.2f, keyframeTime=%.2f, pos=(%.2f, %.2f, %.2f)",
+    progress, self.timer, keyframeTime, cx, cy, cz))
+
+  self.camera:setPosition(cx, cy, cz)
+
+  if progress >= 1.0 or CabCinematic.debug.skipAnimation then
+    self:stop()
+  end
+end
+
+function CabCinematicAnimation:drawDebug()
+  DebugUtil.drawDebugNode(self.vehicle:getExitNode())
+  DebugUtil.drawDebugNode(self.vehicle:getVehicleInteriorCamera().cameraPositionNode)
+  if self.keyframes ~= nil then
+    for _, keyframe in ipairs(self.keyframes) do
+      keyframe:drawDebug(self.vehicle.rootNode)
+    end
   end
 end

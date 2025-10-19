@@ -21,27 +21,31 @@ function CabCinematic:getIsActive()
   return self.cinematicAnimation ~= nil and self.cinematicAnimation:getIsActive()
 end
 
-function CabCinematic:startEnterAnimation(vehicle, withPreMovement, playerDistance, finishCallback)
-  Log:info(string.format("CabCinematic:startEnterAnimation called (withPreMovement: %s, distance: %.2fm)",
-    tostring(withPreMovement), playerDistance or 0))
+function CabCinematic:startEnterAnimation(vehicle, playerSnapshot, finishCallback)
+  pcall(function()
+    executeConsoleCommand("cls")
+  end)
+
+  Log:info(string.format("CabCinematic:startEnterAnimation"))
 
   if self:getIsActive() then
     return
   end
 
-  self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.ANIMATION_TYPE.ENTER, g_localPlayer, vehicle,
-    self.camera, withPreMovement, playerDistance, finishCallback)
+  self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle, self.camera,
+    finishCallback)
+  self.cinematicAnimation.playerSnapshot = playerSnapshot
 end
 
 function CabCinematic:startLeaveAnimation(vehicle, finishCallback)
   Log:info("CabCinematic:startLeaveAnimation called")
 
-  if self:getIsActive() then
-    return
-  end
+  -- if self:getIsActive() then
+  --   return
+  -- end
 
-  self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.ANIMATION_TYPE.LEAVE, g_localPlayer, vehicle,
-    self.camera, false, 0, finishCallback)
+  -- self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, g_localPlayer, vehicle,
+  --   self.camera, false, 0, finishCallback)
 end
 
 function CabCinematic:update(dt)
@@ -52,8 +56,8 @@ function CabCinematic:update(dt)
 
   if self.cinematicAnimation ~= nil then
     if self.cinematicAnimation:getIsEnded() then
-      self.cinematicAnimation:delete()
-      self.cinematicAnimation = nil
+      -- self.cinematicAnimation:delete()
+      -- self.cinematicAnimation = nil
     elseif not self.cinematicAnimation:getIsActive() then
       self.cinematicAnimation:start()
     end
@@ -62,6 +66,12 @@ function CabCinematic:update(dt)
   if self:getIsActive() then
     self.cinematicAnimation:update(dt)
     self.camera:update(dt)
+  end
+end
+
+function CabCinematic:draw()
+  if self.cinematicAnimation ~= nil then
+    self.cinematicAnimation:drawDebug()
   end
 end
 

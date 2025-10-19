@@ -44,14 +44,11 @@ function CabCinematicSpec:interact(superFunc, player)
 
   local exitNode = self:getExitNode()
   local playerDistance = getDistance(player.rootNode, exitNode)
-  local isPlayerOnVehicleExitNode = playerDistance <= 0.5
   local isPlayerInVehicleExitNodeRange = playerDistance <= CabCinematicSpec.VEHICLE_INTERACT_DISTANCE
 
-  self.spec_cabCinematic.withPreMovement = not isPlayerOnVehicleExitNode and isPlayerInVehicleExitNodeRange
-  self.spec_cabCinematic.playerDistance = playerDistance
+  self.spec_cabCinematic.playerSnapshot = CabCinematicPlayerSnapshot.new(player)
 
-  Log:info(string.format("CabCinematicSpec:interact - Distance: %.2fm, WithPreMovement: %s",
-    playerDistance, tostring(self.spec_cabCinematic.withPreMovement)))
+  Log:info(string.format("CabCinematicSpec:interact - Distance: %.2fm", playerDistance))
 
   if isPlayerInVehicleExitNodeRange then
     return superFunc(self, player)
@@ -68,12 +65,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, isControlling, playerS
   local spec = self.spec_enterable
   spec:deleteVehicleCharacter()
 
-  local playerDistance = self.spec_cabCinematic.playerDistance or 0
-
-  Log:info(string.format("Starting enter animation - WithPreMovement: %s, Distance: %.2fm",
-    tostring(self.spec_cabCinematic.withPreMovement), playerDistance))
-
-  return CabCinematic:startEnterAnimation(self, self.spec_cabCinematic.withPreMovement, playerDistance, function()
+  return CabCinematic:startEnterAnimation(self, self.spec_cabCinematic.playerSnapshot, function()
     Log:info("CabCinematicSpec:onPlayerEnterVehicle finish callback called")
     spec:restoreVehicleCharacter()
 
@@ -83,17 +75,18 @@ end
 
 function CabCinematicSpec:doLeaveVehicle(superFunc)
   Log:info("CabCinematicSpec:doLeaveVehicle called")
-  if CabCinematic:getIsActive() then
-    return
-  end
+  return superFunc(self)
+  -- if CabCinematic:getIsActive() then
+  --   return
+  -- end
 
-  local spec = self.spec_enterable
-  spec:deleteVehicleCharacter()
+  -- local spec = self.spec_enterable
+  -- spec:deleteVehicleCharacter()
 
-  return CabCinematic:startLeaveAnimation(self, function()
-    spec:restoreVehicleCharacter()
-    return superFunc(self)
-  end)
+  -- return CabCinematic:startLeaveAnimation(self, function()
+  --   spec:restoreVehicleCharacter()
+  --   return superFunc(self)
+  -- end)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()
@@ -109,5 +102,6 @@ end
 
 function CabCinematicSpec:onLoad()
   local spec             = {}
+  spec.playerSnapshot    = nil
   self.spec_cabCinematic = spec
 end

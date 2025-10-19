@@ -7,7 +7,7 @@ CabCinematicCamera = {
   cameraPitch = 0,
   cameraYaw = 0,
   cameraRoll = 0,
-  linkedVehicle = nil,
+  isLinked = false,
 }
 
 local CabCinematicCamera_mt = Class(CabCinematicCamera)
@@ -31,7 +31,7 @@ function CabCinematicCamera:delete()
     self:deactivate()
   end
 
-  self:unlinkFromVehicle()
+  self:unlink()
   g_cameraManager:removeCamera(self.cameraId)
   delete(self.cameraId)
   self.cameraId = nil
@@ -47,7 +47,7 @@ function CabCinematicCamera:reset()
   self.cameraPitch = 0
   self.cameraYaw = 0
   self.cameraRoll = 0
-  self.linkedVehicle = nil
+  self.isLinked = false
 end
 
 function CabCinematicCamera:activate()
@@ -93,50 +93,32 @@ function CabCinematicCamera:syncPosition()
   setTranslation(self.cameraId, self.cameraX, self.cameraY, self.cameraZ)
 end
 
-function CabCinematicCamera:linkToVehicle(vehicle)
-  if self.linkedVehicle ~= nil then
-    self:unlinkFromVehicle()
+function CabCinematicCamera:link(node)
+  if self.isLinked then
+    self:unlink()
   end
 
-  local interiorCamera = vehicle:getVehicleInteriorCamera()
-  if interiorCamera == nil then
-    Log:error("Cannot find interior camera for vehicle")
-    return false
-  end
+  link(node, self.cameraId)
+  self.isLinked = true
 
-  local cameraNode = interiorCamera.cameraPositionNode or interiorCamera.cameraNode
-  if cameraNode == nil then
-    Log:error("Cannot find camera node for interior camera")
-    return false
-  end
-
-  local vehicleParentNode = getParent(cameraNode)
-  if vehicleParentNode == nil then
-    Log:error("Cannot find parent node for interior camera")
-    return false
-  end
-
-  link(vehicleParentNode, self.cameraId)
-  self.linkedVehicle = vehicle
-
-  Log:info("Successfully linked cinematic camera to vehicle")
+  Log:info("Successfully linked cinematic camera")
   return true
 end
 
-function CabCinematicCamera:unlinkFromVehicle()
-  if self.linkedVehicle ~= nil and self.cameraId ~= nil then
+function CabCinematicCamera:unlink()
+  if self.isLinked and self.cameraId ~= nil then
     unlink(self.cameraId)
-    self.linkedVehicle = nil
-    Log:info("Unlinked cinematic camera from vehicle")
+    self.isLinked = false
+    Log:info("Unlinked cinematic camera")
   end
 end
 
-function CabCinematicCamera:getIsLinkedToVehicle()
-  return self.linkedVehicle ~= nil
+function CabCinematicCamera:getIsLinked()
+  return self.isLinked
 end
 
 function CabCinematicCamera:getParentNode()
-  if not self:getIsLinkedToVehicle() then
+  if not self:getIsLinked() then
     return nil
   end
 
