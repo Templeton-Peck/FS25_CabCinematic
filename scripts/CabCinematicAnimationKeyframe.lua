@@ -15,9 +15,9 @@ CabCinematicAnimationKeyframe.TYPES = {
 
 CabCinematicAnimationKeyframe.SPEEDS = {
   [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.0,
-  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 2.0,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.5,
-  [CabCinematicAnimationKeyframe.TYPES.SEAT]  = 0.7,
+  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 1.8,
+  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.85,
+  [CabCinematicAnimationKeyframe.TYPES.SEAT]  = 0.85,
 }
 
 local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)
@@ -50,9 +50,12 @@ function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
     return 0, 0, 0
   end
 
-  return (self.endPosition[1] - self.startPosition[1]) / self.distance * t,
-      (self.endPosition[2] - self.startPosition[2]) / self.distance * t,
-      (self.endPosition[3] - self.startPosition[3]) / self.distance * t
+  local duration = self:getDuration()
+  local factor = t / duration
+
+  return self.startPosition[1] + (self.endPosition[1] - self.startPosition[1]) * factor,
+      self.startPosition[2] + (self.endPosition[2] - self.startPosition[2]) * factor,
+      self.startPosition[3] + (self.endPosition[3] - self.startPosition[3]) * factor
 end
 
 function CabCinematicAnimationKeyframe:drawDebug(rootNode)

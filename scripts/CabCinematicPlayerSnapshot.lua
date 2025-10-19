@@ -6,7 +6,7 @@ CabCinematicPlayerSnapshot = {
 local CabCinematicPlayerSnapshot_mt = Class(CabCinematicPlayerSnapshot)
 function CabCinematicPlayerSnapshot.new(player)
   local self = setmetatable({}, CabCinematicPlayerSnapshot_mt)
-  self.position = { getTranslation(player.rootNode) }
+  self.position = { getWorldTranslation(getParent(player.camera.firstPersonCamera)) }
   self.rotation = { 0, 0, 0 }
   Log:info(string.format("Created CabCinematicPlayerSnapshot at position (%.2f, %.2f, %.2f)", self.position[1],
     self.position[2], self.position[3]))

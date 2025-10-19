@@ -56,9 +56,20 @@ function CabCinematicAnimation:getIsPaused()
   return self.isPaused
 end
 
-function CabCinematicAnimation:getPreMovementKeyframe(playerSnapshot)
-  local plx, ply, plz = playerSnapshot:getLocalPosition(self.vehicle.rootNode)
-  local elx, ely, elz = self:getVehicleExitNodeFixedPosition()
+function CabCinematicAnimation:getVehicleExitNodeAdjustedPosition()
+  local _, wpy, _ = getWorldTranslation(getParent(g_localPlayer.camera.firstPersonCamera))
+  local wex, _, wez = getWorldTranslation(self.vehicle:getExitNode())
+  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, 0, wez) + 0.1
+  return worldToLocal(self.vehicle.rootNode, wex, wty + (wpy - wty), wez)
+end
+
+function CabCinematicAnimation:getPreMovementKeyframe()
+  if self.playerSnapshot == nil then
+    return nil
+  end
+
+  local plx, ply, plz = self.playerSnapshot:getLocalPosition(self.vehicle.rootNode)
+  local elx, ely, elz = self:getVehicleExitNodeAdjustedPosition()
 
   local playerDistance = MathUtil.vector3Length(elx - plx, ely - ply, elz - plz)
 
@@ -143,19 +154,13 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
   return keyframes
 end
 
-function CabCinematicAnimation:getVehicleExitNodeFixedPosition()
-  local wex, _, wez = getWorldTranslation(self.vehicle:getExitNode())
-  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, 0, wez) + 0.1
-  return worldToLocal(self.vehicle.rootNode, wex, wty, wez)
-end
-
 function CabCinematicAnimation:prepare()
-  local startPosition = { self:getVehicleExitNodeFixedPosition() }
+  local startPosition = { self:getVehicleExitNodeAdjustedPosition() }
   local endPosition = { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
   self.keyframes = self:buildKeyframes(startPosition, endPosition)
 
-  if (self.type == CabCinematicAnimation.TYPES.ENTER and self.playerSnapshot ~= nil) then
-    local preMovementKeyframe = self:getPreMovementKeyframe(self.playerSnapshot)
+  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
+    local preMovementKeyframe = self:getPreMovementKeyframe()
     if (preMovementKeyframe ~= nil) then
       table.insert(self.keyframes, 1, preMovementKeyframe)
     end
