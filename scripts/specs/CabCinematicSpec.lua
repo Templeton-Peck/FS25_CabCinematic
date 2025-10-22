@@ -38,6 +38,8 @@ function CabCinematicSpec.registerEventListeners(vehicleType)
 end
 
 function CabCinematicSpec:interact(superFunc, player)
+  Log:info(string.format("Player speed: %.2f, %.2f, %.2f", player:getSpeed(), player.mover.currentSpeed,
+    PlayerMover.SMALL_SPEED_THRESHOLD))
   if CabCinematic:getIsActive() then
     return
   end

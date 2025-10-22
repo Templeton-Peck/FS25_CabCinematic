@@ -234,12 +234,8 @@ function CabCinematicAnimation:update(dt)
   local progress = self.timer / self.duration
 
   local accumulatedDuration = 0.0
-  for i = 1, self.currentKeyFrameIndex do
+  for i = 1, self.currentKeyFrameIndex - 1 do
     accumulatedDuration = accumulatedDuration + self.keyframes[i]:getDuration()
-  end
-
-  if self.timer > accumulatedDuration then
-    self.currentKeyFrameIndex = self.currentKeyFrameIndex + 1
   end
 
   local currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
@@ -249,7 +245,14 @@ function CabCinematicAnimation:update(dt)
     return
   end
 
-  local keyframeTime = self.timer - (accumulatedDuration - currentKeyFrame:getDuration())
+  local keyframeEndTime = accumulatedDuration + currentKeyFrame:getDuration()
+  if self.timer > keyframeEndTime and self.currentKeyFrameIndex < #self.keyframes then
+    self.currentKeyFrameIndex = self.currentKeyFrameIndex + 1
+    accumulatedDuration = keyframeEndTime
+    currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
+  end
+
+  local keyframeTime = self.timer - accumulatedDuration
   local cx, cy, cz = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
 
   Log:info(string.format("CabCinematicAnimation progress=%.2f, timer=%.2f, keyframeTime=%.2f, pos=(%.2f, %.2f, %.2f)",

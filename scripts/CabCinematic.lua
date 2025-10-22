@@ -22,9 +22,9 @@ function CabCinematic:getIsActive()
 end
 
 function CabCinematic:startEnterAnimation(vehicle, playerSnapshot, finishCallback)
-  pcall(function()
-    executeConsoleCommand("cls")
-  end)
+  -- pcall(function()
+  --   executeConsoleCommand("cls")
+  -- end)
 
   Log:info(string.format("CabCinematic:startEnterAnimation"))
 
