@@ -64,14 +64,14 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, isControlling, playerS
   end
 
   superFunc(self, isControlling, playerStyle, farmId, userId)
-  local spec = self.spec_enterable
-  spec:deleteVehicleCharacter()
+
+  self.spec_enterable:deleteVehicleCharacter()
 
   return CabCinematic:startEnterAnimation(self, self.spec_cabCinematic.playerSnapshot, function()
     Log:info("CabCinematicSpec:onPlayerEnterVehicle finish callback called")
-    spec:restoreVehicleCharacter()
+    self.spec_enterable:restoreVehicleCharacter()
 
-    return self:setActiveCameraIndex(spec.camIndex)
+    return self:setActiveCameraIndex(self.spec_enterable.camIndex)
   end);
 end
 
@@ -81,11 +81,10 @@ function CabCinematicSpec:doLeaveVehicle(superFunc)
     return
   end
 
-  local spec = self.spec_enterable
-  spec:deleteVehicleCharacter()
+  self.spec_enterable:deleteVehicleCharacter()
 
   return CabCinematic:startLeaveAnimation(self, function()
-    spec:restoreVehicleCharacter()
+    self.spec_enterable:restoreVehicleCharacter()
     return superFunc(self)
   end)
 end

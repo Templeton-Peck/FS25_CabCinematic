@@ -1,5 +1,5 @@
 CabCinematicCamera = {
-  cameraId = nil,
+  cameraNode = nil,
   isActive = false,
   cameraX = 0,
   cameraY = 0,
@@ -12,17 +12,17 @@ CabCinematicCamera = {
 
 local CabCinematicCamera_mt = Class(CabCinematicCamera)
 
-local function createCameraId()
-  local cameraId = createCamera("CabCinematicCamera", math.rad(90), 0.1, 5000)
-  setRotation(cameraId, 0, 0, 0)
-  setTranslation(cameraId, 0, 0, 0)
-  return cameraId
+local function createCameraNode()
+  local cameraNode = createCamera("CabCinematicCamera", math.rad(90), 0.1, 5000)
+  setRotation(cameraNode, 0, 0, 0)
+  setTranslation(cameraNode, 0, 0, 0)
+  return cameraNode
 end
 
 function CabCinematicCamera.new()
   local self = setmetatable({}, CabCinematicCamera_mt)
-  self.cameraId = createCameraId()
-  g_cameraManager:addCamera(self.cameraId, nil, false)
+  self.cameraNode = createCameraNode()
+  g_cameraManager:addCamera(self.cameraNode, nil, false)
   return self
 end
 
@@ -32,9 +32,9 @@ function CabCinematicCamera:delete()
   end
 
   self:unlink()
-  g_cameraManager:removeCamera(self.cameraId)
-  delete(self.cameraId)
-  self.cameraId = nil
+  g_cameraManager:removeCamera(self.cameraNode)
+  delete(self.cameraNode)
+  self.cameraNode = nil
 
   self:reset()
 end
@@ -51,21 +51,21 @@ function CabCinematicCamera:reset()
 end
 
 function CabCinematicCamera:activate()
-  Log:info(string.format("Activating CabCinematicCamera %d", self.cameraId))
+  Log:info(string.format("Activating CabCinematicCamera %d", self.cameraNode))
   self:setCameraActiveIfNeeded()
   self.isActive = true
 end
 
 function CabCinematicCamera:deactivate()
-  Log:info(string.format("Deactivating CabCinematicCamera %d", self.cameraId))
+  Log:info(string.format("Deactivating CabCinematicCamera %d", self.cameraNode))
   self.isActive = false
   self:reset()
 end
 
 function CabCinematicCamera:setCameraActiveIfNeeded()
   local activeCameraId = g_cameraManager:getActiveCamera()
-  if activeCameraId ~= self.cameraId then
-    g_cameraManager:setActiveCamera(self.cameraId)
+  if activeCameraId ~= self.cameraNode then
+    g_cameraManager:setActiveCamera(self.cameraNode)
   end
 end
 
@@ -86,11 +86,11 @@ function CabCinematicCamera:setRotation(pitch, yaw, roll)
 end
 
 function CabCinematicCamera:syncRotation()
-  setRotation(self.cameraId, self.cameraPitch, self.cameraYaw, self.cameraRoll)
+  setRotation(self.cameraNode, self.cameraPitch, self.cameraYaw, self.cameraRoll)
 end
 
 function CabCinematicCamera:syncPosition()
-  setTranslation(self.cameraId, self.cameraX, self.cameraY, self.cameraZ)
+  setTranslation(self.cameraNode, self.cameraX, self.cameraY, self.cameraZ)
 end
 
 function CabCinematicCamera:link(node)
@@ -98,7 +98,7 @@ function CabCinematicCamera:link(node)
     self:unlink()
   end
 
-  link(node, self.cameraId)
+  link(node, self.cameraNode)
   self.isLinked = true
 
   Log:info("Successfully linked cinematic camera")
@@ -106,8 +106,8 @@ function CabCinematicCamera:link(node)
 end
 
 function CabCinematicCamera:unlink()
-  if self.isLinked and self.cameraId ~= nil then
-    unlink(self.cameraId)
+  if self.isLinked and self.cameraNode ~= nil then
+    unlink(self.cameraNode)
     self.isLinked = false
     Log:info("Unlinked cinematic camera")
   end
@@ -122,7 +122,7 @@ function CabCinematicCamera:getParentNode()
     return nil
   end
 
-  return getParent(self.cameraId)
+  return getParent(self.cameraNode)
 end
 
 function CabCinematicCamera:update()

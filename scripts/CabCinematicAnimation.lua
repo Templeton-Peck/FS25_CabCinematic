@@ -199,6 +199,56 @@ function CabCinematicAnimation:prepare()
   end
 end
 
+function CabCinematicAnimation:syncAnimationCamerasAtStart()
+  if self.type ~= CabCinematicAnimation.TYPES.ENTER then
+    return
+  end
+
+  local cinematicCamera = self.camera
+  local vehicleCamera = self.vehicle:getVehicleInteriorCamera();
+
+  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
+  setFovY(g_localPlayer.getCurrentCameraNode(), fovY)
+  setFovY(cinematicCamera.cameraNode, fovY)
+  setFovY(vehicleCamera.cameraNode, fovY)
+
+  local dx, dy, dz = localDirectionToWorld(g_localPlayer.camera.cameraRootNode, 0, 0, 1)
+
+  local rotateNodeParent = getParent(vehicleCamera.rotateNode)
+  local localDx, localDy, localDz = worldDirectionToLocal(rotateNodeParent, dx, dy, dz)
+
+  local rotX = -math.asin(localDy)
+  local rotY = math.atan2(localDx, localDz)
+
+  vehicleCamera.rotX = rotX
+  vehicleCamera.rotY = rotY
+  vehicleCamera.rotZ = 0
+
+  Log:info(string.format("syncCamerasAtAnimationStart: setting target camera rotation to (%.2f, %.2f, %.2f)",
+    rotX, rotY, 0))
+
+  vehicleCamera:updateRotateNodeRotation()
+end
+
+function CabCinematicAnimation:syncAnimationCamerasAtStop()
+  if self.type ~= CabCinematicAnimation.TYPES.LEAVE then
+    return
+  end
+
+  local cinematicCamera = self.camera
+  local playerCamera = g_localPlayer.camera
+
+  local dx, dy, dz = localDirectionToWorld(cinematicCamera.cameraNode, 0, 0, 1)
+
+  local pitch = math.asin(dy)
+  local yaw = math.atan2(dx, dz) + math.pi
+
+  Log:info(string.format("syncCamerasAtAnimationStop: setting player camera rotation to (%.2f, %.2f, %.2f)",
+    pitch, yaw, 0))
+
+  playerCamera:setRotation(pitch, yaw, 0)
+end
+
 function CabCinematicAnimation:start()
   Log:info("Starting CabCinematicAnimation")
 
@@ -225,18 +275,20 @@ function CabCinematicAnimation:start()
   self.timer = 0
   self.currentKeyFrameIndex = 1
   self.isActive = true
+
+  self:syncAnimationCamerasAtStart()
   self.camera:activate()
 end
 
 function CabCinematicAnimation:stop()
   Log:info("Stopping CabCinematicAnimation")
 
-  self.camera:deactivate()
-
   if self.finishCallback ~= nil then
     self.finishCallback()
   end
 
+  self:syncAnimationCamerasAtStop()
+  self.camera:deactivate()
   self.camera:unlink()
 
   self.timer          = 0
@@ -282,8 +334,8 @@ function CabCinematicAnimation:update(dt)
   local keyframeTime = self.timer - accumulatedDuration
   local cx, cy, cz = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
 
-  Log:info(string.format("CabCinematicAnimation progress=%.2f, timer=%.2f, keyframeTime=%.2f, pos=(%.2f, %.2f, %.2f)",
-    progress, self.timer, keyframeTime, cx, cy, cz))
+  -- Log:info(string.format("CabCinematicAnimation progress=%.2f, timer=%.2f, keyframeTime=%.2f, pos=(%.2f, %.2f, %.2f)",
+  --   progress, self.timer, keyframeTime, cx, cy, cz))
 
   self.camera:setPosition(cx, cy, cz)
 
