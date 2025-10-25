@@ -14,9 +14,9 @@ CabCinematicAnimationKeyframe.TYPES = {
 }
 
 CabCinematicAnimationKeyframe.SPEEDS = {
-  [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.2,
-  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 1.8,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.85,
+  [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.35,
+  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 2.0,
+  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.90,
   [CabCinematicAnimationKeyframe.TYPES.SEAT]  = 0.85,
 }
 

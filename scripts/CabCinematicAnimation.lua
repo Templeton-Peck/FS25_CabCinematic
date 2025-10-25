@@ -25,6 +25,7 @@ CabCinematicAnimation.PRESETS = {
 }
 
 CabCinematicAnimation.PRE_MOVEMENT_DISTANCE = 1.0
+CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_PLAYER_SPEED = 6.9
 CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED = 8.0
 
 local CabCinematicAnimation_mt = Class(CabCinematicAnimation)
@@ -78,12 +79,17 @@ function CabCinematicAnimation:getPreMovementKeyframe()
       "Calculating pre-movement keyframe - Player position (%.2f, %.2f, %.2f), ExitNode position (%.2f, %.2f, %.2f) - Distance: %.2f",
       plx, ply, plz, elx, ely, elz, playerDistance))
 
-    if self.vehicle:getLastSpeed() > CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED then
+    if self.vehicle:getLastSpeed() >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED then
       return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.RUN, { plx, ply, plz },
         { elx, ely, elz })
     else
-      return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.WALK, { plx, ply, plz },
-        { elx, ely, elz })
+      if self.playerSnapshot ~= nil and self.playerSnapshot.speed >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_PLAYER_SPEED then
+        return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.RUN, { plx, ply, plz },
+          { elx, ely, elz })
+      else
+        return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.WALK, { plx, ply, plz },
+          { elx, ely, elz })
+      end
     end
   else
     Log:info(string.format("No pre-movement keyframe needed - distance: %.2f", playerDistance))
