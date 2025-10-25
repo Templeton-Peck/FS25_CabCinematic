@@ -9,15 +9,19 @@ CabCinematicAnimationKeyframe = {
 CabCinematicAnimationKeyframe.TYPES = {
   WALK = "walk",
   RUN = "run",
-  CLIMB = "climb",
+  CLIMB_LADDER = "climb_ladder",
+  CLIMB_LADDER_VERTICAL = "climb_ladder_vertical",
+  CLIMB_STAIRS = "climb_stairs",
   SEAT = "seat",
 }
 
 CabCinematicAnimationKeyframe.SPEEDS = {
-  [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.35,
-  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 2.0,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.90,
-  [CabCinematicAnimationKeyframe.TYPES.SEAT]  = 0.85,
+  [CabCinematicAnimationKeyframe.TYPES.WALK]                  = 1.35,
+  [CabCinematicAnimationKeyframe.TYPES.RUN]                   = 2.0,
+  [CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER]          = 0.90,
+  [CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER_VERTICAL] = 0.90,
+  [CabCinematicAnimationKeyframe.TYPES.CLIMB_STAIRS]          = 0.90,
+  [CabCinematicAnimationKeyframe.TYPES.SEAT]                  = 0.85,
 }
 
 local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)

@@ -20,8 +20,8 @@ CabCinematicAnimation.TYPES = {
 }
 
 CabCinematicAnimation.PRESETS = {
-  combineDrivable = { CabCinematicAnimationKeyframe.TYPES.CLIMB, CabCinematicAnimationKeyframe.TYPES.WALK, CabCinematicAnimationKeyframe.TYPES.SEAT },
-  tractor = { CabCinematicAnimationKeyframe.TYPES.CLIMB, CabCinematicAnimationKeyframe.TYPES.WALK, CabCinematicAnimationKeyframe.TYPES.SEAT },
+  combineDrivable = { CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER, CabCinematicAnimationKeyframe.TYPES.WALK, CabCinematicAnimationKeyframe.TYPES.SEAT },
+  tractor = { CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER, CabCinematicAnimationKeyframe.TYPES.WALK, CabCinematicAnimationKeyframe.TYPES.SEAT },
 }
 
 CabCinematicAnimation.PRE_MOVEMENT_DISTANCE = 1.0
@@ -135,9 +135,12 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
   local keyframes = {}
 
   -- Analyze x/y/z distances and variations from exitNode to vehicle interior camera
-  -- Use preset to create keyframes (y variations for climb, x/z for walk, seat at the end with no movement)
-  -- Example: [climb, walk, seat] : [y:100%, x/z:0%], [y:0%, x/z:100%], [y:0%, x/z:0%]
-  -- Example: [climb, walk, climb, seat] : incremental y:50% each climb, x/z:100% for walk, seat:0%
+  -- Use preset to create keyframes with different movement patterns:
+  --   CLIMB_LADDER_VERTICAL: mouvement uniquement vertical (y:100%, x/z:0%)
+  --   CLIMB_LADDER: mouvement principalement vertical avec léger déplacement horizontal (y:100%, x/z:15%)
+  --   WALK: mouvement horizontal (y:0%, x/z:100%)
+  --   SEAT: aucun mouvement (y:0%, x/z:0%)
+  -- Example: [climb_ladder, walk, seat] : [y:100%+x/z:15%], [y:0%+x/z:100%], [y:0%+x/z:0%]
 
   local keyframeTypesCounts = {}
   for _, keyframeType in ipairs(preset) do
@@ -165,8 +168,16 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
     local progressX = 0
     local progressY = 0
     local progressZ = 0
-    if keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB then
+    if keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER_VERTICAL then
       progressY = incrementalProgress
+    elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER then
+      progressY = incrementalProgress
+      progressX = incrementalProgress * 0.15
+      progressZ = incrementalProgress * 0.15
+    elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB_STAIRS then
+      progressY = incrementalProgress
+      progressX = incrementalProgress * 0.2
+      progressZ = incrementalProgress * 0.2
     elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.WALK then
       progressX = incrementalProgress
       progressZ = incrementalProgress
