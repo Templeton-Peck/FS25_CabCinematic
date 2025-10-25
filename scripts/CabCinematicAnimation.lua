@@ -92,13 +92,40 @@ function CabCinematicAnimation:getPreMovementKeyframe()
   return nil
 end
 
+function CabCinematicAnimation:getStartPosition()
+  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
+    return { self:getVehicleExitNodeAdjustedPosition() }
+  else
+    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  end
+end
+
+function CabCinematicAnimation:getEndPosition()
+  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
+    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  else
+    return { self:getVehicleExitNodeAdjustedPosition() }
+  end
+end
+
 function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
   Log:info(string.format(
     "Building keyframes from start position (%.2f, %.2f, %.2f) to end position (%.2f, %.2f, %.2f)",
     startPosition[1], startPosition[2], startPosition[3],
     endPosition[1], endPosition[2], endPosition[3]))
 
-  local preset = CabCinematicAnimation.PRESETS[self.vehicle.typeName]
+  local vehiclePreset = CabCinematicAnimation.PRESETS[self.vehicle.typeName]
+  local preset = {}
+
+  if (self.type == CabCinematicAnimation.TYPES.LEAVE) then
+    for i = #vehiclePreset, 1, -1 do
+      table.insert(preset, vehiclePreset[i])
+    end
+  else
+    preset = vehiclePreset
+  end
+
+
   local keyframes = {}
 
   -- Analyze x/y/z distances and variations from exitNode to vehicle interior camera
@@ -155,8 +182,8 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
 end
 
 function CabCinematicAnimation:prepare()
-  local startPosition = { self:getVehicleExitNodeAdjustedPosition() }
-  local endPosition = { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  local startPosition = self:getStartPosition()
+  local endPosition = self:getEndPosition()
   self.keyframes = self:buildKeyframes(startPosition, endPosition)
 
   if (self.type == CabCinematicAnimation.TYPES.ENTER) then

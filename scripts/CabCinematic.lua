@@ -40,12 +40,12 @@ end
 function CabCinematic:startLeaveAnimation(vehicle, finishCallback)
   Log:info("CabCinematic:startLeaveAnimation called")
 
-  -- if self:getIsActive() then
-  --   return
-  -- end
+  if self:getIsActive() then
+    return
+  end
 
-  -- self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, g_localPlayer, vehicle,
-  --   self.camera, false, 0, finishCallback)
+  self.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, vehicle,
+    self.camera, finishCallback)
 end
 
 function CabCinematic:update(dt)

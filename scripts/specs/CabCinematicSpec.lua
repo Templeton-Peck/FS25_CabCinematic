@@ -77,18 +77,17 @@ end
 
 function CabCinematicSpec:doLeaveVehicle(superFunc)
   Log:info("CabCinematicSpec:doLeaveVehicle called")
-  return superFunc(self)
-  -- if CabCinematic:getIsActive() then
-  --   return
-  -- end
+  if CabCinematic:getIsActive() then
+    return
+  end
 
-  -- local spec = self.spec_enterable
-  -- spec:deleteVehicleCharacter()
+  local spec = self.spec_enterable
+  spec:deleteVehicleCharacter()
 
-  -- return CabCinematic:startLeaveAnimation(self, function()
-  --   spec:restoreVehicleCharacter()
-  --   return superFunc(self)
-  -- end)
+  return CabCinematic:startLeaveAnimation(self, function()
+    spec:restoreVehicleCharacter()
+    return superFunc(self)
+  end)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()
