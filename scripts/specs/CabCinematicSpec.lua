@@ -64,11 +64,16 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, isControlling, playerS
 
   superFunc(self, isControlling, playerStyle, farmId, userId)
 
-  self.spec_enterable:deleteVehicleCharacter()
+  if (not self:getIsAIActive()) then
+    self.spec_enterable:deleteVehicleCharacter()
+  end
 
   return CabCinematic:startEnterAnimation(self, self.spec_cabCinematic.playerSnapshot, function()
     Log:info("CabCinematicSpec:onPlayerEnterVehicle finish callback called")
-    self.spec_enterable:restoreVehicleCharacter()
+    if (not self:getIsAIActive()) then
+      self.spec_enterable:restoreVehicleCharacter()
+    end
+
 
     return self:setActiveCameraIndex(self.spec_enterable.camIndex)
   end);
@@ -80,10 +85,14 @@ function CabCinematicSpec:doLeaveVehicle(superFunc)
     return
   end
 
-  self.spec_enterable:deleteVehicleCharacter()
+  if (not self:getIsAIActive()) then
+    self.spec_enterable:deleteVehicleCharacter()
+  end
 
   return CabCinematic:startLeaveAnimation(self, function()
-    self.spec_enterable:restoreVehicleCharacter()
+    if (not self:getIsAIActive()) then
+      self.spec_enterable:restoreVehicleCharacter()
+    end
     return superFunc(self)
   end)
 end
