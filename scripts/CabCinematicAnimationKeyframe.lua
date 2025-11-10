@@ -2,6 +2,9 @@ CabCinematicAnimationKeyframe = {
   type = nil,
   startPosition = { 0, 0, 0 },
   endPosition = { 0, 0, 0 },
+  weightXZ = 0.0,
+  weightY = 0.0,
+  angle = nil,
   speed = 1.0,
   distance = 0.0
 }
@@ -9,28 +12,27 @@ CabCinematicAnimationKeyframe = {
 CabCinematicAnimationKeyframe.TYPES = {
   WALK = "walk",
   RUN = "run",
-  CLIMB_LADDER = "climb_ladder",
-  CLIMB_LADDER_VERTICAL = "climb_ladder_vertical",
-  CLIMB_STAIRS = "climb_stairs",
+  CLIMB = "climb",
   SEAT = "seat",
 }
 
 CabCinematicAnimationKeyframe.SPEEDS = {
-  [CabCinematicAnimationKeyframe.TYPES.WALK]                  = 1.35,
-  [CabCinematicAnimationKeyframe.TYPES.RUN]                   = 2.0,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER]          = 0.90,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER_VERTICAL] = 0.90,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB_STAIRS]          = 0.90,
-  [CabCinematicAnimationKeyframe.TYPES.SEAT]                  = 0.85,
+  [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.35,
+  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 2.0,
+  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.90,
+  [CabCinematicAnimationKeyframe.TYPES.SEAT]  = 0.85,
 }
 
 local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)
-function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition)
+function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition, weightXZ, weightY, angle)
   local self = setmetatable({}, CabCinematicAnimationKeyframe_mt)
   self.type = type
   self.startPosition = startPosition
   self.endPosition = endPosition
   self.speed = CabCinematicAnimationKeyframe.SPEEDS[type]
+  self.weightXZ = weightXZ or 0.5
+  self.weightY = weightY or 0.5
+  self.angle = angle
   self.distance = MathUtil.vector3Length(endPosition[1] - startPosition[1],
     endPosition[2] - startPosition[2],
     endPosition[3] - startPosition[3])

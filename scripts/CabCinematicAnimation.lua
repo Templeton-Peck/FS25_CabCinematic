@@ -19,32 +19,32 @@ CabCinematicAnimation.TYPES = {
   LEAVE = "leave",
 }
 
--- Angles constants pour faciliter la configuration
-local ANGLE_STRAIGHT = 0           -- 0° = tout droit vers la destination
-local ANGLE_LEFT_90 = -math.pi / 2 -- -90° = complètement à gauche
-
-
+local ANGLE_STRAIGHT = 0
+local ANGLE_LEFT_90 = -90
+local ANGLE_RIGHT_90 = 90
 
 CabCinematicAnimation.PRESETS = {
   combineDrivable = {
     harvesters = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT },
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
     },
     forageharvesters = {
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,         angle = ANGLE_STRAIGHT },
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB_STAIRS, angle = ANGLE_LEFT_90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,         angle = ANGLE_LEFT_90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.2,  weightY = 0.0, angle = ANGLE_STRAIGHT },
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.25, weightY = 1.0, angle = ANGLE_LEFT_90 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.4,  weightY = 0.0, angle = ANGLE_LEFT_90 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.14, weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.01, weightY = 0.0 },
     },
   },
   tractor = {
     tractorsm = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT },
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2,  weightY = 1.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8,  weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0,  weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.45, weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0,  weightY = 0.0 },
     },
   },
 }
@@ -186,119 +186,62 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
     preset = vehiclePreset
   end
 
-
   local keyframes = {}
-
-  local keyframeTypesCounts = {}
-  for _, keyframeData in ipairs(preset) do
-    local keyframeType = keyframeData.type or keyframeData
-    keyframeTypesCounts[keyframeType] = (keyframeTypesCounts[keyframeType] or 0) + 1
-  end
-
-  local keyframeTypesProgress = {}
-  local previousProgress = {}
-  for keyframeType, _ in pairs(keyframeTypesCounts) do
-    keyframeTypesProgress[keyframeType] = 0
-    previousProgress[keyframeType] = 0
-  end
-
-  local deltaX = endPosition[1] - startPosition[1]
-  local deltaY = endPosition[2] - startPosition[2]
-  local deltaZ = endPosition[3] - startPosition[3]
-
-  local totalContributionX = 0
-  local totalContributionZ = 0
-
-  for _, keyframeData in ipairs(preset) do
-    local keyframeType = keyframeData.type or keyframeData
-    if keyframeType ~= CabCinematicAnimationKeyframe.TYPES.SEAT then
-      if keyframeData.angle == nil then
-        totalContributionX = totalContributionX + 0.5
-        totalContributionZ = totalContributionZ + 0.5
-      else
-        local clampedAngle = math.max(-math.pi / 2, math.min(math.pi / 2, keyframeData.angle))
-        local factorX, factorZ = 0, 0
-        if clampedAngle == 0 then
-          factorX, factorZ = 1.0, 0.0
-        elseif clampedAngle == -math.pi / 2 then
-          factorX, factorZ = 0.0, 1.0
-        elseif clampedAngle == math.pi / 2 then
-          factorX, factorZ = 0.0, -1.0
-        else
-          local normalizedAngle = clampedAngle / (math.pi / 2)
-          factorX = 1.0 - math.abs(normalizedAngle)
-          factorZ = normalizedAngle
-        end
-        totalContributionX = totalContributionX + math.abs(factorX)
-        totalContributionZ = totalContributionZ + math.abs(factorZ)
-      end
-    end
-  end
-
   local currentPosition = { startPosition[1], startPosition[2], startPosition[3] }
-  for _, keyframeData in ipairs(preset) do
-    local keyframeType = keyframeData.type
 
-    keyframeTypesProgress[keyframeType] = keyframeTypesProgress[keyframeType] + 1
-    local currentProgress = keyframeTypesProgress[keyframeType] / keyframeTypesCounts[keyframeType]
-    local incrementalProgress = currentProgress - previousProgress[keyframeType]
-    previousProgress[keyframeType] = currentProgress
+  for i, presetKeyframe in ipairs(preset) do
+    local weightXZ = presetKeyframe.weightXZ or 0
+    local weightY = presetKeyframe.weightY or 0
+    local angle = presetKeyframe.angle
 
-    local progressY = 0
-    if keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER_VERTICAL then
-      progressY = incrementalProgress
-    elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB_LADDER then
-      progressY = incrementalProgress
-    elseif keyframeType == CabCinematicAnimationKeyframe.TYPES.CLIMB_STAIRS then
-      progressY = incrementalProgress
-    end
+    local totalDeltaX = endPosition[1] - startPosition[1]
+    local totalDeltaY = endPosition[2] - startPosition[2]
+    local totalDeltaZ = endPosition[3] - startPosition[3]
+    local nextPosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
 
-    local baseDeltaY = deltaY * progressY
-
-    local nextPosition
-    Log:info(string.format("Processing keyframe %s, angle = %s", keyframeType, tostring(keyframeData.angle)))
-
-    if keyframeType == CabCinematicAnimationKeyframe.TYPES.SEAT then
-      nextPosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
-    else
-      local factorX, factorZ = 0.5, 0.5
-
-      if keyframeData.angle ~= nil then
-        Log:info(string.format("Using angle %.1f°", math.deg(keyframeData.angle)))
-        local clampedAngle = math.max(-math.pi / 2, math.min(math.pi / 2, keyframeData.angle))
-
-        if clampedAngle == 0 then
-          factorX = 1.0
-          factorZ = 0.0
-        elseif clampedAngle == -math.pi / 2 then
-          factorX = 0.0
-          factorZ = 1.0
-        elseif clampedAngle == math.pi / 2 then
-          factorX = 0.0
-          factorZ = -1.0
+    if weightXZ > 0 then
+      local impactX, impactZ
+      if angle ~= nil then
+        if angle == 0 then
+          impactX = 1.0
+          impactZ = 0.0
+        elseif angle == -90 then
+          impactX = 0.0
+          impactZ = 1.0
+        elseif angle == 90 then
+          impactX = 0.0
+          impactZ = -1.0
         else
-          local normalizedAngle = clampedAngle / (math.pi / 2)
-          factorX = 1.0 - math.abs(normalizedAngle)
-          factorZ = normalizedAngle
+          local angleRad = math.rad(angle)
+          impactX = (math.cos(angleRad) + 1) * 0.5
+          impactZ = (math.sin(angleRad) + 1) * 0.5
         end
+      else
+        impactX = 1.0
+        impactZ = 1.0
       end
 
-      local contributionX = math.abs(factorX) / totalContributionX
-      local contributionZ = math.abs(factorZ) / totalContributionZ
-
-      local movementX = deltaX * contributionX * (factorX >= 0 and 1 or -1)
-      local movementZ = deltaZ * contributionZ * (factorZ >= 0 and 1 or -1)
-
-      nextPosition = {
-        currentPosition[1] + movementX,
-        currentPosition[2] + baseDeltaY,
-        currentPosition[3] + movementZ,
-      }
-
-      Log:info(string.format("  Factors: X=%.2f, Z=%.2f, Contributions: X=%.2f, Z=%.2f",
-        factorX, factorZ, contributionX, contributionZ))
+      nextPosition[1] = currentPosition[1] + (totalDeltaX * weightXZ * impactX)
+      nextPosition[3] = currentPosition[3] + (totalDeltaZ * weightXZ * impactZ)
     end
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(keyframeType, currentPosition, nextPosition))
+
+
+    if weightY > 0 then
+      nextPosition[2] = currentPosition[2] + (totalDeltaY * weightY)
+    end
+
+
+    local keyframe = CabCinematicAnimationKeyframe.new(presetKeyframe.type,
+      { currentPosition[1], currentPosition[2], currentPosition[3] },
+      { nextPosition[1], nextPosition[2], nextPosition[3] },
+      weightXZ,
+      weightY,
+      angle
+    )
+
+    table.insert(keyframes, keyframe)
+
+
     currentPosition = nextPosition
   end
 
@@ -387,10 +330,13 @@ function CabCinematicAnimation:start()
 
   for _, keyframe in ipairs(self.keyframes) do
     Log:info(string.format(
-      "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
+      "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), weightXZ=%.2f, weightY=%.2f, angle=%s, speed=%.2f, distance=%.2f, duration=%.2f",
       keyframe.type,
       keyframe.startPosition[1], keyframe.startPosition[2], keyframe.startPosition[3],
       keyframe.endPosition[1], keyframe.endPosition[2], keyframe.endPosition[3],
+      keyframe.weightXZ,
+      keyframe.weightY,
+      tostring(keyframe.angle) or "nil",
       keyframe.speed,
       keyframe.distance,
       keyframe:getDuration()))
@@ -462,7 +408,7 @@ function CabCinematicAnimation:update(dt)
 
   self.camera:setPosition(cx, cy, cz)
 
-  if self.timer >= self.duration or CabCinematic.debug.skipAnimation then
+  if self.timer >= self.duration or CabCinematic.flags.skipAnimation then
     self:stop()
   end
 end

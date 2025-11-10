@@ -38,6 +38,10 @@ function CabCinematicSpec.registerEventListeners(vehicleType)
 end
 
 function CabCinematicSpec:interact(superFunc, player)
+  pcall(function()
+    executeConsoleCommand("cls")
+  end)
+
   Log:info(string.format("Player speed: %.2f", player:getSpeed()))
   if CabCinematic:getIsActive() then
     return
@@ -80,21 +84,26 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, isControlling, playerS
 end
 
 function CabCinematicSpec:doLeaveVehicle(superFunc)
-  Log:info("CabCinematicSpec:doLeaveVehicle called")
-  if CabCinematic:getIsActive() then
-    return
-  end
+  return superFunc(self)
+  -- pcall(function()
+  --   executeConsoleCommand("cls")
+  -- end)
 
-  if (not self:getIsAIActive()) then
-    self.spec_enterable:deleteVehicleCharacter()
-  end
+  -- Log:info("CabCinematicSpec:doLeaveVehicle called")
+  -- if CabCinematic:getIsActive() then
+  --   return
+  -- end
 
-  return CabCinematic:startLeaveAnimation(self, function()
-    if (not self:getIsAIActive()) then
-      self.spec_enterable:restoreVehicleCharacter()
-    end
-    return superFunc(self)
-  end)
+  -- if (not self:getIsAIActive()) then
+  --   self.spec_enterable:deleteVehicleCharacter()
+  -- end
+
+  -- return CabCinematic:startLeaveAnimation(self, function()
+  --   if (not self:getIsAIActive()) then
+  --     self.spec_enterable:restoreVehicleCharacter()
+  --   end
+  --   return superFunc(self)
+  -- end)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()

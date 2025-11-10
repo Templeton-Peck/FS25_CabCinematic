@@ -4,8 +4,9 @@ CabCinematic.camera = CabCinematicCamera.new()
 CabCinematic.cinematicAnimation = nil
 CabCinematic.vehicle = nil
 CabCinematic.finishCallback = nil
-CabCinematic.debug = {
-  skipAnimation = false,
+CabCinematic.flags = {
+  skipAnimation = true,
+  debugAnimation = true
 }
 
 function CabCinematic:initialize()
@@ -22,10 +23,6 @@ function CabCinematic:getIsActive()
 end
 
 function CabCinematic:startEnterAnimation(vehicle, playerSnapshot, finishCallback)
-  -- pcall(function()
-  --   executeConsoleCommand("cls")
-  -- end)
-
   Log:info(string.format("CabCinematic:startEnterAnimation"))
 
   if self:getIsActive() then
@@ -56,8 +53,10 @@ function CabCinematic:update(dt)
 
   if self.cinematicAnimation ~= nil then
     if self.cinematicAnimation:getIsEnded() then
-      -- self.cinematicAnimation:delete()
-      -- self.cinematicAnimation = nil
+      if not self.flags.debugAnimation then
+        self.cinematicAnimation:delete()
+        self.cinematicAnimation = nil
+      end
     elseif not self.cinematicAnimation:getIsActive() then
       self.cinematicAnimation:start()
     end
@@ -70,34 +69,25 @@ function CabCinematic:update(dt)
 end
 
 function CabCinematic:draw()
-  if self.cinematicAnimation ~= nil then
+  if self.flags.debugAnimation and self.cinematicAnimation ~= nil then
     self.cinematicAnimation:drawDebug()
   end
 end
 
 function CabCinematic:beforeLoadMap()
-  addConsoleCommand("ccSkipAnimation", "Skip cab cinematic animation", "consoleCommandSkipCabCinematicAnimation", self)
-  addConsoleCommand("ccPauseAnimation", "Pause cab cinematic animation", "consoleCommandPauseCabCinematicAnimation", self)
-  addConsoleCommand("ccResumeAnimation", "Resume cab cinematic animation", "consoleCommandResumeCabCinematicAnimation",
-    self)
+  addConsoleCommand("ccSkipAnimation", "Skip animation", "consoleCommandSkipAnimation", self)
+  addConsoleCommand("ccDebugAnimation", "Debug animation", "consoleCommandDebugAnimation", self)
   addConsoleCommand("ccDebugCameras", "Debug cameras", "consoleCommandDebugCameras", self)
 end
 
-function CabCinematic:consoleCommandSkipCabCinematicAnimation()
-  self.debug.skipAnimation = not self.debug.skipAnimation
-  Log:info("Cab cinematic animation skip is now " .. tostring(self.debug.skipAnimation))
+function CabCinematic:consoleCommandSkipAnimation()
+  self.flags.skipAnimation = not self.flags.skipAnimation
+  Log:info("Cab cinematic animation skip is now " .. tostring(self.flags.skipAnimation))
 end
 
-function CabCinematic:consoleCommandPauseCabCinematicAnimation()
-  if self.cinematicAnimation ~= nil then
-    self.cinematicAnimation:pause()
-  end
-end
-
-function CabCinematic:consoleCommandResumeCabCinematicAnimation()
-  if self.cinematicAnimation ~= nil then
-    self.cinematicAnimation:resume()
-  end
+function CabCinematic:consoleCommandDebugAnimation()
+  self.flags.debugAnimation = not self.flags.debugAnimation
+  Log:info("Cab cinematic animation debug is now " .. tostring(self.flags.debugAnimation))
 end
 
 function CabCinematic:consoleCommandDebugCameras()
