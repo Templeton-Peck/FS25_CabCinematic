@@ -71,3 +71,17 @@ function CabCinematicAnimationKeyframe:drawDebug(rootNode)
     endWorldPos[1], endWorldPos[2], endWorldPos[3],
     1, 0, 0, 0.5)
 end
+
+function CabCinematicAnimationKeyframe:printDebug()
+  Log:info(string.format(
+    "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), weightXZ=%.2f, weightY=%.2f, angle=%s, speed=%.2f, distance=%.2f, duration=%.2f",
+    self.type,
+    self.startPosition[1], self.startPosition[2], self.startPosition[3],
+    self.endPosition[1], self.endPosition[2], self.endPosition[3],
+    self.weightXZ,
+    self.weightY,
+    tostring(self.angle) or "nil",
+    self.speed,
+    self.distance,
+    self:getDuration()))
+end

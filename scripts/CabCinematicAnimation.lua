@@ -19,10 +19,6 @@ CabCinematicAnimation.TYPES = {
   LEAVE = "leave",
 }
 
-local ANGLE_STRAIGHT = 0
-local ANGLE_LEFT_90 = -90
-local ANGLE_RIGHT_90 = 90
-
 CabCinematicAnimation.PRESETS = {
   combineDrivable = {
     harvesters = {
@@ -31,20 +27,19 @@ CabCinematicAnimation.PRESETS = {
       { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
     },
     forageharvesters = {
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.2,  weightY = 0.0, angle = ANGLE_STRAIGHT },
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.25, weightY = 1.0, angle = ANGLE_LEFT_90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.4,  weightY = 0.0, angle = ANGLE_LEFT_90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.14, weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.10, weightY = 0.0, angle = 0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.35, weightY = 1.0, angle = -90 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.40, weightY = 0.0, angle = -90 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.10, weightY = 0.0, angle = -70 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.04, weightY = 0.0 },
       { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.01, weightY = 0.0 },
     },
   },
   tractor = {
     tractorsm = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2,  weightY = 1.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8,  weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0,  weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.45, weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0,  weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
     },
   },
 }
@@ -164,85 +159,83 @@ function CabCinematicAnimation:getEndPosition()
   end
 end
 
+local function sign(v) return (v >= 0) and 1 or -1 end
+
 function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
-  Log:info(string.format(
-    "Building keyframes from start position (%.2f, %.2f, %.2f) to end position (%.2f, %.2f, %.2f)",
+  local vehiclePreset = self:getVehiclePreset()
+  if not vehiclePreset then return {} end
+
+  Log:info(string.format("Building keyframes from start (%.2f, %.2f, %.2f) to end (%.2f, %.2f, %.2f)",
     startPosition[1], startPosition[2], startPosition[3],
     endPosition[1], endPosition[2], endPosition[3]))
 
-  local vehiclePreset = self:getVehiclePreset()
-  if vehiclePreset == nil then
-    Log:error("No vehicle preset found, cannot build keyframes")
-    return {}
-  end
-
   local preset = {}
-
-  if (self.type == CabCinematicAnimation.TYPES.LEAVE) then
-    for i = #vehiclePreset, 1, -1 do
-      table.insert(preset, vehiclePreset[i])
-    end
+  if self.type == CabCinematicAnimation.TYPES.LEAVE then
+    for i = #vehiclePreset, 1, -1 do table.insert(preset, vehiclePreset[i]) end
   else
     preset = vehiclePreset
   end
 
   local keyframes = {}
-  local currentPosition = { startPosition[1], startPosition[2], startPosition[3] }
+  local cur = { startPosition[1], startPosition[2], startPosition[3] }
 
-  for i, presetKeyframe in ipairs(preset) do
-    local weightXZ = presetKeyframe.weightXZ or 0
-    local weightY = presetKeyframe.weightY or 0
-    local angle = presetKeyframe.angle
+  local dxT = endPosition[1] - startPosition[1]
+  local dyT = endPosition[2] - startPosition[2]
+  local dzT = endPosition[3] - startPosition[3]
+  local horizT = math.sqrt(dxT * dxT + dzT * dzT)
 
-    local totalDeltaX = endPosition[1] - startPosition[1]
-    local totalDeltaY = endPosition[2] - startPosition[2]
-    local totalDeltaZ = endPosition[3] - startPosition[3]
-    local nextPosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
+  local bases = {}
+  local sumX, sumZ, sumY = 0, 0, 0
+  for i, kf in ipairs(preset) do
+    local wXZ = math.max(0, kf.weightXZ or 0)
+    local wY  = math.max(0, kf.weightY or 0)
+    local bx, bz
 
-    if weightXZ > 0 then
-      local impactX, impactZ
-      if angle ~= nil then
-        if angle == 0 then
-          impactX = 1.0
-          impactZ = 0.0
-        elseif angle == -90 then
-          impactX = 0.0
-          impactZ = 1.0
-        elseif angle == 90 then
-          impactX = 0.0
-          impactZ = -1.0
-        else
-          local angleRad = math.rad(angle)
-          impactX = (math.cos(angleRad) + 1) * 0.5
-          impactZ = (math.sin(angleRad) + 1) * 0.5
-        end
+    if kf.angle == nil then
+      if horizT > 0 then
+        bx = math.abs(dxT) / horizT
+        bz = math.abs(dzT) / horizT
       else
-        impactX = 1.0
-        impactZ = 1.0
+        bx, bz = 0, 0
       end
-
-      nextPosition[1] = currentPosition[1] + (totalDeltaX * weightXZ * impactX)
-      nextPosition[3] = currentPosition[3] + (totalDeltaZ * weightXZ * impactZ)
+    else
+      local a = math.rad(math.max(-90, math.min(90, kf.angle)))
+      bx = math.abs(math.cos(a))
+      bz = math.abs(math.sin(a))
     end
 
+    bases[i] = { bx = bx, bz = bz, wXZ = wXZ, wY = wY, type = kf.type, angle = kf.angle }
+    sumX = sumX + wXZ * bx
+    sumZ = sumZ + wXZ * bz
+    sumY = sumY + wY
+  end
 
-    if weightY > 0 then
-      nextPosition[2] = currentPosition[2] + (totalDeltaY * weightY)
-    end
+  for _, b in ipairs(bases) do
+    local stepX = 0
+    local stepZ = 0
+    local stepY = 0
 
+    if sumX > 0 then stepX = sign(dxT) * math.abs(dxT) * (b.wXZ * b.bx / sumX) end
+    if sumZ > 0 then stepZ = sign(dzT) * math.abs(dzT) * (b.wXZ * b.bz / sumZ) end
+    if sumY > 0 then stepY = sign(dyT) * math.abs(dyT) * (b.wY / sumY) end
 
-    local keyframe = CabCinematicAnimationKeyframe.new(presetKeyframe.type,
-      { currentPosition[1], currentPosition[2], currentPosition[3] },
-      { nextPosition[1], nextPosition[2], nextPosition[3] },
-      weightXZ,
-      weightY,
-      angle
+    local nextPos = { cur[1] + stepX, cur[2] + stepY, cur[3] + stepZ }
+
+    local keyframe = CabCinematicAnimationKeyframe.new(
+      b.type,
+      { cur[1], cur[2], cur[3] },
+      { nextPos[1], nextPos[2], nextPos[3] },
+      b.wXZ, b.wY, b.angle
     )
 
+    keyframe:printDebug()
+
     table.insert(keyframes, keyframe)
+    cur = nextPos
+  end
 
-
-    currentPosition = nextPosition
+  if #keyframes > 0 then
+    keyframes[#keyframes].endPosition = { endPosition[1], endPosition[2], endPosition[3] }
   end
 
   return keyframes
@@ -327,20 +320,6 @@ function CabCinematicAnimation:start()
   self:prepare()
 
   Log:info(string.format("CabCinematicAnimation total duration: %.2f seconds", self.duration))
-
-  for _, keyframe in ipairs(self.keyframes) do
-    Log:info(string.format(
-      "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), weightXZ=%.2f, weightY=%.2f, angle=%s, speed=%.2f, distance=%.2f, duration=%.2f",
-      keyframe.type,
-      keyframe.startPosition[1], keyframe.startPosition[2], keyframe.startPosition[3],
-      keyframe.endPosition[1], keyframe.endPosition[2], keyframe.endPosition[3],
-      keyframe.weightXZ,
-      keyframe.weightY,
-      tostring(keyframe.angle) or "nil",
-      keyframe.speed,
-      keyframe.distance,
-      keyframe:getDuration()))
-  end
 
   self.timer = 0
   self.currentKeyFrameIndex = 1

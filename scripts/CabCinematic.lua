@@ -5,8 +5,8 @@ CabCinematic.cinematicAnimation = nil
 CabCinematic.vehicle = nil
 CabCinematic.finishCallback = nil
 CabCinematic.flags = {
-  skipAnimation = true,
-  debugAnimation = true
+  skipAnimation = false,
+  debugAnimation = false
 }
 
 function CabCinematic:initialize()
@@ -78,6 +78,10 @@ function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccSkipAnimation", "Skip animation", "consoleCommandSkipAnimation", self)
   addConsoleCommand("ccDebugAnimation", "Debug animation", "consoleCommandDebugAnimation", self)
   addConsoleCommand("ccDebugCameras", "Debug cameras", "consoleCommandDebugCameras", self)
+  addConsoleCommand("ccPrintPresets", "Print current animation presets", "consoleCommandPrintPresets", self)
+  addConsoleCommand("ccSetHotPreset",
+    "Update animation preset: ccUpdateAnimation <typeName> <category> <keyframe1> ... (keyframe format: type,weightXZ,weightY,angle)",
+    "consoleCommandSetHotPreset", self)
 end
 
 function CabCinematic:consoleCommandSkipAnimation()
@@ -100,6 +104,82 @@ function CabCinematic:consoleCommandDebugCameras()
   else
     Log:info("No active vehicle camera")
   end
+end
+
+function CabCinematic:consoleCommandPrintPresets()
+  for typeName, categories in pairs(CabCinematicAnimation.PRESETS) do
+    for category, keyframes in pairs(categories) do
+      local keyframeStrings = {}
+      for _, keyframe in ipairs(keyframes) do
+        local keyframeString = string.format("%s,%.2f,%.2f", keyframe.type, keyframe.weightXZ, keyframe.weightY)
+        if keyframe.angle ~= nil then
+          keyframeString = keyframeString .. string.format(",%.2f", keyframe.angle)
+        end
+        table.insert(keyframeStrings, keyframeString)
+      end
+      Log:info(string.format("Preset: %s %s %s", typeName, category, table.concat(keyframeStrings, " ")))
+    end
+  end
+end
+
+function CabCinematic:consoleCommandSetHotPreset(typeName, category, ...)
+  local keyframeStrings = { ... }
+
+  if not typeName or not category or #keyframeStrings == 0 then
+    Log:warning(
+      "Usage: ccSetHotPreset <typeName> <category> <keyframe1> ... (keyframe format: type,weightXZ,weightY,angle)")
+    return
+  end
+
+  local keyframes = {}
+
+  for i, keyframeString in ipairs(keyframeStrings) do
+    local parts = {}
+    for part in string.gmatch(keyframeString, "[^,]+") do
+      table.insert(parts, string.match(part, "^%s*(.-)%s*$"))
+    end
+
+    if #parts < 3 then
+      Log:warning(string.format("Invalid keyframe format '%s' (expected at least 3 parts: type,weightXZ,weightY)",
+        keyframeString))
+      return
+    end
+
+    local keyframe = {
+      type = parts[1],
+      weightXZ = tonumber(parts[2]),
+      weightY = tonumber(parts[3])
+    }
+
+    if parts[4] then
+      keyframe.angle = tonumber(parts[4])
+    end
+
+    if not keyframe.weightXZ or not keyframe.weightY then
+      Log:warning(string.format("Invalid numeric values in keyframe '%s'", keyframeString))
+      return
+    end
+
+    table.insert(keyframes, keyframe)
+  end
+
+  local sumWeightXZ = 0
+  local sumWeightY = 0
+  for _, kf in ipairs(keyframes) do
+    sumWeightXZ = sumWeightXZ + kf.weightXZ
+    sumWeightY = sumWeightY + kf.weightY
+  end
+
+  if sumWeightXZ ~= 1.0 then
+    Log:warning(string.format("Total weightXZ %.2f differs from 1.0", sumWeightXZ))
+  end
+
+  if sumWeightY ~= 1.0 then
+    Log:warning(string.format("Total weightY %.2f differs from 1.0", sumWeightY))
+  end
+
+  CabCinematicAnimation.PRESETS[typeName] = CabCinematicAnimation.PRESETS[typeName] or {}
+  CabCinematicAnimation.PRESETS[typeName][category] = keyframes
 end
 
 function CabCinematic:onVehicleCameraActivate(superFunc)
