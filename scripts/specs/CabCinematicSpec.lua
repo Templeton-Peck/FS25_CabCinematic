@@ -43,14 +43,15 @@ function CabCinematicSpec.registerEventListeners(vehicleType)
 end
 
 function CabCinematicSpec:interact(superFunc, player)
+  if CabCinematic:getIsActive() then
+    return
+  end
+
   pcall(function()
     executeConsoleCommand("cls")
   end)
 
   Log:info(string.format("Player speed: %.2f", player:getSpeed()))
-  if CabCinematic:getIsActive() then
-    return
-  end
 
   local exitNode = self:getExitNode()
   local playerDistance = getDistance(player.rootNode, exitNode)
@@ -90,14 +91,15 @@ end
 
 function CabCinematicSpec:doLeaveVehicle(superFunc)
   -- return superFunc(self)
-  pcall(function()
-    executeConsoleCommand("cls")
-  end)
 
   Log:info("CabCinematicSpec:doLeaveVehicle called")
   if CabCinematic:getIsActive() then
     return
   end
+
+  pcall(function()
+    executeConsoleCommand("cls")
+  end)
 
   if (not self:getIsAIActive()) then
     self.spec_enterable:deleteVehicleCharacter()

@@ -349,6 +349,13 @@ function CabCinematicAnimation:start()
   self.currentKeyFrameIndex = 1
   self.isActive = true
 
+  for i, camera in pairs(self.vehicle.spec_enterable.cameras) do
+    if camera.isInside then
+      self.vehicle:setActiveCameraIndex(i)
+      break
+    end
+  end
+
   self:syncAnimationCamerasAtStart()
   self.camera:activate()
 end
