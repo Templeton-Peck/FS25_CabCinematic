@@ -9,8 +9,6 @@ CabCinematicAnimation = {
   finishCallback = nil,
   keyframes = nil,
 
-  raycastDebug = nil,
-
   playerSnapshot = nil,
   duration = 0.0,
   currentKeyFrameIndex = 1,
@@ -29,10 +27,9 @@ CabCinematicAnimation.PRESETS = {
       { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
     },
     forageharvesters = {
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.10, weightY = 0.0, angle = 0 },
       { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.35, weightY = 1.0, angle = -90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.40, weightY = 0.0, angle = -90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.10, weightY = 0.0, angle = -70 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.55, weightY = 0.0, angle = -90 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.05, weightY = 0.0, angle = -70 },
       { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.04, weightY = 0.0 },
       { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.01, weightY = 0.0 },
     },
@@ -79,18 +76,9 @@ function CabCinematicAnimation:getIsPaused()
   return self.isPaused
 end
 
-function CabCinematicAnimation:getVehicleCategory()
-  local categoryName = "unknown"
-  local storeItem = g_storeManager:getItemByXMLFilename(self.vehicle.configFileName)
-  if storeItem ~= nil and storeItem.categoryName ~= nil then
-    categoryName = string.lower(storeItem.categoryName)
-  end
-  return categoryName
-end
-
 function CabCinematicAnimation:getVehiclePreset()
   if CabCinematicAnimation.PRESETS[self.vehicle.typeName] ~= nil then
-    local vehicleCategory = self:getVehicleCategory()
+    local vehicleCategory = self.vehicle:getVehicleCategory()
     if CabCinematicAnimation.PRESETS[self.vehicle.typeName][vehicleCategory] ~= nil then
       return CabCinematicAnimation.PRESETS[self.vehicle.typeName][vehicleCategory]
     else
@@ -104,20 +92,63 @@ function CabCinematicAnimation:getVehiclePreset()
   end
 end
 
-function CabCinematicAnimation:getVehicleExitNodeAdjustedPosition()
-  local _, wpy, _ = getWorldTranslation(getParent(g_localPlayer.camera.firstPersonCamera))
-  local wex, _, wez = getWorldTranslation(self.vehicle:getExitNode())
-  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, 0, wez) + 0.1
-  return worldToLocal(self.vehicle.rootNode, wex, wty + (wpy - wty), wez)
+function CabCinematicAnimation:isVehicleRequiringExteriorPositionAdjustment()
+  return self.vehicle.typeName == "combineDrivable" and self.vehicle:getVehicleCategory() == "forageharvesters"
 end
 
-function CabCinematicAnimation:getPreMovementKeyframe()
+function CabCinematicAnimation:getPresetStartPosition()
+  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
+    if self:isVehicleRequiringExteriorPositionAdjustment() then
+      return self.vehicle:getVehicleAdjustedExteriorPosition()
+    else
+      return self.vehicle:getVehicleDefaultExteriorPosition()
+    end
+  else
+    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  end
+end
+
+function CabCinematicAnimation:getPresetEndPosition()
+  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
+    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  else
+    if self:isVehicleRequiringExteriorPositionAdjustment() then
+      return self.vehicle:getVehicleAdjustedExteriorPosition()
+    else
+      return self.vehicle:getVehicleDefaultExteriorPosition()
+    end
+  end
+end
+
+function CabCinematicAnimation:getEnterAdjustmentKeyframeType()
+  if self.playerSnapshot == nil then
+    return CabCinematicAnimationKeyframe.TYPES.WALK
+  end
+
+  if self.vehicle:getLastSpeed() >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED then
+    return CabCinematicAnimationKeyframe.TYPES.RUN
+  elseif self.playerSnapshot.speed >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_PLAYER_SPEED then
+    return CabCinematicAnimationKeyframe.TYPES.RUN
+  else
+    return CabCinematicAnimationKeyframe.TYPES.WALK
+  end
+end
+
+function CabCinematicAnimation:getEnterAdjustmentKeyframeEndPosition()
+  if self:isVehicleRequiringExteriorPositionAdjustment() then
+    return self.vehicle:getVehicleAdjustedExteriorPosition()
+  end
+
+  return self.vehicle:getVehicleDefaultExteriorPosition()
+end
+
+function CabCinematicAnimation:buildEnterAdjustmentKeyframe()
   if self.playerSnapshot == nil then
     return nil
   end
 
   local plx, ply, plz = self.playerSnapshot:getLocalPosition(self.vehicle.rootNode)
-  local elx, ely, elz = self:getVehicleExitNodeAdjustedPosition()
+  local elx, ely, elz = unpack(self:getEnterAdjustmentKeyframeEndPosition())
 
   local playerDistance = MathUtil.vector3Length(elx - plx, ely - ply, elz - plz)
 
@@ -126,18 +157,11 @@ function CabCinematicAnimation:getPreMovementKeyframe()
       "Calculating pre-movement keyframe - Player position (%.2f, %.2f, %.2f), ExitNode position (%.2f, %.2f, %.2f) - Distance: %.2f",
       plx, ply, plz, elx, ely, elz, playerDistance))
 
-    if self.vehicle:getLastSpeed() >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED then
-      return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.RUN, { plx, ply, plz },
-        { elx, ely, elz })
-    else
-      if self.playerSnapshot ~= nil and self.playerSnapshot.speed >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_PLAYER_SPEED then
-        return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.RUN, { plx, ply, plz },
-          { elx, ely, elz })
-      else
-        return CabCinematicAnimationKeyframe.new(CabCinematicAnimationKeyframe.TYPES.WALK, { plx, ply, plz },
-          { elx, ely, elz })
-      end
-    end
+    return CabCinematicAnimationKeyframe.new(
+      self:getEnterAdjustmentKeyframeType(),
+      { plx, ply, plz },
+      { elx, ely, elz }
+    )
   else
     Log:info(string.format("No pre-movement keyframe needed - distance: %.2f", playerDistance))
   end
@@ -145,25 +169,20 @@ function CabCinematicAnimation:getPreMovementKeyframe()
   return nil
 end
 
-function CabCinematicAnimation:getStartPosition()
-  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
-    return { self:getVehicleExitNodeAdjustedPosition() }
-  else
-    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+function CabCinematicAnimation:buildLeaveAdjustmentKeyframe()
+  if self:isVehicleRequiringExteriorPositionAdjustment() then
+    return CabCinematicAnimationKeyframe.new(
+      self:getEnterAdjustmentKeyframeType(),
+      self.vehicle:getVehicleAdjustedExteriorPosition(),
+      self.vehicle:getVehicleDefaultExteriorPosition()
+    )
   end
+
+  return nil
 end
 
-function CabCinematicAnimation:getEndPosition()
-  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
-    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
-  else
-    return { self:getVehicleExitNodeAdjustedPosition() }
-  end
-end
-
-local function sign(v) return (v >= 0) and 1 or -1 end
-
-function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
+function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
+  local function sign(v) return (v >= 0) and 1 or -1 end
   local vehiclePreset = self:getVehiclePreset()
   if not vehiclePreset then return {} end
 
@@ -230,8 +249,6 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
       b.wXZ, b.wY, b.angle
     )
 
-    keyframe:printDebug()
-
     table.insert(keyframes, keyframe)
     cur = nextPos
   end
@@ -243,75 +260,26 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
   return keyframes
 end
 
-function CabCinematicAnimation:performDebugRaycast()
-  local dist = 3.0
-  local ex, ey, ez = self:getVehicleExitNodeAdjustedPosition()
-  local sx, sy, sz = localToWorld(self.vehicle.rootNode, ex, ey, ez)
-  local vx, vy, vz = localToWorld(self.vehicle.rootNode, ex - dist, ey, ez)
-
-  self.raycastDebug = {
-    start = { sx, sy, sz },
-    target = { vx, vy, vz },
-    hit = nil
-  }
-
-  local dx, dy, dz = vx - sx, vy - sy, vz - sz
-  local len = math.sqrt(dx * dx + dy * dy + dz * dz)
-  if len < 0.001 then
-    Log:info("performDebugRaycast: vector too short, aborting")
-    return
-  end
-
-  dx, dy, dz = dx / len, dy / len, dz / len
-
-  local finalDist = math.min(len, 3.0)
-
-  Log:info(string.format(
-    "Casting ray (EXIT->VEHICLE) from (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f) dist=%.2f",
-    sx, sy, sz, vx, vy, vz, finalDist
-  ))
-
-  raycastAllAsync(sx, sy, sz, dx, dy, dz, finalDist, "debugRaycastCallback", self, CollisionFlag.VEHICLE)
-end
-
-function CabCinematicAnimation:debugRaycastCallback(hitObjectId, x, y, z, distance, nx, ny, nz, materialId, u, v, w)
-  Log:info(string.format("Raycast hit at (%.2f, %.2f, %.2f) distance=%.2f", x, y, z, distance))
-
-  local obj = g_currentMission.nodeToObject[hitObjectId]
-  if obj ~= nil then
-    local root = obj.getRootVehicle and obj:getRootVehicle() or obj
-
-    if root == self.vehicle then
-      if self.raycastDebug.hit == nil or distance < self.raycastDebug.hit[4] then
-        self.raycastDebug.hit = { x, y, z, distance }
-
-        Log:info(string.format(
-          "Updated raycastDebug.hit = (%.2f, %.2f, %.2f), dist=%.2f",
-          x, y, z, distance
-        ))
-      end
-    end
-  end
-
-  return true
-end
-
 function CabCinematicAnimation:prepare()
-  local startPosition = self:getStartPosition()
-  local endPosition = self:getEndPosition()
-  self:performDebugRaycast()
-  self.keyframes = self:buildKeyframes(startPosition, endPosition)
+  local keyframes = self:buildPresetKeyframes(self:getPresetStartPosition(), self:getPresetEndPosition())
 
-  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
-    local preMovementKeyframe = self:getPreMovementKeyframe()
-    if (preMovementKeyframe ~= nil) then
-      table.insert(self.keyframes, 1, preMovementKeyframe)
+  if self.type == CabCinematicAnimation.TYPES.ENTER then
+    local adjustmentKeyframe = self:buildEnterAdjustmentKeyframe()
+    if adjustmentKeyframe ~= nil then
+      table.insert(keyframes, 1, adjustmentKeyframe)
+    end
+  else
+    local adjustmentKeyframe = self:buildLeaveAdjustmentKeyframe()
+    if adjustmentKeyframe ~= nil then
+      table.insert(keyframes, adjustmentKeyframe)
     end
   end
 
+  self.keyframes = keyframes
   self.duration = 0
   for _, keyframe in ipairs(self.keyframes) do
     self.duration = self.duration + keyframe:getDuration()
+    keyframe:printDebug()
   end
 end
 
@@ -451,18 +419,15 @@ end
 function CabCinematicAnimation:drawDebug()
   DebugUtil.drawDebugNode(self.vehicle:getExitNode(), "exitNode")
   DebugUtil.drawDebugNode(self.vehicle:getVehicleInteriorCamera().cameraPositionNode, "camera")
-  if (self.raycastDebug ~= nil) then
-    if self.raycastDebug.hit ~= nil then
-      DebugUtil.drawDebugGizmoAtWorldPos(self.raycastDebug.hit[1],
-        self.raycastDebug.hit[2],
-        self.raycastDebug.hit[3],
+  if (self.vehicle.spec_cabCinematic ~= nil) then
+    if self.vehicle.spec_cabCinematic.adjustedExteriorPosition ~= nil then
+      DebugUtil.drawDebugGizmoAtWorldPos(self.vehicle.spec_cabCinematic.adjustedExteriorPosition[1],
+        self.vehicle.spec_cabCinematic.adjustedExteriorPosition[2],
+        self.vehicle.spec_cabCinematic.adjustedExteriorPosition[3],
         1, 0, 0, 0, 1, 0, "hit")
     end
-
-    DebugUtil.drawDebugLine(self.raycastDebug.start[1], self.raycastDebug.start[2], self.raycastDebug.start[3],
-      self.raycastDebug.target[1], self.raycastDebug.target[2], self.raycastDebug.target[3],
-      0, 0, 1, 0.2)
   end
+
   if self.keyframes ~= nil then
     for _, keyframe in ipairs(self.keyframes) do
       keyframe:drawDebug(self.vehicle.rootNode)

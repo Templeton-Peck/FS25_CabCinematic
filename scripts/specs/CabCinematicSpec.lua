@@ -23,6 +23,11 @@ end
 
 function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCamera", CabCinematicSpec.getVehicleInteriorCamera)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleCategory", CabCinematicSpec.getVehicleCategory)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleDefaultExteriorPosition",
+    CabCinematicSpec.getVehicleDefaultExteriorPosition)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleAdjustedExteriorPosition",
+    CabCinematicSpec.getVehicleAdjustedExteriorPosition)
 end
 
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
@@ -117,8 +122,62 @@ function CabCinematicSpec:getVehicleInteriorCamera()
   return nil
 end
 
+function CabCinematicSpec:getVehicleCategory()
+  if self.spec_cabCinematic.vehicleCategory ~= nil then
+    return self.spec_cabCinematic.vehicleCategory
+  end
+
+  self.spec_cabCinematic.vehicleCategory = "unknown"
+  local storeItem = g_storeManager:getItemByXMLFilename(self.configFileName)
+  if storeItem ~= nil and storeItem.categoryName ~= nil then
+    self.spec_cabCinematic.vehicleCategory = string.lower(storeItem.categoryName)
+  end
+
+  return self.spec_cabCinematic.vehicleCategory
+end
+
+function CabCinematicSpec:getVehicleDefaultExteriorPosition()
+  if self.spec_cabCinematic.defaultExteriorPosition ~= nil then
+    return self.spec_cabCinematic.defaultExteriorPosition
+  end
+
+  local _, wpy, _ = getWorldTranslation(getParent(g_localPlayer.camera.firstPersonCamera))
+  local wex, _, wez = getWorldTranslation(self:getExitNode())
+  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, 0, wez) + 0.05
+  self.spec_cabCinematic.defaultExteriorPosition = { worldToLocal(self.rootNode, wex, wty + (wpy - wty), wez) }
+
+  return self.spec_cabCinematic.defaultExteriorPosition
+end
+
+function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
+  if self.spec_cabCinematic.adjustedExteriorPosition ~= nil then
+    return self.spec_cabCinematic.adjustedExteriorPosition
+  end
+
+  local dist = 3.0
+  local ex, ey, ez = unpack(self:getVehicleDefaultExteriorPosition())
+  local sx, sy, sz = localToWorld(self.rootNode, ex, ey, ez)
+  local vx, vy, vz = localToWorld(self.rootNode, ex - dist, ey, ez)
+
+  local dx, dy, dz = vx - sx, vy - sy, vz - sz
+  local len = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+  dx, dy, dz = dx / len, dy / len, dz / len
+
+  local hit, hitX, hitY, hitZ = RaycastUtil.raycastClosest(sx, sy, sz, dx, dy, dz, dist, CollisionFlag.VEHICLE)
+  if hit then
+    Log:info(string.format("Raycast hit at (%.2f, %.2f, %.2f)", hitX, hitY, hitZ))
+    self.spec_cabCinematic.adjustedExteriorPosition = { worldToLocal(self.rootNode, hitX, hitY, hitZ) }
+  end
+
+  return self.spec_cabCinematic.adjustedExteriorPosition
+end
+
 function CabCinematicSpec:onLoad()
-  local spec             = {}
-  spec.playerSnapshot    = nil
-  self.spec_cabCinematic = spec
+  local spec                    = {}
+  spec.playerSnapshot           = nil
+  spec.vehicleCategory          = nil
+  spec.defaultExteriorPosition  = nil
+  spec.adjustedExteriorPosition = nil
+  self.spec_cabCinematic        = spec
 end
