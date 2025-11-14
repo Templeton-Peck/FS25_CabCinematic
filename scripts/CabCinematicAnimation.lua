@@ -244,8 +244,10 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
 end
 
 function CabCinematicAnimation:performDebugRaycast()
-  local sx, sy, sz = localToWorld(self.vehicle.rootNode, self:getVehicleExitNodeAdjustedPosition())
-  local vx, vy, vz = getWorldTranslation(self.vehicle.rootNode)
+  local dist = 3.0
+  local ex, ey, ez = self:getVehicleExitNodeAdjustedPosition()
+  local sx, sy, sz = localToWorld(self.vehicle.rootNode, ex, ey, ez)
+  local vx, vy, vz = localToWorld(self.vehicle.rootNode, ex - dist, ey, ez)
 
   self.raycastDebug = {
     start = { sx, sy, sz },
@@ -262,14 +264,14 @@ function CabCinematicAnimation:performDebugRaycast()
 
   dx, dy, dz = dx / len, dy / len, dz / len
 
-  local dist = math.min(len, 3.0)
+  local finalDist = math.min(len, 3.0)
 
   Log:info(string.format(
     "Casting ray (EXIT->VEHICLE) from (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f) dist=%.2f",
-    sx, sy, sz, vx, vy, vz, dist
+    sx, sy, sz, vx, vy, vz, finalDist
   ))
 
-  raycastAllAsync(sx, sy, sz, dx, dy, dz, dist, "debugRaycastCallback", self, CollisionFlag.VEHICLE)
+  raycastAllAsync(sx, sy, sz, dx, dy, dz, finalDist, "debugRaycastCallback", self, CollisionFlag.VEHICLE)
 end
 
 function CabCinematicAnimation:debugRaycastCallback(hitObjectId, x, y, z, distance, nx, ny, nz, materialId, u, v, w)
