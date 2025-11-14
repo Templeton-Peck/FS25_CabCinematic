@@ -9,6 +9,8 @@ CabCinematicAnimation = {
   finishCallback = nil,
   keyframes = nil,
 
+  raycastDebug = nil,
+
   playerSnapshot = nil,
   duration = 0.0,
   currentKeyFrameIndex = 1,
@@ -241,9 +243,61 @@ function CabCinematicAnimation:buildKeyframes(startPosition, endPosition)
   return keyframes
 end
 
+function CabCinematicAnimation:performDebugRaycast()
+  local sx, sy, sz = localToWorld(self.vehicle.rootNode, self:getVehicleExitNodeAdjustedPosition())
+  local vx, vy, vz = getWorldTranslation(self.vehicle.rootNode)
+
+  self.raycastDebug = {
+    start = { sx, sy, sz },
+    target = { vx, vy, vz },
+    hit = nil
+  }
+
+  local dx, dy, dz = vx - sx, vy - sy, vz - sz
+  local len = math.sqrt(dx * dx + dy * dy + dz * dz)
+  if len < 0.001 then
+    Log:info("performDebugRaycast: vector too short, aborting")
+    return
+  end
+
+  dx, dy, dz = dx / len, dy / len, dz / len
+
+  local dist = math.min(len, 3.0)
+
+  Log:info(string.format(
+    "Casting ray (EXIT->VEHICLE) from (%.2f, %.2f, %.2f) to (%.2f, %.2f, %.2f) dist=%.2f",
+    sx, sy, sz, vx, vy, vz, dist
+  ))
+
+  raycastAllAsync(sx, sy, sz, dx, dy, dz, dist, "debugRaycastCallback", self, CollisionFlag.VEHICLE)
+end
+
+function CabCinematicAnimation:debugRaycastCallback(hitObjectId, x, y, z, distance, nx, ny, nz, materialId, u, v, w)
+  Log:info(string.format("Raycast hit at (%.2f, %.2f, %.2f) distance=%.2f", x, y, z, distance))
+
+  local obj = g_currentMission.nodeToObject[hitObjectId]
+  if obj ~= nil then
+    local root = obj.getRootVehicle and obj:getRootVehicle() or obj
+
+    if root == self.vehicle then
+      if self.raycastDebug.hit == nil or distance < self.raycastDebug.hit[4] then
+        self.raycastDebug.hit = { x, y, z, distance }
+
+        Log:info(string.format(
+          "Updated raycastDebug.hit = (%.2f, %.2f, %.2f), dist=%.2f",
+          x, y, z, distance
+        ))
+      end
+    end
+  end
+
+  return true
+end
+
 function CabCinematicAnimation:prepare()
   local startPosition = self:getStartPosition()
   local endPosition = self:getEndPosition()
+  self:performDebugRaycast()
   self.keyframes = self:buildKeyframes(startPosition, endPosition)
 
   if (self.type == CabCinematicAnimation.TYPES.ENTER) then
@@ -393,8 +447,20 @@ function CabCinematicAnimation:update(dt)
 end
 
 function CabCinematicAnimation:drawDebug()
-  DebugUtil.drawDebugNode(self.vehicle:getExitNode())
-  DebugUtil.drawDebugNode(self.vehicle:getVehicleInteriorCamera().cameraPositionNode)
+  DebugUtil.drawDebugNode(self.vehicle:getExitNode(), "exitNode")
+  DebugUtil.drawDebugNode(self.vehicle:getVehicleInteriorCamera().cameraPositionNode, "camera")
+  if (self.raycastDebug ~= nil) then
+    if self.raycastDebug.hit ~= nil then
+      DebugUtil.drawDebugGizmoAtWorldPos(self.raycastDebug.hit[1],
+        self.raycastDebug.hit[2],
+        self.raycastDebug.hit[3],
+        1, 0, 0, 0, 1, 0, "hit")
+    end
+
+    DebugUtil.drawDebugLine(self.raycastDebug.start[1], self.raycastDebug.start[2], self.raycastDebug.start[3],
+      self.raycastDebug.target[1], self.raycastDebug.target[2], self.raycastDebug.target[3],
+      0, 0, 1, 0.2)
+  end
   if self.keyframes ~= nil then
     for _, keyframe in ipairs(self.keyframes) do
       keyframe:drawDebug(self.vehicle.rootNode)
