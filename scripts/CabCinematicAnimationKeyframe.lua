@@ -2,9 +2,6 @@ CabCinematicAnimationKeyframe = {
   type = nil,
   startPosition = { 0, 0, 0 },
   endPosition = { 0, 0, 0 },
-  weightXZ = 0.0,
-  weightY = 0.0,
-  angle = nil,
   speed = 1.0,
   distance = 0.0
 }
@@ -16,6 +13,12 @@ CabCinematicAnimationKeyframe.TYPES = {
   SEAT = "seat",
 }
 
+CabCinematicAnimationKeyframe.MODES = {
+  PERCENT_TOTAL = "PERCENT_TOTAL",
+  PERCENT_REMAINING = "PERCENT_REMAINING",
+  ABSOLUTE = "ABSOLUTE",
+}
+
 CabCinematicAnimationKeyframe.SPEEDS = {
   [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.6,
   [CabCinematicAnimationKeyframe.TYPES.RUN]   = 2.25,
@@ -24,15 +27,12 @@ CabCinematicAnimationKeyframe.SPEEDS = {
 }
 
 local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)
-function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition, weightXZ, weightY, angle)
+function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition)
   local self = setmetatable({}, CabCinematicAnimationKeyframe_mt)
   self.type = type
   self.startPosition = startPosition
   self.endPosition = endPosition
   self.speed = CabCinematicAnimationKeyframe.SPEEDS[type]
-  self.weightXZ = weightXZ or 0.5
-  self.weightY = weightY or 0.5
-  self.angle = angle
   self.distance = MathUtil.vector3Length(endPosition[1] - startPosition[1],
     endPosition[2] - startPosition[2],
     endPosition[3] - startPosition[3])
@@ -64,6 +64,12 @@ function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
       self.startPosition[3] + (self.endPosition[3] - self.startPosition[3]) * factor
 end
 
+function CabCinematicAnimationKeyframe:reverse()
+  local temp = self.startPosition
+  self.startPosition = self.endPosition
+  self.endPosition = temp
+end
+
 function CabCinematicAnimationKeyframe:drawDebug(rootNode)
   local startWorldPos = { localToWorld(rootNode, unpack(self.startPosition)) }
   local endWorldPos = { localToWorld(rootNode, unpack(self.endPosition)) }
@@ -74,13 +80,10 @@ end
 
 function CabCinematicAnimationKeyframe:printDebug()
   Log:info(string.format(
-    "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), weightXZ=%.2f, weightY=%.2f, angle=%s, speed=%.2f, distance=%.2f, duration=%.2f",
+    "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
     self.type,
     self.startPosition[1], self.startPosition[2], self.startPosition[3],
     self.endPosition[1], self.endPosition[2], self.endPosition[3],
-    self.weightXZ,
-    self.weightY,
-    tostring(self.angle) or "nil",
     self.speed,
     self.distance,
     self:getDuration()))

@@ -12,8 +12,8 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] FOV standardization across cameras
 - [x] Allow free camera movement during cinematics
 - [x] Fix cinematics with moving vehicles
-- [ ] WIP: Implement vehicle freezing during cinematics
 - [x] Improve enter/interact trigger detection (currently too restrictive)
+- [ ] Implement vehicle freezing during cinematics
 - [ ] Add view bobbing to cinematics
 - [ ] Handle combine ladder animations properly
 - [ ] Third-person camera fix

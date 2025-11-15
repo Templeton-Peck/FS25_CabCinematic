@@ -22,33 +22,97 @@ CabCinematicAnimation.TYPES = {
 CabCinematicAnimation.PRESETS = {
   combineDrivable = {
     harvesters = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 100 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 }
+      },
     },
     forageharvesters = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.35, weightY = 1.0, angle = -90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.55, weightY = 0.0, angle = -90 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.05, weightY = 0.0, angle = -70 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.04, weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.01, weightY = 0.0 },
+      -- {
+      --   type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      --   y = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = 0.2 },
+      --   x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+      -- },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = 1 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 115 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+      },
+    },
+    beetharvesters = {
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 100 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.5 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 115 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+      },
     },
   },
   tractor = {
     tractorss = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 0.65 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.35 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 65 }
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 }
+      },
     },
     tractorsm = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 80 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.5 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.3 }
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 }
+      }
     },
     tractorsl = {
-      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
-      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 80 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.6 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.4 }
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 }
+      }
     },
   },
 }
@@ -107,27 +171,15 @@ function CabCinematicAnimation:isVehicleRequiringExteriorPositionAdjustment()
 end
 
 function CabCinematicAnimation:getPresetStartPosition()
-  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
-    if self:isVehicleRequiringExteriorPositionAdjustment() then
-      return self.vehicle:getVehicleAdjustedExteriorPosition()
-    else
-      return self.vehicle:getVehicleDefaultExteriorPosition()
-    end
+  if self:isVehicleRequiringExteriorPositionAdjustment() then
+    return self.vehicle:getVehicleAdjustedExteriorPosition()
   else
-    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+    return self.vehicle:getVehicleDefaultExteriorPosition()
   end
 end
 
 function CabCinematicAnimation:getPresetEndPosition()
-  if (self.type == CabCinematicAnimation.TYPES.ENTER) then
-    return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
-  else
-    if self:isVehicleRequiringExteriorPositionAdjustment() then
-      return self.vehicle:getVehicleAdjustedExteriorPosition()
-    else
-      return self.vehicle:getVehicleDefaultExteriorPosition()
-    end
-  end
+  return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
 end
 
 function CabCinematicAnimation:getEnterAdjustmentKeyframeType()
@@ -192,7 +244,6 @@ function CabCinematicAnimation:buildLeaveAdjustmentKeyframe()
 end
 
 function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
-  local function sign(v) return (v >= 0) and 1 or -1 end
   local vehiclePreset = self:getVehiclePreset()
   if not vehiclePreset then return {} end
 
@@ -200,63 +251,62 @@ function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
     startPosition[1], startPosition[2], startPosition[3],
     endPosition[1], endPosition[2], endPosition[3]))
 
-  local preset = {}
-  if self.type == CabCinematicAnimation.TYPES.LEAVE then
-    for i = #vehiclePreset, 1, -1 do table.insert(preset, vehiclePreset[i]) end
-  else
-    preset = vehiclePreset
-  end
-
   local keyframes = {}
   local cur = { startPosition[1], startPosition[2], startPosition[3] }
 
-  local dxT = endPosition[1] - startPosition[1]
-  local dyT = endPosition[2] - startPosition[2]
-  local dzT = endPosition[3] - startPosition[3]
-  local horizT = math.sqrt(dxT * dxT + dzT * dzT)
+  local totalDelta = {
+    x = endPosition[1] - startPosition[1],
+    y = endPosition[2] - startPosition[2],
+    z = endPosition[3] - startPosition[3]
+  }
 
-  local bases = {}
-  local sumX, sumZ, sumY = 0, 0, 0
-  for i, kf in ipairs(preset) do
-    local wXZ = math.max(0, kf.weightXZ or 0)
-    local wY  = math.max(0, kf.weightY or 0)
-    local bx, bz
+  local remaining = {
+    x = totalDelta.x,
+    y = totalDelta.y,
+    z = totalDelta.z
+  }
 
-    if kf.angle == nil then
-      if horizT > 0 then
-        bx = math.abs(dxT) / horizT
-        bz = math.abs(dzT) / horizT
-      else
-        bx, bz = 0, 0
+  for _, kf in ipairs(vehiclePreset) do
+    local delta = { x = 0, y = 0, z = 0 }
+
+    for _, axis in ipairs({ 'x', 'y', 'z' }) do
+      if kf[axis] then
+        local axisConfig = kf[axis]
+        local mode = axisConfig.mode
+        local value = axisConfig.value
+
+        if mode == CabCinematicAnimationKeyframe.MODES.ABSOLUTE then
+          delta[axis] = value
+          Log:info(string.format("  %s: ABSOLUTE = %.2f", axis, delta[axis]))
+        elseif mode == CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL then
+          delta[axis] = totalDelta[axis] * (value / 100)
+          Log:info(string.format("  %s: PERCENT_TOTAL = %.2f pct of %.2f = %.2f", axis, value, totalDelta[axis],
+            delta[axis]))
+        elseif mode == CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING then
+          delta[axis] = remaining[axis] * (value / 100)
+          Log:info(string.format("  %s: PERCENT_REMAINING = %.2f pct of %.2f = %.2f", axis, value, remaining[axis],
+            delta[axis]))
+        end
       end
-    else
-      local a = math.rad(math.max(-90, math.min(90, kf.angle)))
-      bx = math.abs(math.cos(a))
-      bz = math.abs(math.sin(a))
     end
 
-    bases[i] = { bx = bx, bz = bz, wXZ = wXZ, wY = wY, type = kf.type, angle = kf.angle }
-    sumX = sumX + wXZ * bx
-    sumZ = sumZ + wXZ * bz
-    sumY = sumY + wY
-  end
+    remaining.x = remaining.x - delta.x
+    remaining.y = remaining.y - delta.y
+    remaining.z = remaining.z - delta.z
 
-  for _, b in ipairs(bases) do
-    local stepX = 0
-    local stepZ = 0
-    local stepY = 0
+    local nextPos = {
+      cur[1] + delta.x,
+      cur[2] + delta.y,
+      cur[3] + delta.z
+    }
 
-    if sumX > 0 then stepX = sign(dxT) * math.abs(dxT) * (b.wXZ * b.bx / sumX) end
-    if sumZ > 0 then stepZ = sign(dzT) * math.abs(dzT) * (b.wXZ * b.bz / sumZ) end
-    if sumY > 0 then stepY = sign(dyT) * math.abs(dyT) * (b.wY / sumY) end
-
-    local nextPos = { cur[1] + stepX, cur[2] + stepY, cur[3] + stepZ }
+    Log:info(string.format("Keyframe %s: delta=(%.2f, %.2f, %.2f), remaining=(%.2f, %.2f, %.2f)",
+      kf.type, delta.x, delta.y, delta.z, remaining.x, remaining.y, remaining.z))
 
     local keyframe = CabCinematicAnimationKeyframe.new(
-      b.type,
+      kf.type,
       { cur[1], cur[2], cur[3] },
-      { nextPos[1], nextPos[2], nextPos[3] },
-      b.wXZ, b.wY, b.angle
+      { nextPos[1], nextPos[2], nextPos[3] }
     )
 
     table.insert(keyframes, keyframe)
@@ -265,6 +315,16 @@ function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
 
   if #keyframes > 0 then
     keyframes[#keyframes].endPosition = { endPosition[1], endPosition[2], endPosition[3] }
+  end
+
+  if self.type == CabCinematicAnimation.TYPES.LEAVE then
+    local reversedKeyframes = {}
+    for i, keyframe in ipairs(keyframes) do
+      keyframe:reverse()
+      table.insert(reversedKeyframes, 1, keyframe)
+    end
+
+    return reversedKeyframes
   end
 
   return keyframes
