@@ -494,8 +494,6 @@ function CabCinematicAnimation:update(dt)
 end
 
 function CabCinematicAnimation:drawDebug()
-  DebugUtil.drawDebugNode(self.vehicle:getExitNode(), "exitNode")
-  DebugUtil.drawDebugNode(self.vehicle:getVehicleInteriorCamera().cameraPositionNode, "camera")
   if (self.vehicle.spec_cabCinematic ~= nil) then
     if self.vehicle.spec_cabCinematic.adjustedExteriorPosition ~= nil then
       local hx, hy, hz = localToWorld(self.vehicle.rootNode,

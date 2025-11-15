@@ -42,9 +42,7 @@ A big thank-you to **w33zl** (https://github.com/w33zl) for all the open-source 
 Following console commands are for testing and debugging purposes.
 
 - `ccSkipAnimation` : Skip animation when entering or exiting a vehicle.
-- `ccPauseAnimation` : Pause animation when entering or exiting a vehicle.
-- `ccResumeAnimation` : Resume animation when entering or exiting a vehicle.
-- `ccDebugCameras` : Toggle debug information for the cameras.
+- `ccDebug` : Draw debug gizmos and lines for animation and vehicle.
 
 ## Preview
 
