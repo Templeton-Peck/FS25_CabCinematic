@@ -35,7 +35,17 @@ CabCinematicAnimation.PRESETS = {
     },
   },
   tractor = {
+    tractorss = {
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 0.65 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.35 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
+    },
     tractorsm = {
+      { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
+      { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
+    },
+    tractorsl = {
       { type = CabCinematicAnimationKeyframe.TYPES.CLIMB, weightXZ = 0.2, weightY = 1.0 },
       { type = CabCinematicAnimationKeyframe.TYPES.WALK,  weightXZ = 0.8, weightY = 0.0 },
       { type = CabCinematicAnimationKeyframe.TYPES.SEAT,  weightXZ = 0.0, weightY = 0.0 },
@@ -428,10 +438,9 @@ function CabCinematicAnimation:drawDebug()
   DebugUtil.drawDebugNode(self.vehicle:getVehicleInteriorCamera().cameraPositionNode, "camera")
   if (self.vehicle.spec_cabCinematic ~= nil) then
     if self.vehicle.spec_cabCinematic.adjustedExteriorPosition ~= nil then
-      DebugUtil.drawDebugGizmoAtWorldPos(self.vehicle.spec_cabCinematic.adjustedExteriorPosition[1],
-        self.vehicle.spec_cabCinematic.adjustedExteriorPosition[2],
-        self.vehicle.spec_cabCinematic.adjustedExteriorPosition[3],
-        1, 0, 0, 0, 1, 0, "hit")
+      local hx, hy, hz = localToWorld(self.vehicle.rootNode,
+        unpack(self.vehicle.spec_cabCinematic.adjustedExteriorPosition))
+      DebugUtil.drawDebugGizmoAtWorldPos(hx, hy, hz, 1, 0, 0, 0, 1, 0, "hit")
     end
   end
 

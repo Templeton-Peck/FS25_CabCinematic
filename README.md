@@ -8,17 +8,18 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 ### V1
 
 - [x] Enter/leave cinematics game hook
-- [x] Cinematic system with keyframes and bobbing
+- [x] Cinematic system with keyframes
 - [x] FOV standardization across cameras
 - [x] Allow free camera movement during cinematics
 - [x] Fix cinematics with moving vehicles
 - [ ] WIP: Implement vehicle freezing during cinematics
 - [x] Improve enter/interact trigger detection (currently too restrictive)
+- [ ] Add view bobbing to cinematics
+- [ ] Handle combine ladder animations properly
 - [ ] Third-person camera fix
 - [ ] Tab-switching fix
-- [ ] Cinematic speed-multiplier game setting
-- [ ] Cinematic skipping
-- [ ] Cinematics for all vehicle types (currently only works with tractors and combines)
+- [ ] Cinematic skipping keybind
+- [ ] Cinematics for all vehicle types
 - [ ] modDesc icon
 - [ ] Code cleanup
 
@@ -29,6 +30,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 ### V2
 
 - [ ] Horse support
+- [ ] Bike support
 - [ ] Multiplayer support (requires help and testing)
 
 ## Acknowledgements
