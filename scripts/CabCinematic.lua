@@ -1,25 +1,22 @@
 CabCinematic = Mod:init()
-CabCinematic.initialized = false
 CabCinematic.camera = CabCinematicCamera.new()
 CabCinematic.cinematicAnimation = nil
 CabCinematic.vehicle = nil
 CabCinematic.finishCallback = nil
+CabCinematic.inputs = {
+  skipAnimation = false,
+}
 CabCinematic.flags = {
   skipAnimation = false,
   debug = false
 }
 
-function CabCinematic:initialize()
-  Log:info("CabCinematic:initialize called")
-
-  if not self.initialized then
-    self:registerActionEvents()
-    self.initialized = true
-  end
-end
-
 function CabCinematic:getIsActive()
   return self.cinematicAnimation ~= nil and self.cinematicAnimation:getIsActive()
+end
+
+function CabCinematic:getIsSkipping()
+  return self.inputs.skipAnimation or self.flags.skipAnimation
 end
 
 function CabCinematic:startEnterAnimation(vehicle, playerSnapshot, finishCallback)
@@ -46,11 +43,6 @@ function CabCinematic:startLeaveAnimation(vehicle, finishCallback)
 end
 
 function CabCinematic:update(dt)
-  if not self.initialized then
-    self:initialize()
-    return
-  end
-
   if self.cinematicAnimation ~= nil then
     if self.cinematicAnimation:getIsEnded() then
       if not self.flags.debug then
@@ -93,16 +85,16 @@ function CabCinematic:draw()
 end
 
 function CabCinematic:beforeLoadMap()
-  addConsoleCommand("ccSkipAnimation", "Skip animation", "consoleCommandSkipAnimation", self)
-  addConsoleCommand("ccDebug", "Debug animation", "consoleCommandDebug", self)
+  addConsoleCommand("ccSkipAnimation", "Skip animation", "onSkipAnimationConsoleCommand", self)
+  addConsoleCommand("ccDebug", "Debug animation", "onDebugConsoleCommand", self)
 end
 
-function CabCinematic:consoleCommandSkipAnimation()
+function CabCinematic:onSkipAnimationConsoleCommand()
   self.flags.skipAnimation = not self.flags.skipAnimation
   Log:info("Cab cinematic animation skip is now " .. tostring(self.flags.skipAnimation))
 end
 
-function CabCinematic:consoleCommandDebug()
+function CabCinematic:onDebugConsoleCommand()
   self.flags.debug = not self.flags.debug
   Log:info("Cab cinematic debug is now " .. tostring(self.flags.debug))
 end
@@ -113,24 +105,9 @@ function CabCinematic:onVehicleCameraActivate(superFunc)
   superFunc(self)
 end
 
-function CabCinematic:registerActionEvents()
-  local ok, actionEventId = g_inputBinding:registerActionEvent(InputAction.CAB_CINEMATIC_DEBUG, CabCinematic,
-    CabCinematic.debugAction, true, true, false, true)
-
-  if ok then
-    g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_LOW)
-    g_inputBinding:setActionEventActive(actionEventId, true)
-    g_inputBinding:setActionEventText(actionEventId, "CabCinematic Debug Action")
-    g_inputBinding:setActionEventTextVisibility(actionEventId, true)
-  else
-    Log:error("Failed to register action event for CabCinematic")
-  end
-end
-
-function CabCinematic:debugAction(actionName, state, arg3, arg4, isAnalog)
-  if state ~= 1 then
-    return
-  end
+function CabCinematic:onSkipAnimationInput(actionName, state, arg3, arg4, isAnalog)
+  self.inputs.skipAnimation = state == 1
+  Log:info(string.format("onSkipAnimationInput : %s", tostring(self.inputs.skipAnimation)))
 end
 
 if g_specializationManager:getSpecializationByName("cabCinematicSpec") == nil then
@@ -147,4 +124,17 @@ for typeName, typeEntry in pairs(g_vehicleTypeManager:getTypes()) do
   end
 end
 
+local function registerPlayerActionEvents(self, superFunc, ...)
+  superFunc(self, ...)
+
+  local ok = g_inputBinding:registerActionEvent(InputAction.CAB_CINEMATIC_SKIP, CabCinematic,
+    CabCinematic.onSkipAnimationInput, true, true, false, true)
+
+  if not ok then
+    Log:error("Failed to register action event for CabCinematic")
+  end
+end
+
 VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
+PlayerInputComponent.registerGlobalPlayerActionEvents = Utils.overwrittenFunction(
+  PlayerInputComponent.registerGlobalPlayerActionEvents, registerPlayerActionEvents)

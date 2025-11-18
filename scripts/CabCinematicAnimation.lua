@@ -475,7 +475,7 @@ function CabCinematicAnimation:update(dt)
 
   self.camera:setPosition(cx, cy, cz)
 
-  if self.timer >= self.duration or CabCinematic.flags.skipAnimation then
+  if self.timer >= self.duration or CabCinematic:getIsSkipping() then
     self:stop()
   end
 end

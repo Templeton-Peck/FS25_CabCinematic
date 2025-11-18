@@ -52,6 +52,10 @@ function CabCinematicSpec:interact(superFunc, player)
     return
   end
 
+  if CabCinematic:getIsSkipping() then
+    return superFunc(self, player)
+  end
+
   pcall(function()
     executeConsoleCommand("cls")
   end)
@@ -79,6 +83,10 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, isControlling, playerS
 
   superFunc(self, isControlling, playerStyle, farmId, userId)
 
+  if CabCinematic:getIsSkipping() then
+    return
+  end
+
   if (not self:getIsAIActive()) then
     self.spec_enterable:deleteVehicleCharacter()
   end
@@ -101,6 +109,11 @@ function CabCinematicSpec:doLeaveVehicle(superFunc)
   if CabCinematic:getIsActive() then
     return
   end
+
+  if CabCinematic:getIsSkipping() then
+    return superFunc(self)
+  end
+
 
   pcall(function()
     executeConsoleCommand("cls")

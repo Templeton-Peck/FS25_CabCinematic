@@ -13,11 +13,11 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Allow free camera movement during cinematics
 - [x] Fix cinematics with moving vehicles
 - [x] Improve enter/interact trigger detection (currently too restrictive)
+- [x] Cinematic skipping keybind (`left alt` by default)
 - [ ] Add view bobbing to cinematics
 - [ ] Handle combine ladder animations properly
 - [ ] Third-person camera fix
 - [ ] Tab-switching fix
-- [ ] Cinematic skipping keybind
 
 ### V1
 

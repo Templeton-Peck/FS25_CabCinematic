@@ -16,13 +16,15 @@
 
   <iconFilename>icon.dds</iconFilename>
 
+  <l10n filenamePrefix="translations/translation" />
+
   <actions>
-    <action name="CAB_CINEMATIC_DEBUG" category="ONFOOT" axisType="HALF" />
+    <action name="CAB_CINEMATIC_SKIP" />
   </actions>
 
   <inputBinding>
-    <actionBinding action="CAB_CINEMATIC_DEBUG">
-      <binding device="KB_MOUSE_DEFAULT" input="KEY_j" />
+    <actionBinding action="CAB_CINEMATIC_SKIP">
+      <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt" />
     </actionBinding>
   </inputBinding>
 
