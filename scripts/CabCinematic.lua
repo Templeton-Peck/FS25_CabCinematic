@@ -82,10 +82,12 @@ function CabCinematic:draw()
       local wdx, wdy, wdz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleInteriorCameraPosition()))
       local dex, dey, dez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleDefaultExteriorPosition()))
       local aex, aey, aez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleAdjustedExteriorPosition()))
+      local clx, cly, clz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleCabLeftHitPosition()))
 
       DebugUtil.drawDebugGizmoAtWorldPos(wdx, wdy, wdz, 1, 0, 0, 0, 1, 0, "interiorCameraPosition")
       DebugUtil.drawDebugGizmoAtWorldPos(dex, dey, dez, 1, 0, 0, 0, 1, 0, "defaultExteriorPosition")
       DebugUtil.drawDebugGizmoAtWorldPos(aex, aey, aez, 1, 0, 0, 0, 1, 0, "adjustedExteriorPosition")
+      DebugUtil.drawDebugGizmoAtWorldPos(clx, cly, clz, 1, 0, 0, 0, 1, 0, "cabLeftHit")
     end
   end
 end

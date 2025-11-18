@@ -37,7 +37,7 @@ CabCinematicAnimation.PRESETS = {
       {
         type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
         y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
-        z = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = 1 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = 0.8 },
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,

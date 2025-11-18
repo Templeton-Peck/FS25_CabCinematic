@@ -1,6 +1,7 @@
 CabCinematicSpec = {}
 
 CabCinematicSpec.VEHICLE_INTERACT_DISTANCE = 3.0
+CabCinematicSpec.VEHICLE_RAYCAST_DISTANCE = 3.0
 
 local function getDistance(originNode, targetNode)
   if not originNode or originNode == 0 or not targetNode or targetNode == 0 then
@@ -30,6 +31,8 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getVehicleDefaultExteriorPosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleAdjustedExteriorPosition",
     CabCinematicSpec.getVehicleAdjustedExteriorPosition)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleCabLeftHitPosition",
+    CabCinematicSpec.getVehicleCabLeftHitPosition)
 end
 
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
@@ -175,26 +178,50 @@ function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
     return self.spec_cabCinematic.adjustedExteriorPosition
   end
 
-  local dist = 3.0
-  local ex, ey, ez = unpack(self:getVehicleDefaultExteriorPosition())
-  local sx, sy, sz = localToWorld(self.rootNode, ex, ey, ez)
-  local vx, vy, vz = localToWorld(self.rootNode, ex - dist, ey, ez)
+  local cabLeftHitPos = self:getVehicleCabLeftHitPosition()
+  local defaultExteriorPosition = self:getVehicleDefaultExteriorPosition()
+
+  local xOffset = 0.28
+  local yOffset = 0.0
+  local zOffset = 0.0
+
+  if (self.typeName == "combineDrivable" and self:getVehicleCategory() == "forageharvesters") then
+    zOffset = 0.2
+  end
+
+  self.spec_cabCinematic.adjustedExteriorPosition = {
+    cabLeftHitPos[1] + xOffset,
+    defaultExteriorPosition[2] + yOffset,
+    defaultExteriorPosition[3] + zOffset
+  }
+
+  return self.spec_cabCinematic.adjustedExteriorPosition
+end
+
+function CabCinematicSpec:getVehicleCabLeftHitPosition()
+  if self.spec_cabCinematic.cabLeftHitPosition ~= nil then
+    return self.spec_cabCinematic.cabLeftHitPosition
+  end
+
+  local dist = CabCinematicSpec.VEHICLE_RAYCAST_DISTANCE;
+  local cx, cy, cz = unpack(self:getVehicleInteriorCameraPosition())
+  local sx, sy, sz = localToWorld(self.rootNode, cx + dist, cy, cz)
+  local vx, vy, vz = localToWorld(self.rootNode, cx, cy, cz)
 
   local dx, dy, dz = vx - sx, vy - sy, vz - sz
   local len = math.sqrt(dx * dx + dy * dy + dz * dz)
-
   dx, dy, dz = dx / len, dy / len, dz / len
 
   local hit, hitX, hitY, hitZ = RaycastUtil.raycastClosest(sx, sy, sz, dx, dy, dz, dist, CollisionFlag.VEHICLE)
   if hit then
-    Log:info(string.format("Raycast hit at (%.2f, %.2f, %.2f)", hitX, hitY, hitZ))
-    self.spec_cabCinematic.adjustedExteriorPosition = { worldToLocal(self.rootNode, hitX, hitY, hitZ) }
+    Log:info(string.format("Cab left raycast hit at (%.2f, %.2f, %.2f)", hitX, hitY, hitZ))
+    self.spec_cabCinematic.cabLeftHitPosition = { worldToLocal(self.rootNode, hitX, hitY, hitZ) }
   else
-    Log:info("No raycast hit at")
-    self.spec_cabCinematic.adjustedExteriorPosition = { worldToLocal(self.rootNode, sx, sy, sz) }
+    Log:info("No cab left raycast hit")
+    self.spec_cabCinematic.cabLeftHitPosition = { worldToLocal(self.rootNode, sx, sy, sz) }
   end
 
-  return self.spec_cabCinematic.adjustedExteriorPosition
+  return self.spec_cabCinematic.cabLeftHitPosition
 end
 
 function CabCinematicSpec:onLoad()
@@ -203,5 +230,7 @@ function CabCinematicSpec:onLoad()
   spec.vehicleCategory          = nil
   spec.defaultExteriorPosition  = nil
   spec.adjustedExteriorPosition = nil
+  spec.interiorCameraPosition   = nil
+  spec.cabLeftHitPosition       = nil
   self.spec_cabCinematic        = spec
 end
