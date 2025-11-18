@@ -78,7 +78,14 @@ function CabCinematic:draw()
         g_currentMission.interactiveVehicleInRange or nil
     if vehicle ~= nil then
       DebugUtil.drawDebugNode(vehicle:getExitNode(), "exitNode")
-      DebugUtil.drawDebugNode(vehicle:getVehicleInteriorCamera().cameraPositionNode, "cameraPositionNode")
+
+      local wdx, wdy, wdz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleInteriorCameraPosition()))
+      local dex, dey, dez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleDefaultExteriorPosition()))
+      local aex, aey, aez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleAdjustedExteriorPosition()))
+
+      DebugUtil.drawDebugGizmoAtWorldPos(wdx, wdy, wdz, 1, 0, 0, 0, 1, 0, "interiorCameraPosition")
+      DebugUtil.drawDebugGizmoAtWorldPos(dex, dey, dez, 1, 0, 0, 0, 1, 0, "defaultExteriorPosition")
+      DebugUtil.drawDebugGizmoAtWorldPos(aex, aey, aez, 1, 0, 0, 0, 1, 0, "adjustedExteriorPosition")
     end
   end
 end

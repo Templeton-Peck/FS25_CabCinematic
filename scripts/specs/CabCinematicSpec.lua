@@ -23,6 +23,8 @@ end
 
 function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCamera", CabCinematicSpec.getVehicleInteriorCamera)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCameraPosition",
+    CabCinematicSpec.getVehicleInteriorCameraPosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCategory", CabCinematicSpec.getVehicleCategory)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleDefaultExteriorPosition",
     CabCinematicSpec.getVehicleDefaultExteriorPosition)
@@ -138,6 +140,23 @@ function CabCinematicSpec:getVehicleCategory()
   return self.spec_cabCinematic.vehicleCategory
 end
 
+function CabCinematicSpec:getVehicleInteriorCameraPosition()
+  if self.spec_cabCinematic.interiorCameraPosition ~= nil then
+    return self.spec_cabCinematic.interiorCameraPosition
+  end
+
+  local camera = self:getVehicleInteriorCamera()
+  if camera ~= nil then
+    local dx, dy, dz = getTranslation(camera.cameraPositionNode)
+    self.spec_cabCinematic.interiorCameraPosition = { localToLocal(getParent(camera.cameraPositionNode), self.rootNode,
+      dx, dy, dz) }
+  else
+    self.spec_cabCinematic.interiorCameraPosition = { 0, 0, 0 }
+  end
+
+  return self.spec_cabCinematic.interiorCameraPosition
+end
+
 function CabCinematicSpec:getVehicleDefaultExteriorPosition()
   if self.spec_cabCinematic.defaultExteriorPosition ~= nil then
     return self.spec_cabCinematic.defaultExteriorPosition
@@ -170,6 +189,9 @@ function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
   if hit then
     Log:info(string.format("Raycast hit at (%.2f, %.2f, %.2f)", hitX, hitY, hitZ))
     self.spec_cabCinematic.adjustedExteriorPosition = { worldToLocal(self.rootNode, hitX, hitY, hitZ) }
+  else
+    Log:info("No raycast hit at")
+    self.spec_cabCinematic.adjustedExteriorPosition = { worldToLocal(self.rootNode, sx, sy, sz) }
   end
 
   return self.spec_cabCinematic.adjustedExteriorPosition

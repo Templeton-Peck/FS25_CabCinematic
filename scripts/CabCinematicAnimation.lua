@@ -34,11 +34,6 @@ CabCinematicAnimation.PRESETS = {
       },
     },
     forageharvesters = {
-      -- {
-      --   type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
-      --   y = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = 0.2 },
-      --   x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
-      -- },
       {
         type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
         y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
@@ -179,7 +174,7 @@ function CabCinematicAnimation:getPresetStartPosition()
 end
 
 function CabCinematicAnimation:getPresetEndPosition()
-  return { getTranslation(self.vehicle:getVehicleInteriorCamera().cameraPositionNode) }
+  return self.vehicle:getVehicleInteriorCameraPosition()
 end
 
 function CabCinematicAnimation:getEnterAdjustmentKeyframeType()
@@ -277,15 +272,10 @@ function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
 
         if mode == CabCinematicAnimationKeyframe.MODES.ABSOLUTE then
           delta[axis] = value
-          Log:info(string.format("  %s: ABSOLUTE = %.2f", axis, delta[axis]))
         elseif mode == CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL then
           delta[axis] = totalDelta[axis] * (value / 100)
-          Log:info(string.format("  %s: PERCENT_TOTAL = %.2f pct of %.2f = %.2f", axis, value, totalDelta[axis],
-            delta[axis]))
         elseif mode == CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING then
           delta[axis] = remaining[axis] * (value / 100)
-          Log:info(string.format("  %s: PERCENT_REMAINING = %.2f pct of %.2f = %.2f", axis, value, remaining[axis],
-            delta[axis]))
         end
       end
     end
@@ -299,9 +289,6 @@ function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
       cur[2] + delta.y,
       cur[3] + delta.z
     }
-
-    Log:info(string.format("Keyframe %s: delta=(%.2f, %.2f, %.2f), remaining=(%.2f, %.2f, %.2f)",
-      kf.type, delta.x, delta.y, delta.z, remaining.x, remaining.y, remaining.z))
 
     local keyframe = CabCinematicAnimationKeyframe.new(
       kf.type,
@@ -494,14 +481,6 @@ function CabCinematicAnimation:update(dt)
 end
 
 function CabCinematicAnimation:drawDebug()
-  if (self.vehicle.spec_cabCinematic ~= nil) then
-    if self.vehicle.spec_cabCinematic.adjustedExteriorPosition ~= nil then
-      local hx, hy, hz = localToWorld(self.vehicle.rootNode,
-        unpack(self.vehicle.spec_cabCinematic.adjustedExteriorPosition))
-      DebugUtil.drawDebugGizmoAtWorldPos(hx, hy, hz, 1, 0, 0, 0, 1, 0, "hit")
-    end
-  end
-
   if self.keyframes ~= nil then
     for _, keyframe in ipairs(self.keyframes) do
       keyframe:drawDebug(self.vehicle.rootNode)
