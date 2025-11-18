@@ -1,22 +1,6 @@
 CabCinematicSpec = {}
 
-CabCinematicSpec.VEHICLE_INTERACT_DISTANCE = 3.0
 CabCinematicSpec.VEHICLE_RAYCAST_DISTANCE = 3.0
-
-local function getDistance(originNode, targetNode)
-  if not originNode or originNode == 0 or not targetNode or targetNode == 0 then
-    return math.huge
-  end
-
-  local ox, oy, oz = getWorldTranslation(originNode)
-  local tx, ty, tz = getWorldTranslation(targetNode)
-
-  local dx = tx - ox
-  local dy = ty - oy
-  local dz = tz - oz
-
-  return math.sqrt(dx * dx + dy * dy + dz * dz)
-end
 
 function CabCinematicSpec.prerequisitesPresent(specializations)
   return SpecializationUtil.hasSpecialization(Enterable, specializations)
@@ -35,100 +19,8 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getVehicleCabLeftHitPosition)
 end
 
-function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
-  SpecializationUtil.registerOverwrittenFunction(vehicleType, "interact", CabCinematicSpec.interact)
-  SpecializationUtil.registerOverwrittenFunction(vehicleType, "onPlayerEnterVehicle",
-    CabCinematicSpec.onPlayerEnterVehicle)
-  SpecializationUtil.registerOverwrittenFunction(vehicleType, "doLeaveVehicle",
-    CabCinematicSpec.doLeaveVehicle)
-end
-
 function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", CabCinematicSpec)
-end
-
-function CabCinematicSpec:interact(superFunc, player)
-  if CabCinematic:getIsActive() then
-    return
-  end
-
-  if CabCinematic:getIsSkipping() then
-    return superFunc(self, player)
-  end
-
-  pcall(function()
-    executeConsoleCommand("cls")
-  end)
-
-  Log:info(string.format("Player speed: %.2f", player:getSpeed()))
-
-  local exitNode = self:getExitNode()
-  local playerDistance = getDistance(player.rootNode, exitNode)
-  local isPlayerInVehicleExitNodeRange = playerDistance <= CabCinematicSpec.VEHICLE_INTERACT_DISTANCE
-
-  self.spec_cabCinematic.playerSnapshot = CabCinematicPlayerSnapshot.new(player)
-
-  Log:info(string.format("CabCinematicSpec:interact - Distance: %.2fm", playerDistance))
-
-  if isPlayerInVehicleExitNodeRange then
-    return superFunc(self, player)
-  end
-end
-
-function CabCinematicSpec:onPlayerEnterVehicle(superFunc, isControlling, playerStyle, farmId, userId)
-  Log:info("CabCinematicSpec:onPlayerEnterVehicle called")
-  if CabCinematic:getIsActive() then
-    return
-  end
-
-  superFunc(self, isControlling, playerStyle, farmId, userId)
-
-  if CabCinematic:getIsSkipping() then
-    return
-  end
-
-  if (not self:getIsAIActive()) then
-    self.spec_enterable:deleteVehicleCharacter()
-  end
-
-  return CabCinematic:startEnterAnimation(self, self.spec_cabCinematic.playerSnapshot, function()
-    Log:info("CabCinematicSpec:onPlayerEnterVehicle finish callback called")
-    if (not self:getIsAIActive()) then
-      self.spec_enterable:restoreVehicleCharacter()
-    end
-
-
-    return self:setActiveCameraIndex(self.spec_enterable.camIndex)
-  end);
-end
-
-function CabCinematicSpec:doLeaveVehicle(superFunc)
-  -- return superFunc(self)
-
-  Log:info("CabCinematicSpec:doLeaveVehicle called")
-  if CabCinematic:getIsActive() then
-    return
-  end
-
-  if CabCinematic:getIsSkipping() then
-    return superFunc(self)
-  end
-
-
-  pcall(function()
-    executeConsoleCommand("cls")
-  end)
-
-  if (not self:getIsAIActive()) then
-    self.spec_enterable:deleteVehicleCharacter()
-  end
-
-  return CabCinematic:startLeaveAnimation(self, function()
-    if (not self:getIsAIActive()) then
-      self.spec_enterable:restoreVehicleCharacter()
-    end
-    return superFunc(self)
-  end)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()
@@ -220,12 +112,10 @@ function CabCinematicSpec:getVehicleCabLeftHitPosition()
   local cx, cy, cz = unpack(self:getVehicleInteriorCameraPosition())
   local sx, sy, sz = localToWorld(self.rootNode, cx + dist, cy, cz)
   local vx, vy, vz = localToWorld(self.rootNode, cx, cy, cz)
-
-  local dx, dy, dz = vx - sx, vy - sy, vz - sz
-  local len = math.sqrt(dx * dx + dy * dy + dz * dz)
-  dx, dy, dz = dx / len, dy / len, dz / len
+  local dx, dy, dz = MathUtil.vector3Normalize(vx - sx, vy - sy, vz - sz)
 
   local hit, hitX, hitY, hitZ = RaycastUtil.raycastClosest(sx, sy, sz, dx, dy, dz, dist, CollisionFlag.VEHICLE)
+
   if hit then
     Log:info(string.format("Cab left raycast hit at (%.2f, %.2f, %.2f)", hitX, hitY, hitZ))
     self.spec_cabCinematic.cabLeftHitPosition = { worldToLocal(self.rootNode, hitX, hitY, hitZ) }
@@ -239,7 +129,6 @@ end
 
 function CabCinematicSpec:onLoad()
   local spec                    = {}
-  spec.playerSnapshot           = nil
   spec.vehicleCategory          = nil
   spec.defaultExteriorPosition  = nil
   spec.adjustedExteriorPosition = nil
