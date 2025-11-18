@@ -5,7 +5,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 
 ## TODO
 
-### V1
+### BETA
 
 - [x] Enter/leave cinematics game hook
 - [x] Cinematic system with keyframes
@@ -13,12 +13,15 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Allow free camera movement during cinematics
 - [x] Fix cinematics with moving vehicles
 - [x] Improve enter/interact trigger detection (currently too restrictive)
-- [ ] Implement vehicle freezing during cinematics
 - [ ] Add view bobbing to cinematics
 - [ ] Handle combine ladder animations properly
 - [ ] Third-person camera fix
 - [ ] Tab-switching fix
 - [ ] Cinematic skipping keybind
+
+### V1
+
+- [ ] Implement vehicle freezing during cinematics
 - [ ] Cinematics for all vehicle types
 - [ ] modDesc icon
 - [ ] Code cleanup
@@ -32,6 +35,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [ ] Horse support
 - [ ] Bike support
 - [ ] Multiplayer support (requires help and testing)
+- [ ] Full Interactive Control (IC) support
 
 ## Acknowledgements
 
