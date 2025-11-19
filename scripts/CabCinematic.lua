@@ -77,16 +77,26 @@ function CabCinematic:draw()
         g_currentMission.interactiveVehicleInRange or nil
     if vehicle ~= nil then
       DebugUtil.drawDebugNode(vehicle:getExitNode(), "exitNode")
+      DebugUtil.drawDebugNode(vehicle.spec_drivable.steeringWheel.node, "steeringAxleNode")
 
       local wdx, wdy, wdz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleInteriorCameraPosition()))
       local dex, dey, dez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleDefaultExteriorPosition()))
       local aex, aey, aez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleAdjustedExteriorPosition()))
-      local clx, cly, clz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleCabLeftHitPosition()))
+
+      local positions = vehicle:getVehicleCabHitPositions()
+
+      local cfx, cfy, cfz = localToWorld(vehicle.rootNode, unpack(positions.front))
+      local clx, cly, clz = localToWorld(vehicle.rootNode, unpack(positions.left))
+      local crx, cry, crz = localToWorld(vehicle.rootNode, unpack(positions.right))
+      local ccx, ccy, ccz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleCabCenterPosition()))
 
       DebugUtil.drawDebugGizmoAtWorldPos(wdx, wdy, wdz, 1, 0, 0, 0, 1, 0, "interiorCameraPosition")
       DebugUtil.drawDebugGizmoAtWorldPos(dex, dey, dez, 1, 0, 0, 0, 1, 0, "defaultExteriorPosition")
       DebugUtil.drawDebugGizmoAtWorldPos(aex, aey, aez, 1, 0, 0, 0, 1, 0, "adjustedExteriorPosition")
+      DebugUtil.drawDebugGizmoAtWorldPos(cfx, cfy, cfz, 1, 0, 0, 0, 1, 0, "cabFrontHit")
       DebugUtil.drawDebugGizmoAtWorldPos(clx, cly, clz, 1, 0, 0, 0, 1, 0, "cabLeftHit")
+      DebugUtil.drawDebugGizmoAtWorldPos(crx, cry, crz, 1, 0, 0, 0, 1, 0, "cabRightHit")
+      DebugUtil.drawDebugGizmoAtWorldPos(ccx, ccy, ccz, 1, 0, 0, 0, 1, 0, "cabCenterPosition")
     end
   end
 end

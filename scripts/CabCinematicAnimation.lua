@@ -19,6 +19,11 @@ CabCinematicAnimation.TYPES = {
   LEAVE = "leave",
 }
 
+CabCinematicAnimation.RELATIVE_POSITIONS = {
+  DEFAULT = "default",
+  CAB_SIDE_LEFT = "cabSideLeft",
+}
+
 CabCinematicAnimation.PRESETS = {
   combineDrivable = {
     harvesters = {
@@ -57,11 +62,15 @@ CabCinematicAnimation.PRESETS = {
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,
-        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.5 },
+        x = {
+          mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING,
+          value = 100,
+          relative = CabCinematicAnimation.RELATIVE_POSITIONS.CAB_SIDE_LEFT,
+        },
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,
-        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 115 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,
@@ -69,6 +78,32 @@ CabCinematicAnimation.PRESETS = {
         z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
       },
     },
+  },
+  combineCutterFruitPreparer = {
+    beetharvesters = {
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 100 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = {
+          mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING,
+          value = 100,
+          relative = CabCinematicAnimation.RELATIVE_POSITIONS.CAB_SIDE_LEFT,
+        },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+      },
+      {
+        type = CabCinematicAnimationKeyframe.TYPES.WALK,
+        x = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+        z = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING, value = 100 },
+      },
+    }
   },
   tractor = {
     tractorss = {
@@ -249,17 +284,7 @@ function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
   local keyframes = {}
   local cur = { startPosition[1], startPosition[2], startPosition[3] }
 
-  local totalDelta = {
-    x = endPosition[1] - startPosition[1],
-    y = endPosition[2] - startPosition[2],
-    z = endPosition[3] - startPosition[3]
-  }
-
-  local remaining = {
-    x = totalDelta.x,
-    y = totalDelta.y,
-    z = totalDelta.z
-  }
+  local cabSidePosition = self.vehicle:getVehicleCabSidePosition()
 
   for _, kf in ipairs(vehiclePreset) do
     local delta = { x = 0, y = 0, z = 0 }
@@ -269,20 +294,28 @@ function CabCinematicAnimation:buildPresetKeyframes(startPosition, endPosition)
         local axisConfig = kf[axis]
         local mode = axisConfig.mode
         local value = axisConfig.value
+        local relative = axisConfig.relative or CabCinematicAnimation.RELATIVE_POSITIONS.DEFAULT
+        local offset = axisConfig.offset or 0.0
+
+        local relativePos = relative == CabCinematicAnimation.RELATIVE_POSITIONS.DEFAULT and endPosition or
+            cabSidePosition
+        local axisIndex = axis == 'x' and 1 or (axis == 'y' and 2 or 3)
+        local targetValue = relativePos[axisIndex]
+
+        local totalDeltaForAxis = targetValue - startPosition[axisIndex]
+        local remainingForAxis = targetValue - cur[axisIndex]
 
         if mode == CabCinematicAnimationKeyframe.MODES.ABSOLUTE then
           delta[axis] = value
         elseif mode == CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL then
-          delta[axis] = totalDelta[axis] * (value / 100)
+          delta[axis] = totalDeltaForAxis * (value / 100)
         elseif mode == CabCinematicAnimationKeyframe.MODES.PERCENT_REMAINING then
-          delta[axis] = remaining[axis] * (value / 100)
+          delta[axis] = remainingForAxis * (value / 100)
         end
+
+        delta[axis] = delta[axis] + offset
       end
     end
-
-    remaining.x = remaining.x - delta.x
-    remaining.y = remaining.y - delta.y
-    remaining.z = remaining.z - delta.z
 
     local nextPos = {
       cur[1] + delta.x,
