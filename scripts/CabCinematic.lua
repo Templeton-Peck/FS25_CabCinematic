@@ -1,19 +1,20 @@
-CabCinematic = Mod:init()
-CabCinematic.camera = CabCinematicCamera.new()
-CabCinematic.cinematicAnimation = nil
-CabCinematic.vehicle = nil
-CabCinematic.finishCallback = nil
-CabCinematic.inputEventIds = {
-  skipAnimation = nil,
-}
-CabCinematic.inputStates = {
-  skipAnimation = false,
-}
-CabCinematic.flags = {
-  skipAnimation = false,
-  debug = false
-}
-CabCinematic.debugAnimation = nil
+CabCinematic = Mod:init({
+  camera = CabCinematicCamera.new(),
+  cinematicAnimation = nil,
+  vehicle = nil,
+  finishCallback = nil,
+  inputEventIds = {
+    skipAnimation = nil,
+  },
+  inputStates = {
+    skipAnimation = false,
+  },
+  flags = {
+    skipAnimation = false,
+    debug = false
+  },
+  debugAnimation = nil,
+})
 
 CabCinematic.VEHICLE_INTERACT_DISTANCE = 3.0
 
@@ -122,6 +123,32 @@ function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccPauseAnimation", "Pause animation", "onPauseAnimationConsoleCommand", self)
   addConsoleCommand("ccSkipAnimation", "Skip animation", "onSkipAnimationConsoleCommand", self)
   addConsoleCommand("ccDebug", "Debug animation", "onDebugConsoleCommand", self)
+end
+
+function CabCinematic:delete()
+  removeConsoleCommand("ccPauseAnimation")
+  removeConsoleCommand("ccSkipAnimation")
+  removeConsoleCommand("ccDebug")
+
+  if self.camera ~= nil then
+    self.camera:delete()
+    self.camera = nil
+  end
+
+  if self.inputEventIds.skipAnimation ~= nil then
+    g_inputBinding:removeActionEvent(self.inputEventIds.skipAnimation)
+    self.inputEventIds.skipAnimation = nil
+  end
+
+  if self.cinematicAnimation ~= nil then
+    self.cinematicAnimation:delete()
+    self.cinematicAnimation = nil
+  end
+
+  if self.debugAnimation ~= nil then
+    self.debugAnimation:delete()
+    self.debugAnimation = nil
+  end
 end
 
 function CabCinematic:onPauseAnimationConsoleCommand()
@@ -280,27 +307,32 @@ function CabCinematic.onEnterOrLeaveCombine(combine, superFunc, ...)
   return superFunc(combine, ...)
 end
 
-VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
-PlayerInputComponent.registerGlobalPlayerActionEvents = Utils.overwrittenFunction(
-  PlayerInputComponent.registerGlobalPlayerActionEvents, CabCinematic.registerPlayerActionEvents)
-PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
-  CabCinematic.onPlayerEnterVehicle)
-Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
-Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch,
-  CabCinematic.onPlayerSwitchVehicleCamera)
-Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematic.onEnterOrLeaveCombine)
-Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematic.onEnterOrLeaveCombine)
+local function init()
+  VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
+  PlayerInputComponent.registerGlobalPlayerActionEvents = Utils.overwrittenFunction(
+    PlayerInputComponent.registerGlobalPlayerActionEvents, CabCinematic.registerPlayerActionEvents)
+  PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
+    CabCinematic.onPlayerEnterVehicle)
+  Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
+  Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch,
+    CabCinematic.onPlayerSwitchVehicleCamera)
+  Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematic.onEnterOrLeaveCombine)
+  Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematic.onEnterOrLeaveCombine)
 
-if g_specializationManager:getSpecializationByName("cabCinematicSpec") == nil then
-  g_specializationManager:addSpecialization("cabCinematicSpec", "CabCinematicSpec",
-    Utils.getFilename("scripts/specs/CabCinematicSpec.lua", CabCinematic.dir), nil)
-end
+  if g_specializationManager:getSpecializationByName("cabCinematicSpec") == nil then
+    g_specializationManager:addSpecialization("cabCinematicSpec", "CabCinematicSpec",
+      Utils.getFilename("scripts/specs/CabCinematicSpec.lua", CabCinematic.dir), nil)
+  end
 
-for typeName, typeEntry in pairs(g_vehicleTypeManager:getTypes()) do
-  if typeEntry ~= nil and SpecializationUtil.hasSpecialization(Enterable, typeEntry.specializations) then
-    if not SpecializationUtil.hasSpecialization(CabCinematicSpec, typeEntry.specializations) then
-      Log:info(string.format("[CabCinematicSpec] Add spec to '%s'", typeName))
-      g_vehicleTypeManager:addSpecialization(typeName, CabCinematic.name .. ".cabCinematicSpec")
+  for typeName, typeEntry in pairs(g_vehicleTypeManager:getTypes()) do
+    if typeEntry ~= nil and SpecializationUtil.hasSpecialization(Enterable, typeEntry.specializations) then
+      if not SpecializationUtil.hasSpecialization(CabCinematicSpec, typeEntry.specializations) then
+        Log:info(string.format("[CabCinematicSpec] Add spec to '%s'", typeName))
+        g_vehicleTypeManager:addSpecialization(typeName, CabCinematic.name .. ".cabCinematicSpec")
+      end
     end
   end
 end
+
+
+init()

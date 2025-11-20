@@ -2,8 +2,8 @@
 
 ModHelper (Weezls Mod Lib for FS22) - Simplifies the creation of script based mods for FS22
 
-This utility class acts as a wrapper for Farming Simulator script based mods. It hels with setting up the mod up and 
-acting as a "bootstrapper" for the main mod class/table. It also add additional utility functions for sourcing additonal files, 
+This utility class acts as a wrapper for Farming Simulator script based mods. It hels with setting up the mod up and
+acting as a "bootstrapper" for the main mod class/table. It also add additional utility functions for sourcing additonal files,
 manage user settings, assist debugging etc.
 
 See ModHelper.md (search my GitHub page for it since Giants won't allow "links" in the scripts) for documentation and more details.
@@ -17,9 +17,9 @@ v2.0        FS22 version
 v1.0        Initial public release
 
 License:    CC BY-NC-SA 4.0
-This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or 
+This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or
 format for noncommercial purposes only, and only so long as attribution is given to the creator.
-If you remix, adapt, or build upon the material, you must license the modified material under identical terms. 
+If you remix, adapt, or build upon the material, you must license the modified material under identical terms.
 
 ]]
 
@@ -49,92 +49,14 @@ function YourModName:update(dt) end -- Looped as long game is running (CAUTION! 
 
 ]]
 
-local deprecatedMessages = {}
-local function deprecated(functionName, replacementMessage, justOnce)
-    justOnce = justOnce or false
-    if justOnce and deprecatedMessages[functionName] then
-        return
-    end
-    printWarning(string.format("WARNING: [DEPRECATED] Function '%s' is marked as deprecated, please use %s instead", functionName, replacementMessage))
-    deprecatedMessages[functionName] = true
-end
-
--- This will create the "Mod" base class (and effectively reset any previous references to other mods) 
+-- This will create the "Mod" base class (and effectively reset any previous references to other mods)
 Mod = {
-
     debugMode = false,
-
-    -- printInternal = function(self, category, message, ...)
-    --     message = (message ~= nil and message:format(...)) or ""
-    --     if category ~= nil and category ~= "" then
-    --         category = string.format(" %s:", category)
-    --     else
-    --         category = ""
-    --     end
-    --     print(string.format("[%s]%s %s", self.title, category, tostring(message)))
-    -- end,
-
-    -- printDebug = function(self, message, ...)
-    --     deprecated("Mod:printDebug()", "Log:debug()", true)
-    --     printCallstack()
-    --     if self.debugMode == true then
-    --         self:printInternal("DEBUG", message, ...)
-    --     end
-    -- end,
-
-    -- printDebugVar = function(self, name, variable)
-    --     deprecated("Mod:printDebugVar()", "Log:var()", true)
-    --     if self.debugMode ~= true then
-    --         return
-    --     end
-
-    --     -- local tt1 = (val or "")
-    --     local valType = type(variable)
-    
-    --     if valType == "string" then
-    --         variable = string.format( "'%s'", variable )
-    --     end
-    
-    --     local text = string.format( "%s=%s [@%s]", name, tostring(variable), valType )
-    --     self:printInternal("DBGVAR", text)
-    -- end,
-    
-    -- printWarning = function(self, message, ...)
-    --     deprecated("Mod:printWarning()", "Log:warning()", true)
-    --     self:printInternal("Warning", message, ...)
-    -- end,
-
-    -- printError = function(self, message, ...)
-    --     deprecated("Mod:printError()", "Log:error()", true)
-    --     self:printInternal("Error", message, ...)
-    -- end,
-
-    -- getIsMultiplayer = function(self) return g_currentMission.missionDynamicInfo.isMultiplayer end,
-    getIsServer = function(self) return g_currentMission.getIsServer() end,
-    getIsClient = function(self) return g_currentMission.getIsClient() end,
-    -- getIsDedicatedServer = function(self) return not self:getIsClient() and self:getIsServer() end, --g_dedicatedServer
-    -- getIsMasterUser = function(self) return g_currentMission.isMasterUser end,
-    -- getHasFarmAdminAccess = function(self) return g_currentMission:getHasPlayerPermission("farmManager") end,
-    -- getIsValidFarmManager = function(self) return g_currentMission.player ~= nil and self:getHasFarmAdminAccess() and g_currentMission.player.farmId ~= FarmManager.SPECTATOR_FARM_ID end,
 }
-Mod_MT = {
-}
-
--- SubModule = {
---     printInfo = function(message, ...) Mod:printInfo(message, ...) end,
---     printDebug = function(message, ...) Mod:printDebug(message) end,
---     printDebugVar = function(name, variable) Mod:printDebugVar(name, variable) end,
---     printWarning = function(message, ...) Mod:printWarning(message) end,
---     printError = function(message, ...) Mod:printError(message) end,
---     parent = nil,
--- }
--- SubModule_MT = {
--- }
 
 local function getTrueGlobalG()
     return getmetatable(_G).__index
 end
-
 
 
 -- Set initial values for the global Mod object/"class"
@@ -153,29 +75,12 @@ Mod.env.g_currentModName = Mod.name
 Mod.env.g_currentModDirectory = Mod.dir
 
 
-
 local modDescXML = loadXMLFile("modDesc", Mod.dir .. "modDesc.xml");
 Mod.title = getXMLString(modDescXML, "modDesc.title.en");
 Mod.author = getXMLString(modDescXML, "modDesc.author");
 Mod.version = getXMLString(modDescXML, "modDesc.version");
--- Mod.author = Mod.mod.author
--- Mod.version = Mod.mod.version
+
 delete(modDescXML);
-
--- function Mod:printInfo(message, ...)
---     deprecated("Mod:printInfo()", "Log:info()", true)
-
---     self:printInternal("", message, ...)
--- end
-
-
-
--- Local aliases for convinience
--- local function printInfo(message) Mod:printInfo(message) end
--- local function printDebug(message) Mod:printDebug(message) end
--- local function printDebugVar(name, variable) Mod:printDebugVar(name, variable) end
--- local function printWarning(message) Mod:printWarning(message) end
--- local function printError(message) Mod:printError(message) end
 
 
 -- Helper functions
@@ -201,12 +106,13 @@ function ModSettings:new(mod)
     newModSettings.__mod = mod;
     return newModSettings;
 end
+
 function ModSettings:init(name, defaultSettingsFileName, userSettingsFileName)
     if not validateParam(name, "string", "Parameter 'name' (#1) is mandatory and must contain a non-empty string") then
         return;
     end
 
-    if defaultSettingsFileName == nil or type(defaultSettingsFileName) ~= "string" then 
+    if defaultSettingsFileName == nil or type(defaultSettingsFileName) ~= "string" then
         self.__mod.printError("Parameter 'defaultSettingsFileName' (#2) is mandatory and must contain a filename");
         return;
     end
@@ -226,6 +132,7 @@ function ModSettings:init(name, defaultSettingsFileName, userSettingsFileName)
 
     return self;
 end
+
 function ModSettings:load(callback)
     if not validateParam(callback, "function", "Parameter 'callback' (#1) is mandatory and must contain a valid callback function") then
         return;
@@ -236,7 +143,8 @@ function ModSettings:load(callback)
     local xmlNodeName = self._config.xmlNodeName or "settings"
 
     if defaultSettingsFile == "" or userSettingsFile == "" then
-        self.__mod.printError("Cannot load settings, neither a user settings nor a default settings file was supplied. Nothing to read settings from.");
+        self.__mod.printError(
+            "Cannot load settings, neither a user settings nor a default settings file was supplied. Nothing to read settings from.");
         return;
     end
 
@@ -251,28 +159,31 @@ function ModSettings:load(callback)
         local xmlReader = {
             xmlFile = xmlFile,
             xmlNodeName = xmlNodeName,
-            
+
             getKey = function(self, categoryName, valueName)
                 local xmlKey = self.xmlNodeName
 
-                
-                if categoryName ~= nil and categoryName ~= "" then 
+
+                if categoryName ~= nil and categoryName ~= "" then
                     xmlKey = xmlKey .. "." .. categoryName
                 end
 
                 xmlKey = xmlKey .. "." .. valueName
-                
+
                 return xmlKey
             end,
 
             readBool = function(self, categoryName, valueName, defaultValue)
-                return Utils.getNoNil(getXMLBool(self.xmlFile, self:getKey(categoryName, valueName)), defaultValue or false)
+                return Utils.getNoNil(getXMLBool(self.xmlFile, self:getKey(categoryName, valueName)),
+                    defaultValue or false)
             end,
             readFloat = function(self, categoryName, valueName, defaultValue)
-                return Utils.getNoNil(getXMLFloat(self.xmlFile, self:getKey(categoryName, valueName)), defaultValue or 0.0)
+                return Utils.getNoNil(getXMLFloat(self.xmlFile, self:getKey(categoryName, valueName)),
+                    defaultValue or 0.0)
             end,
             readString = function(self, categoryName, valueName, defaultValue)
-                return Utils.getNoNil(getXMLString(self.xmlFile, self:getKey(categoryName, valueName)), defaultValue or "")
+                return Utils.getNoNil(getXMLString(self.xmlFile, self:getKey(categoryName, valueName)),
+                    defaultValue or "")
             end,
 
         }
@@ -286,9 +197,7 @@ function ModSettings:load(callback)
     if fileExists(userSettingsFile) then
         executeXmlReader(xmlNodeName, userSettingsFile, callback);
     end
-
 end
-
 
 function ModSettings:save(callback)
     if not validateParam(callback, "function", "Parameter 'callback' (#1) is mandatory and must contain a valid callback function") then
@@ -318,17 +227,17 @@ function ModSettings:save(callback)
         local xmlWriter = {
             xmlFile = xmlFile,
             xmlNodeName = xmlNodeName,
-            
+
             getKey = function(self, categoryName, valueName)
                 local xmlKey = self.xmlNodeName
 
-                
-                if categoryName ~= nil and categoryName ~= "" then 
+
+                if categoryName ~= nil and categoryName ~= "" then
                     xmlKey = xmlKey .. "." .. categoryName
                 end
 
                 xmlKey = xmlKey .. "." .. valueName
-                
+
                 return xmlKey
             end,
 
@@ -356,11 +265,10 @@ function ModSettings:save(callback)
     return self
 end
 
-
 function Mod:source(file)
     source(self.dir .. file);
     return self; -- Return self to keep the "chain" (fluent)
-end--function
+end              --function
 
 function Mod:trySource(file, silentFail)
     local filename = self.dir .. file
@@ -373,30 +281,17 @@ function Mod:trySource(file, silentFail)
         self:printWarning("Failed to load sourcefile '" .. filename .. "'")
     end
     return self; -- Return self to keep the "chain" (fluent)
-end--function
+end              --function
 
-function Mod:init()
-    local newMod = self:new();
+function Mod:init(properties)
+    local newMod = self:new(properties);
 
     addModEventListener(newMod);
 
     print(string.format("Load mod: %s (v%s) by %s", newMod.title, newMod.version, newMod.author))
 
     return newMod;
-end--function
-
-
-function Mod:isServerAdmin()
-    deprecated("isServerAdmin()", "getIsServerAdmin()")
-
-    return self:getIsServerAdmin()
-end
-
-function Mod:isFarmAdmin()
-    deprecated("isFarmAdmin()", "getIsFarmAdmin()")
-
-    return self:getIsServerAdmin()
-end
+end --function
 
 ---Check if the game is in multiplayer mode
 ---@return boolean "True if the game is in multiplayer mode, otherwise false"
@@ -408,19 +303,8 @@ function Mod:getIsDedicatedServer()
     return (not self:getIsClient() and self:getIsServer()) or g_dedicatedServer ~= nil
 end
 
-function Mod:getHasFarmAdminAccess()
-    deprecated("getHasFarmAdminAccess()", "getIsFarmAdmin()")
-    return self:getIsFarmAdmin()
-end
-
-function  Mod:getIsValidFarmManager()
-    deprecated("getIsValidFarmManager()", "getIsFarmAdmin()")
-
-    return self:getIsFarmAdmin()
-end
-
 function Mod:getIsMasterUser()
-    return g_currentMission.isMasterUser    
+    return g_currentMission.isMasterUser
 end
 
 ---Checks if the player is in spectator mode (i.e. not associated with a farm)
@@ -438,9 +322,9 @@ end
 --- Checks if the player is a farm admin
 ---@return boolean "True if the player is associated with a farm, and the player also has been promoted to farm admin for that farm, otherwise false"
 function Mod:getIsFarmAdmin()
-    local isSpectatorFarm = self:getIsSpectatorFarm()    
+    local isSpectatorFarm = self:getIsSpectatorFarm()
     local currentFarm = not isSpectatorFarm and g_farmManager:getFarmById(g_localPlayer.farmId) or nil
-    
+
     return (not isSpectatorFarm and currentFarm ~= nil and currentFarm:isUserFarmManager(g_localPlayer.userId)) or false
 end
 
@@ -457,21 +341,10 @@ function Mod:getCurrentPlayer()
     -- return g_currentMission.playerSystem.playersByUserId[g_currentMission.playerUserId]
 end
 
-
 function Mod:getCurrentFarm()
     local farmId = g_localPlayer.farmId or FarmManager.SPECTATOR_FARM_ID
     return g_farmManager:getFarmById(farmId)
 end
-
-function Mod:enableDebugMode()
-    deprecated("enableDebugMode()", "Log class")
-
-    self.debugMode = true
-
-    self:printDebug("Debug mode enabled")
-
-    return self; -- Return self to keep the "chain" (fluent)
-end--function
 
 function Mod:loadSound(name, fileName)
     local newSound = createSample(name)
@@ -479,8 +352,8 @@ function Mod:loadSound(name, fileName)
     return newSound
 end
 
-function Mod:new()
-    local newMod = {}
+function Mod:new(properties)
+    local newMod = properties or {}
 
     setmetatable(newMod, self)
     self.__index = self
@@ -502,59 +375,66 @@ function Mod:new()
     --     newMod.startMission(newMod, ...)
     -- end);
 
-    FSBaseMission.onStartMission = Utils.appendedFunction(FSBaseMission.onStartMission, function(baseMission, ...) 
+    FSBaseMission.onStartMission = Utils.appendedFunction(FSBaseMission.onStartMission, function(baseMission, ...)
         if newMod.startMission ~= nil and type(newMod.startMission) == "function" then
             newMod:startMission(baseMission, ...)
         end
     end)
 
-    FSBaseMission.onStartMission = Utils.prependedFunction(FSBaseMission.onStartMission, function(baseMission, ...) 
+    FSBaseMission.onStartMission = Utils.prependedFunction(FSBaseMission.onStartMission, function(baseMission, ...)
         if newMod.beforeStartMission ~= nil and type(newMod.beforeStartMission) == "function" then
             newMod:beforeStartMission(baseMission, ...)
         end
     end)
 
-    -- Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, function(mission00, ...) 
+    -- Mission00.loadMission00Finished = Utils.appendedFunction(Mission00.loadMission00Finished, function(mission00, ...)
     --     if newMod.missionLoaded ~= nil and type(newMod.missionLoaded) == "function" then
     --         newMod:missionLoaded(mission00, ...)
     --     end
     -- end)
 
-    FSBaseMission.load = Utils.appendedFunction(FSBaseMission.load, function(baseMission, ...) 
+    FSBaseMission.load = Utils.appendedFunction(FSBaseMission.load, function(baseMission, ...)
         if newMod.load ~= nil and type(newMod.load) == "function" then
             newMod:load(baseMission, ...)
         end
     end)
 
 
-    FSBaseMission.initialize = Utils.appendedFunction(FSBaseMission.initialize, function(baseMission, ...) 
+    FSBaseMission.initialize = Utils.appendedFunction(FSBaseMission.initialize, function(baseMission, ...)
         if newMod.initMission ~= nil and type(newMod.initMission) == "function" then
             newMod:initMission(baseMission, ...)
         end
     end)
 
-    FSBaseMission.loadMap = Utils.prependedFunction(FSBaseMission.loadMap, function(baseMission, ...) 
+    FSBaseMission.loadMap = Utils.prependedFunction(FSBaseMission.loadMap, function(baseMission, ...)
         if newMod.beforeLoadMap ~= nil and type(newMod.beforeLoadMap) == "function" then
             newMod:beforeLoadMap(baseMission, ...)
         end
     end)
 
-    FSBaseMission.loadMap = Utils.appendedFunction(FSBaseMission.loadMap, function(baseMission, ...) 
+    FSBaseMission.loadMap = Utils.appendedFunction(FSBaseMission.loadMap, function(baseMission, ...)
         if newMod.afterLoadMap ~= nil and type(newMod.afterLoadMap) == "function" then
             newMod:afterLoadMap(baseMission, ...)
         end
     end)
 
 
-    FSBaseMission.loadMapFinished = Utils.prependedFunction(FSBaseMission.loadMapFinished, function(baseMission, ...) 
+    FSBaseMission.loadMapFinished = Utils.prependedFunction(FSBaseMission.loadMapFinished, function(baseMission, ...)
         if newMod.loadMapFinished ~= nil and type(newMod.loadMapFinished) == "function" then
             newMod:loadMapFinished(baseMission, ...)
         end
     end)
 
-    FSBaseMission.loadMapFinished = Utils.appendedFunction(FSBaseMission.loadMapFinished, function(baseMission, ...) 
+    FSBaseMission.loadMapFinished = Utils.appendedFunction(FSBaseMission.loadMapFinished, function(baseMission, ...)
         if newMod.afterLoadMapFinished ~= nil and type(newMod.afterLoadMapFinished) == "function" then
             newMod:afterLoadMapFinished(baseMission, ...)
+        end
+    end)
+
+
+    FSBaseMission.delete = Utils.appendedFunction(FSBaseMission.delete, function(baseMission, ...)
+        if newMod.delete ~= nil and type(newMod.delete) == "function" then
+            newMod:delete(baseMission, ...)
         end
     end)
 
@@ -577,7 +457,7 @@ function Mod:new()
     end)
 
     return newMod;
-end--function
+end --function
 
 -- function SubModule:new(parent, table)
 --     local newSubModule = table or {}
@@ -598,7 +478,6 @@ end--function
 ---@param modName string The name of the mod/zip-file
 ---@param envName string (Optional)The environment name to check for
 function Mod:getIsModActive(modName, envName)
-
     if modName == nil and envName == nil then
         return false
     end
@@ -616,7 +495,6 @@ function Mod:getIsModActive(modName, envName)
     envCheck = (envName == nil) or (getfenv(0)[envName] ~= nil)
 
     return modNameCheck and envCheck
-
 end
 
 -- function Mod:getIsSeasonsActive()
@@ -642,18 +520,6 @@ function ModHelper.getModEnvironment(name)
     return getTrueGlobalG()[name]
 end
 
-function ModHelper.getIsMaizePlusActive()
-    return ModHelper.isModActive("FS22_MaizePlus")
-end
-
-function ModHelper.isMaizePlusForageActive()
-    return ModHelper.isModActive("FS22_MaizePlus_forageExtension")
-end
-
-function ModHelper.isMaizePlusAnimalFoodAdditionsActive()
-    return ModHelper.isModActive("FS22_maizePlus_animalFoodAdditions")
-end
-
 ---comment
 ---@param scope integer|string
 ---@param trueG boolean
@@ -670,4 +536,3 @@ function ModHelper.getfenv(scope, trueG)
         return tempObject
     end
 end
-

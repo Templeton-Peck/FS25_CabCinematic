@@ -21,6 +21,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 
 ### V1
 
+- [ ] Better seat animations
 - [ ] Implement vehicle freezing during cinematics
 - [ ] Cinematics for all vehicle types
 - [ ] modDesc icon
