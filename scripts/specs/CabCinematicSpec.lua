@@ -33,6 +33,7 @@ end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", CabCinematicSpec)
+  SpecializationUtil.registerEventListener(vehicleType, "onDelete", CabCinematicSpec)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()
@@ -241,4 +242,12 @@ function CabCinematicSpec:onLoad()
   spec.interiorCameraPosition   = nil
   spec.cabHitPositions          = nil
   self.spec_cabCinematic        = spec
+end
+
+function CabCinematicSpec:onDelete()
+  self.spec_cabCinematic.vehicleCategory          = nil
+  self.spec_cabCinematic.defaultExteriorPosition  = nil
+  self.spec_cabCinematic.adjustedExteriorPosition = nil
+  self.spec_cabCinematic.interiorCameraPosition   = nil
+  self.spec_cabCinematic.cabHitPositions          = nil
 end
