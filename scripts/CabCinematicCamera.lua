@@ -32,8 +32,9 @@ function CabCinematicCamera:delete()
   end
 
   self:unlink()
+
   g_cameraManager:removeCamera(self.cameraNode)
-  delete(self.cameraNode)
+
   self.cameraNode = nil
 
   self:reset()
@@ -51,13 +52,11 @@ function CabCinematicCamera:reset()
 end
 
 function CabCinematicCamera:activate()
-  Log:info(string.format("Activating CabCinematicCamera %d", self.cameraNode))
   self:setCameraActiveIfNeeded()
   self.isActive = true
 end
 
 function CabCinematicCamera:deactivate()
-  Log:info(string.format("Deactivating CabCinematicCamera %d", self.cameraNode))
   self.isActive = false
   self:reset()
 end

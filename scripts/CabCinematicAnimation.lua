@@ -396,13 +396,10 @@ function CabCinematicAnimation:prepare()
 end
 
 function CabCinematicAnimation:syncAnimationCamerasAtStart()
-  local firstKeyframe = self.keyframes[1]
-  local cx, cy, cz = firstKeyframe:getInterpolatedPositionAtTime(0.0)
-  self.camera:setPosition(cx, cy, cz)
+  local vehicleCamera = self.vehicle:getVehicleInteriorCamera();
 
   if self.type == CabCinematicAnimation.TYPES.ENTER then
     local cinematicCamera = self.camera
-    local vehicleCamera = self.vehicle:getVehicleInteriorCamera();
 
     local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
     setFovY(g_localPlayer.getCurrentCameraNode(), fovY)
@@ -426,6 +423,12 @@ function CabCinematicAnimation:syncAnimationCamerasAtStart()
 
     vehicleCamera:updateRotateNodeRotation()
   end
+
+  local startPosition = self.keyframes[1].startPosition
+  self.camera:setPosition(startPosition[1], startPosition[2], startPosition[3])
+  self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
+  self.camera:syncPosition()
+  self.camera:syncRotation()
 end
 
 function CabCinematicAnimation:syncAnimationCamerasAtStop()
@@ -456,6 +459,7 @@ function CabCinematicAnimation:start()
   end
 
   self:prepare()
+  self:syncAnimationCamerasAtStart()
 
   Log:info(string.format("CabCinematicAnimation total duration: %.2f seconds", self.duration))
 
@@ -470,7 +474,7 @@ function CabCinematicAnimation:start()
     end
   end
 
-  self:syncAnimationCamerasAtStart()
+
   self.camera:activate()
 end
 
@@ -508,11 +512,11 @@ function CabCinematicAnimation:update(dt)
     return
   end
 
-  if self.vehicle:isVehicleCabCinematicRequiredAnimationPlaying() then
+  if self.vehicle:getIsVehicleCabCinematicRequiredAnimationPlaying() then
     return
   end
 
-  if not self.vehicle:isVehicleCabCinematicRequiredAnimationFinished() then
+  if not self.vehicle:getIsVehicleCabCinematicRequiredAnimationFinished() then
     print("Playing required vehicle animations...")
     return self.vehicle:playVehicleCabCinematicRequiredAnimations()
   end

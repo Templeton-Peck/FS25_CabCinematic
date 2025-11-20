@@ -25,10 +25,10 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
   SpecializationUtil.registerFunction(vehicleType, "playVehicleCabCinematicRequiredAnimations",
     CabCinematicSpec.playVehicleCabCinematicRequiredAnimations)
-  SpecializationUtil.registerFunction(vehicleType, "isVehicleCabCinematicRequiredAnimationFinished",
-    CabCinematicSpec.isVehicleCabCinematicRequiredAnimationFinished)
-  SpecializationUtil.registerFunction(vehicleType, "isVehicleCabCinematicRequiredAnimationPlaying",
-    CabCinematicSpec.isVehicleCabCinematicRequiredAnimationPlaying)
+  SpecializationUtil.registerFunction(vehicleType, "getIsVehicleCabCinematicRequiredAnimationFinished",
+    CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationFinished)
+  SpecializationUtil.registerFunction(vehicleType, "getIsVehicleCabCinematicRequiredAnimationPlaying",
+    CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationPlaying)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -212,7 +212,7 @@ function CabCinematicSpec:playVehicleCabCinematicRequiredAnimations()
   end
 end
 
-function CabCinematicSpec:isVehicleCabCinematicRequiredAnimationFinished()
+function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationFinished()
   if self:getIsAIActive() then
     return true
   end
@@ -221,7 +221,7 @@ function CabCinematicSpec:isVehicleCabCinematicRequiredAnimationFinished()
   return anim == nil or self:getAnimationTime(anim.name) >= 1.0
 end
 
-function CabCinematicSpec:isVehicleCabCinematicRequiredAnimationPlaying()
+function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationPlaying()
   local anim = self:getVehicleCabCinematicRequiredAnimation()
   return anim ~= nil and self:getIsAnimationPlaying(anim.name)
 end
