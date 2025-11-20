@@ -21,6 +21,14 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getVehicleCabSidePosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCenterPosition",
     CabCinematicSpec.getVehicleCabCenterPosition)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCinematicRequiredAnimation",
+    CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
+  SpecializationUtil.registerFunction(vehicleType, "playVehicleCabCinematicRequiredAnimations",
+    CabCinematicSpec.playVehicleCabCinematicRequiredAnimations)
+  SpecializationUtil.registerFunction(vehicleType, "isVehicleCabCinematicRequiredAnimationFinished",
+    CabCinematicSpec.isVehicleCabCinematicRequiredAnimationFinished)
+  SpecializationUtil.registerFunction(vehicleType, "isVehicleCabCinematicRequiredAnimationPlaying",
+    CabCinematicSpec.isVehicleCabCinematicRequiredAnimationPlaying)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -181,6 +189,34 @@ end
 
 function CabCinematicSpec:getVehicleCabSidePosition()
   return self:getVehicleCabHitPositions().left
+end
+
+function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
+  if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
+    return {
+      name = self.spec_combine.ladder.animName,
+      speed = self.spec_combine.ladder.animSpeedScale,
+    }
+  end
+
+  return nil
+end
+
+function CabCinematicSpec:playVehicleCabCinematicRequiredAnimations()
+  local anim = self:getVehicleCabCinematicRequiredAnimation()
+  if anim ~= nil then
+    self:playAnimation(anim.name, anim.speed, self:getAnimationTime(anim.name), true)
+  end
+end
+
+function CabCinematicSpec:isVehicleCabCinematicRequiredAnimationFinished()
+  local anim = self:getVehicleCabCinematicRequiredAnimation()
+  return anim == nil or self:getAnimationTime(anim.name) >= 1.0
+end
+
+function CabCinematicSpec:isVehicleCabCinematicRequiredAnimationPlaying()
+  local anim = self:getVehicleCabCinematicRequiredAnimation()
+  return anim ~= nil and self:getIsAnimationPlaying(anim.name)
 end
 
 function CabCinematicSpec:onLoad()

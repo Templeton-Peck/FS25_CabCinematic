@@ -13,6 +13,7 @@ CabCinematic.flags = {
   skipAnimation = false,
   debug = false
 }
+CabCinematic.debugAnimation = nil
 
 CabCinematic.VEHICLE_INTERACT_DISTANCE = 3.0
 
@@ -28,6 +29,15 @@ function CabCinematic:getIsActive()
   return self.cinematicAnimation ~= nil and self.cinematicAnimation:getIsActive()
 end
 
+function CabCinematic:getIsReadyToStart()
+  return self.cinematicAnimation ~= nil and not self.cinematicAnimation:getIsActive() and
+      not self.cinematicAnimation:getIsEnded()
+end
+
+function CabCinematic:getIsReadyToStop()
+  return self.cinematicAnimation ~= nil and (self.cinematicAnimation:getIsEnded() or CabCinematic:getIsSkipping())
+end
+
 function CabCinematic:getIsSkipping()
   return self.inputStates.skipAnimation or self.flags.skipAnimation
 end
@@ -37,31 +47,34 @@ function CabCinematic:getIsDisabled()
 end
 
 function CabCinematic:startCurrentAnimation()
+  if self.flags.debug then
+    self.debugAnimation = self.cinematicAnimation
+  end
+
   g_inputBinding:setActionEventTextVisibility(CabCinematic.inputEventIds.skipAnimation, true)
   CabCinematic.inputStates.skipAnimation = false
   self.cinematicAnimation:start()
 end
 
 function CabCinematic:stopCurrentAnimation()
+  self.cinematicAnimation:stop()
+
   if not self.flags.debug then
     self.cinematicAnimation:delete()
-    self.cinematicAnimation = nil
   end
+
+  self.cinematicAnimation = nil
 
   CabCinematic.inputStates.skipAnimation = false
   g_inputBinding:setActionEventTextVisibility(CabCinematic.inputEventIds.skipAnimation, false)
 end
 
 function CabCinematic:update(dt)
-  if self.cinematicAnimation ~= nil then
-    if self.cinematicAnimation:getIsEnded() then
-      self:stopCurrentAnimation()
-    elseif not self.cinematicAnimation:getIsActive() then
-      self:startCurrentAnimation()
-    end
-  end
-
-  if self:getIsActive() then
+  if self:getIsReadyToStart() then
+    self:startCurrentAnimation()
+  elseif self:getIsReadyToStop() then
+    self:stopCurrentAnimation()
+  elseif self:getIsActive() then
     self.cinematicAnimation:update(dt)
     self.camera:update(dt)
   end
@@ -69,11 +82,11 @@ end
 
 function CabCinematic:draw()
   if self.flags.debug then
-    if self.cinematicAnimation ~= nil then
-      self.cinematicAnimation:drawDebug()
+    if self.debugAnimation ~= nil then
+      self.debugAnimation:drawDebug()
     end
 
-    local vehicle = self.cinematicAnimation and self.cinematicAnimation.vehicle or
+    local vehicle = self.debugAnimation and self.debugAnimation.vehicle or
         g_currentMission.interactiveVehicleInRange or nil
     if vehicle ~= nil then
       DebugUtil.drawDebugNode(vehicle:getExitNode(), "exitNode")
@@ -98,12 +111,25 @@ function CabCinematic:draw()
       DebugUtil.drawDebugGizmoAtWorldPos(crx, cry, crz, 1, 0, 0, 0, 1, 0, "cabRightHit")
       DebugUtil.drawDebugGizmoAtWorldPos(ccx, ccy, ccz, 1, 0, 0, 0, 1, 0, "cabCenterPosition")
     end
+
+    -- local rVehicle = g_currentMission.interactiveVehicleInRange
+    -- if rVehicle ~= nil then
+    -- end
   end
 end
 
 function CabCinematic:beforeLoadMap()
+  addConsoleCommand("ccPauseAnimation", "Pause animation", "onPauseAnimationConsoleCommand", self)
   addConsoleCommand("ccSkipAnimation", "Skip animation", "onSkipAnimationConsoleCommand", self)
   addConsoleCommand("ccDebug", "Debug animation", "onDebugConsoleCommand", self)
+end
+
+function CabCinematic:onPauseAnimationConsoleCommand()
+  if self.cinematicAnimation ~= nil then
+    self.cinematicAnimation:pause()
+  else
+    Log:info("No cab cinematic animation to pause")
+  end
 end
 
 function CabCinematic:onSkipAnimationConsoleCommand()
@@ -124,7 +150,6 @@ end
 
 function CabCinematic:onSkipAnimationInput(actionName, state, arg3, arg4, isAnalog)
   self.inputStates.skipAnimation = state == 1
-  Log:info(string.format("onSkipAnimationInput : %s", tostring(self.inputStates.skipAnimation)))
 end
 
 function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
@@ -162,14 +187,6 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     return
   end
 
-  superFunc(playerInput, ...)
-
-  local playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
-
-  if (not vehicle:getIsAIActive()) then
-    vehicle.spec_enterable:deleteVehicleCharacter()
-  end
-
   CabCinematic.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle,
     CabCinematic.camera,
     function()
@@ -179,7 +196,13 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
 
       return vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
     end)
-  CabCinematic.cinematicAnimation.playerSnapshot = playerSnapshot
+  CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
+
+  superFunc(playerInput, ...)
+
+  if (not vehicle:getIsAIActive()) then
+    vehicle.spec_enterable:deleteVehicleCharacter()
+  end
 end
 
 function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
@@ -230,6 +253,8 @@ end
 function CabCinematic.registerPlayerActionEvents(playerInput, superFunc, ...)
   superFunc(playerInput, ...)
 
+  Log:info("CabCinematic.registerPlayerActionEvents called")
+
   local ok, eventId = g_inputBinding:registerActionEvent(InputAction.CAB_CINEMATIC_SKIP, CabCinematic,
     CabCinematic.onSkipAnimationInput, true, true, true, true)
 
@@ -243,6 +268,14 @@ function CabCinematic.registerPlayerActionEvents(playerInput, superFunc, ...)
   end
 end
 
+function CabCinematic.onEnterOrLeaveCombine(combine, superFunc, ...)
+  if CabCinematic:getIsActive() or CabCinematic:getIsReadyToStart() then
+    return
+  end
+
+  return superFunc(combine, ...)
+end
+
 VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
 PlayerInputComponent.registerGlobalPlayerActionEvents = Utils.overwrittenFunction(
   PlayerInputComponent.registerGlobalPlayerActionEvents, CabCinematic.registerPlayerActionEvents)
@@ -251,6 +284,8 @@ PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputCompone
 Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
 Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch,
   CabCinematic.onPlayerSwitchVehicleCamera)
+Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematic.onEnterOrLeaveCombine)
+Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematic.onEnterOrLeaveCombine)
 
 if g_specializationManager:getSpecializationByName("cabCinematicSpec") == nil then
   g_specializationManager:addSpecialization("cabCinematicSpec", "CabCinematicSpec",

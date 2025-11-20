@@ -16,8 +16,8 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Cinematic skipping keybind (`left alt` by default)
 - [x] Third-person camera fix
 - [x] Tab-switching fix
+- [x] Handle combine ladder animations properly
 - [ ] Add view bobbing to cinematics
-- [ ] Handle combine ladder animations properly
 
 ### V1
 
@@ -46,6 +46,7 @@ A big thank-you to **w33zl** (https://github.com/w33zl) for all the open-source 
 
 Following console commands are for testing and debugging purposes.
 
+- `ccPauseAnimation` : Pause the current cab cinematic animation.
 - `ccSkipAnimation` : Skip animation when entering or exiting a vehicle.
 - `ccDebug` : Draw debug gizmos and lines for animation and vehicle.
 

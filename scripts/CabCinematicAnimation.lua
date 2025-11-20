@@ -374,34 +374,36 @@ function CabCinematicAnimation:prepare()
 end
 
 function CabCinematicAnimation:syncAnimationCamerasAtStart()
-  if self.type ~= CabCinematicAnimation.TYPES.ENTER then
-    return
+  local firstKeyframe = self.keyframes[1]
+  local cx, cy, cz = firstKeyframe:getInterpolatedPositionAtTime(0.0)
+  self.camera:setPosition(cx, cy, cz)
+
+  if self.type == CabCinematicAnimation.TYPES.ENTER then
+    local cinematicCamera = self.camera
+    local vehicleCamera = self.vehicle:getVehicleInteriorCamera();
+
+    local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
+    setFovY(g_localPlayer.getCurrentCameraNode(), fovY)
+    setFovY(cinematicCamera.cameraNode, fovY)
+    setFovY(vehicleCamera.cameraNode, fovY)
+
+    local dx, dy, dz = localDirectionToWorld(g_localPlayer.camera.cameraRootNode, 0, 0, 1)
+
+    local rotateNodeParent = getParent(vehicleCamera.rotateNode)
+    local localDx, localDy, localDz = worldDirectionToLocal(rotateNodeParent, dx, dy, dz)
+
+    local rotX = -math.asin(localDy)
+    local rotY = math.atan2(localDx, localDz)
+
+    vehicleCamera.rotX = rotX
+    vehicleCamera.rotY = rotY
+    vehicleCamera.rotZ = 0
+
+    Log:info(string.format("syncCamerasAtAnimationStart: setting target camera rotation to (%.2f, %.2f, %.2f)",
+      rotX, rotY, 0))
+
+    vehicleCamera:updateRotateNodeRotation()
   end
-
-  local cinematicCamera = self.camera
-  local vehicleCamera = self.vehicle:getVehicleInteriorCamera();
-
-  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
-  setFovY(g_localPlayer.getCurrentCameraNode(), fovY)
-  setFovY(cinematicCamera.cameraNode, fovY)
-  setFovY(vehicleCamera.cameraNode, fovY)
-
-  local dx, dy, dz = localDirectionToWorld(g_localPlayer.camera.cameraRootNode, 0, 0, 1)
-
-  local rotateNodeParent = getParent(vehicleCamera.rotateNode)
-  local localDx, localDy, localDz = worldDirectionToLocal(rotateNodeParent, dx, dy, dz)
-
-  local rotX = -math.asin(localDy)
-  local rotY = math.atan2(localDx, localDz)
-
-  vehicleCamera.rotX = rotX
-  vehicleCamera.rotY = rotY
-  vehicleCamera.rotZ = 0
-
-  Log:info(string.format("syncCamerasAtAnimationStart: setting target camera rotation to (%.2f, %.2f, %.2f)",
-    rotX, rotY, 0))
-
-  vehicleCamera:updateRotateNodeRotation()
 end
 
 function CabCinematicAnimation:syncAnimationCamerasAtStop()
@@ -467,6 +469,11 @@ function CabCinematicAnimation:stop()
   self.isEnded        = true
 end
 
+function CabCinematicAnimation:pause()
+  Log:info("Pausing CabCinematicAnimation")
+  self.isPaused = true
+end
+
 function CabCinematicAnimation:update(dt)
   if not self.isActive then
     return
@@ -479,6 +486,14 @@ function CabCinematicAnimation:update(dt)
     return
   end
 
+  if self.vehicle:isVehicleCabCinematicRequiredAnimationPlaying() then
+    return
+  end
+
+  if not self.vehicle:isVehicleCabCinematicRequiredAnimationFinished() then
+    return self.vehicle:playVehicleCabCinematicRequiredAnimations()
+  end
+
   self.timer = self.timer + (dt / 1000.0)
 
   local accumulatedDuration = 0.0
@@ -489,7 +504,7 @@ function CabCinematicAnimation:update(dt)
   local currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
   if currentKeyFrame == nil then
     Log:error("No current keyframe found during update")
-    self:stop()
+    self.isEnded = true
     return
   end
 
@@ -508,8 +523,8 @@ function CabCinematicAnimation:update(dt)
 
   self.camera:setPosition(cx, cy, cz)
 
-  if self.timer >= self.duration or CabCinematic:getIsSkipping() then
-    self:stop()
+  if self.timer >= self.duration then
+    self.isEnded = true
   end
 end
 
