@@ -192,12 +192,19 @@ function CabCinematicSpec:getVehicleCabSidePosition()
 end
 
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
+  if self.spec_enterable and self.spec_enterable.enterAnimation then
+    return {
+      name = self.spec_enterable.enterAnimation,
+      speed = 1
+    }
+  end
+
   if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
     local ladder = self.spec_combine.ladder
     if ladder.animName ~= nil and ladder.animSpeedScale > 0 then
       return {
         name = self.spec_combine.ladder.animName,
-        speed = self.spec_combine.ladder.animSpeedScale,
+        speed = self.spec_combine.ladder.animSpeedScale
       }
     end
   end
@@ -213,6 +220,10 @@ function CabCinematicSpec:playVehicleCabCinematicRequiredAnimations()
 end
 
 function CabCinematicSpec:isVehicleCabCinematicRequiredAnimationFinished()
+  if self:getIsAIActive() then
+    return true
+  end
+
   local anim = self:getVehicleCabCinematicRequiredAnimation()
   return anim == nil or self:getAnimationTime(anim.name) >= 1.0
 end
