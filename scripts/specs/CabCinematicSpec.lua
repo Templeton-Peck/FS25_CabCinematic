@@ -192,7 +192,7 @@ function CabCinematicSpec:getVehicleCabSidePosition()
 end
 
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
-  if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
+  if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil and self.spec_combine.ladder.animName ~= nil then
     return {
       name = self.spec_combine.ladder.animName,
       speed = self.spec_combine.ladder.animSpeedScale,

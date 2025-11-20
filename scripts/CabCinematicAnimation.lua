@@ -165,7 +165,29 @@ function CabCinematicAnimation.new(type, vehicle, camera, finishCallback)
 end
 
 function CabCinematicAnimation:delete()
+  if self.camera then
+    self.camera:deactivate()
+    self.camera:unlink()
+  end
 
+  if self.keyframes then
+    for _, keyframe in ipairs(self.keyframes) do
+      keyframe:delete()
+    end
+  end
+
+  self.timer = 0
+  self.isActive = false
+  self.isPaused = false
+  self.isEnded = false
+  self.type = nil
+  self.vehicle = nil
+  self.camera = nil
+  self.finishCallback = nil
+  self.keyframes = nil
+  self.playerSnapshot = nil
+  self.duration = 0.0
+  self.currentKeyFrameIndex = 1
 end
 
 function CabCinematicAnimation:getIsActive()
@@ -491,6 +513,7 @@ function CabCinematicAnimation:update(dt)
   end
 
   if not self.vehicle:isVehicleCabCinematicRequiredAnimationFinished() then
+    print("Playing required vehicle animations...")
     return self.vehicle:playVehicleCabCinematicRequiredAnimations()
   end
 

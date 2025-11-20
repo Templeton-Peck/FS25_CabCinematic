@@ -140,6 +140,10 @@ end
 function CabCinematic:onDebugConsoleCommand()
   self.flags.debug = not self.flags.debug
   Log:info("Cab cinematic debug is now " .. tostring(self.flags.debug))
+  if not self.flags.debug and self.debugAnimation ~= nil then
+    self.debugAnimation:delete()
+    self.debugAnimation = nil
+  end
 end
 
 function CabCinematic.onVehicleCameraActivate(self, superFunc, ...)
