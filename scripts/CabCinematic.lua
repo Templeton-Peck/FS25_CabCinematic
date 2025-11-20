@@ -47,6 +47,20 @@ function CabCinematic:getIsDisabled()
   return self:getIsSkipping() or not self:isPlayerInFirstPerson()
 end
 
+function CabCinematic:getIsVehicleSupported(vehicle)
+  local vehiclePreset = CabCinematicAnimation.PRESETS[vehicle.typeName]
+  if vehiclePreset == nil then
+    return false
+  end
+
+  local vehicleCategory = vehicle:getVehicleCategory()
+  if vehiclePreset[vehicleCategory] == nil then
+    return false
+  end
+
+  return true
+end
+
 function CabCinematic:startCurrentAnimation()
   if self.flags.debug then
     self.debugAnimation = self.cinematicAnimation
@@ -188,8 +202,17 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     return
   end
 
-  if CabCinematic:getIsDisabled() then
+  local vehicle = g_currentMission.interactiveVehicleInRange
+  if vehicle == nil then
+    return
+  end
+
+  if CabCinematic:getIsDisabled() or not CabCinematic:getIsVehicleSupported(vehicle) then
     return superFunc(playerInput, ...)
+  end
+
+  if g_time <= g_currentMission.lastInteractionTime + 200 then
+    return
   end
 
   pcall(function()
@@ -197,16 +220,6 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
   end)
 
   Log:info("enterableActionEventEnter called")
-
-
-  if g_time <= g_currentMission.lastInteractionTime + 200 then
-    return
-  end
-
-  local vehicle = g_currentMission.interactiveVehicleInRange
-  if vehicle == nil then
-    return
-  end
 
   local exitNode = vehicle:getExitNode()
   local playerDistance = CabCinematicUtil.getNodeDistance3D(g_localPlayer.rootNode, exitNode)
@@ -241,7 +254,12 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
     return
   end
 
-  if CabCinematic:getIsDisabled() then
+  local vehicle = g_localPlayer:getCurrentVehicle()
+  if vehicle == nil then
+    return
+  end
+
+  if CabCinematic:getIsDisabled() or not CabCinematic:getIsVehicleSupported(vehicle) then
     return superFunc(enterable, ...)
   end
 
@@ -250,12 +268,6 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
   end)
 
   Log:info("enterableActionEventLeave called")
-
-  local vehicle = g_localPlayer:getCurrentVehicle()
-  if vehicle == nil then
-    return
-  end
-
 
   if (not vehicle:getIsAIActive()) then
     vehicle.spec_enterable:deleteVehicleCharacter()
