@@ -136,14 +136,10 @@ local function performLeftCabRaycast(vehicle, cx, cy, cz)
 
   local sx, sy, sz = localToWorld(vehicle.rootNode, cx + dist, cy, cz)
   local vx, vy, vz = localToWorld(vehicle.rootNode, cx, cy, cz)
-  local dx, dy, dz = MathUtil.vector3Normalize(vx - sx, vy - sy, vz - sz)
 
-  local hit, hitX, hitY, hitZ = RaycastUtil.raycastClosest(sx, sy, sz, dx, dy, dz, dist, CollisionFlag.VEHICLE)
-  if hit then
-    return { worldToLocal(vehicle.rootNode, hitX, hitY, hitZ) }
-  end
+  local _, hitX, hitY, hitZ = CabCinematicUtil.raycastVehicle(vehicle, sx, sy, sz, vx, vy, vz, dist)
 
-  return { worldToLocal(vehicle.rootNode, sx, sy, sz) }
+  return { worldToLocal(vehicle.rootNode, hitX, hitY, hitZ) }
 end
 
 local function performFrontCabRaycast(vehicle, cx, cy, cz)
@@ -151,14 +147,10 @@ local function performFrontCabRaycast(vehicle, cx, cy, cz)
 
   local sx, sy, sz = localToWorld(vehicle.rootNode, cx, cy, cz + dist)
   local vx, vy, vz = localToWorld(vehicle.rootNode, cx, cy, cz)
-  local dx, dy, dz = MathUtil.vector3Normalize(vx - sx, vy - sy, vz - sz)
 
-  local hit, hitX, hitY, hitZ = RaycastUtil.raycastClosest(sx, sy, sz, dx, dy, dz, dist, CollisionFlag.VEHICLE)
-  if hit then
-    return { worldToLocal(vehicle.rootNode, hitX, hitY, hitZ) }
-  end
+  local _, hitX, hitY, hitZ = CabCinematicUtil.raycastVehicle(vehicle, sx, sy, sz, vx, vy, vz, dist)
 
-  return { worldToLocal(vehicle.rootNode, sx, sy, sz) }
+  return { worldToLocal(vehicle.rootNode, hitX, hitY, hitZ) }
 end
 
 function CabCinematicSpec:getVehicleCabHitPositions()
