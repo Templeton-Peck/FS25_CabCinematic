@@ -30,7 +30,7 @@ CabCinematicAnimation.PRESETS = {
       {
         type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
         y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 100 },
-        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.8 },
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,
@@ -58,7 +58,7 @@ CabCinematicAnimation.PRESETS = {
       {
         type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
         y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 100 },
-        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.8 },
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,
@@ -84,7 +84,7 @@ CabCinematicAnimation.PRESETS = {
       {
         type = CabCinematicAnimationKeyframe.TYPES.CLIMB,
         y = { mode = CabCinematicAnimationKeyframe.MODES.PERCENT_TOTAL, value = 100 },
-        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -1 },
+        x = { mode = CabCinematicAnimationKeyframe.MODES.ABSOLUTE, value = -0.8 },
       },
       {
         type = CabCinematicAnimationKeyframe.TYPES.WALK,
