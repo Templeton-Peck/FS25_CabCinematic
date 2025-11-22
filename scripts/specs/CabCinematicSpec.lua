@@ -185,19 +185,21 @@ function CabCinematicSpec:getVehicleCabSidePosition()
 end
 
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
-  if self.spec_enterable and self.spec_enterable.enterAnimation then
-    return {
-      name = self.spec_enterable.enterAnimation,
-      speed = 1
-    }
-  end
-
   if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
     local ladder = self.spec_combine.ladder
-    if ladder.animName ~= nil and ladder.animSpeedScale > 0 then
+    if ladder.animName ~= nil then
       return {
-        name = self.spec_combine.ladder.animName,
-        speed = self.spec_combine.ladder.animSpeedScale
+        name = ladder.animName,
+        speed = math.abs(ladder.animSpeedScale)
+      }
+    end
+  end
+
+  if self.spec_enterable and self.spec_enterable.enterAnimation then
+    if string.find(self.spec_enterable.enterAnimation:lower(), "ladder") ~= nil then
+      return {
+        name = self.spec_enterable.enterAnimation,
+        speed = 1
       }
     end
   end
@@ -218,7 +220,11 @@ function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationFinished()
   end
 
   local anim = self:getVehicleCabCinematicRequiredAnimation()
-  return anim == nil or self:getAnimationTime(anim.name) >= 1.0
+  if anim ~= nil then
+    return self:getAnimationTime(anim.name) >= 1.0
+  else
+    return true
+  end
 end
 
 function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationPlaying()

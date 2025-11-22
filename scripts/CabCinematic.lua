@@ -127,9 +127,20 @@ function CabCinematic:draw()
       DebugUtil.drawDebugGizmoAtWorldPos(ccx, ccy, ccz, 1, 0, 0, 0, 1, 0, "cabCenterPosition")
     end
 
-    -- local rVehicle = g_currentMission.interactiveVehicleInRange
-    -- if rVehicle ~= nil then
-    -- end
+    local rVehicle = g_currentMission.interactiveVehicleInRange
+    if rVehicle ~= nil then
+      if rVehicle.spec_combine ~= nil and rVehicle.spec_combine.ladder ~= nil then
+        local animation = rVehicle.spec_animatedVehicle.animations[rVehicle.spec_combine.ladder.animName];
+        if animation ~= nil then
+          for _, part in ipairs(animation.parts) do
+            for index = 1, #part.animationValues do
+              local value = part.animationValues[index]
+              DebugUtil.drawDebugNode(value.node, getName(value.node))
+            end
+          end
+        end
+      end
+    end
   end
 end
 
@@ -295,6 +306,10 @@ end
 
 function CabCinematic.registerPlayerActionEvents(playerInput, superFunc, ...)
   superFunc(playerInput, ...)
+
+  if CabCinematic.inputEventIds.skipAnimation ~= nil then
+    return
+  end
 
   Log:info("CabCinematic.registerPlayerActionEvents called")
 

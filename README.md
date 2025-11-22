@@ -18,7 +18,8 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Tab-switching fix
 - [x] Handle combine ladder animations properly
 - [x] Add view bobbing to cinematics
-- [ ] Minor bug fixes
+- [ ] Minor bug fixes with ladders
+- [ ] Improve animation accuracy using vehicle nodes
 
 ### V1
 

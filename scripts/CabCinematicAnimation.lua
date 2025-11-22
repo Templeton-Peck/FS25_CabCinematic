@@ -474,7 +474,6 @@ function CabCinematicAnimation:start()
     end
   end
 
-
   self.camera:activate()
 end
 
@@ -517,7 +516,6 @@ function CabCinematicAnimation:update(dt)
   end
 
   if not self.vehicle:getIsVehicleCabCinematicRequiredAnimationFinished() then
-    print("Playing required vehicle animations...")
     return self.vehicle:playVehicleCabCinematicRequiredAnimations()
   end
 
