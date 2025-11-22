@@ -11,6 +11,7 @@ CabCinematic = Mod:init({
   },
   flags = {
     skipAnimation = false,
+    disabled = false,
     debug = false
   },
   debugAnimation = nil,
@@ -44,7 +45,7 @@ function CabCinematic:getIsSkipping()
 end
 
 function CabCinematic:getIsDisabled()
-  return self:getIsSkipping() or not self:isPlayerInFirstPerson()
+  return self.flags.disabled or self:getIsSkipping() or not self:isPlayerInFirstPerson()
 end
 
 function CabCinematic:getIsVehicleSupported(vehicle)
@@ -147,12 +148,14 @@ end
 function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccPauseAnimation", "Pause animation", "onPauseAnimationConsoleCommand", self)
   addConsoleCommand("ccSkipAnimation", "Skip animation", "onSkipAnimationConsoleCommand", self)
+  addConsoleCommand("ccDisable", "Disable animation", "onDisableConsoleCommand", self)
   addConsoleCommand("ccDebug", "Debug animation", "onDebugConsoleCommand", self)
 end
 
 function CabCinematic:delete()
   removeConsoleCommand("ccPauseAnimation")
   removeConsoleCommand("ccSkipAnimation")
+  removeConsoleCommand("ccDisable")
   removeConsoleCommand("ccDebug")
 
   if self.camera ~= nil then
@@ -187,6 +190,11 @@ end
 function CabCinematic:onSkipAnimationConsoleCommand()
   self.flags.skipAnimation = not self.flags.skipAnimation
   Log:info("Cab cinematic animation skip is now " .. tostring(self.flags.skipAnimation))
+end
+
+function CabCinematic:onDisableConsoleCommand()
+  self.flags.disabled = not self.flags.disabled
+  Log:info("Cab cinematic disabled : " .. tostring(self.flags.disabled))
 end
 
 function CabCinematic:onDebugConsoleCommand()
