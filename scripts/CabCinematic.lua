@@ -11,8 +11,8 @@ CabCinematic = Mod:init({
   },
   flags = {
     skipAnimation = false,
-    disabled = false,
-    debug = false
+    disabled = true,
+    debug = true
   },
   debugAnimation = nil,
 })
@@ -102,45 +102,44 @@ function CabCinematic:draw()
       self.debugAnimation:drawDebug()
     end
 
-    local vehicle = self.debugAnimation and self.debugAnimation.vehicle or
-        g_currentMission.interactiveVehicleInRange or nil
+    local vehicle = g_currentMission.interactiveVehicleInRange or self.debugAnimation and self.debugAnimation.vehicle or
+        nil
     if vehicle ~= nil then
-      DebugUtil.drawDebugNode(vehicle:getExitNode(), "exitNode")
-      DebugUtil.drawDebugNode(vehicle.spec_drivable.steeringWheel.node, "steeringAxleNode")
+      if vehicle.spec_cabCinematic ~= nil then
+        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, vehicle:getCabCinematicPositions())
 
-      local wdx, wdy, wdz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleInteriorCameraPosition()))
-      local dex, dey, dez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleDefaultExteriorPosition()))
-      local aex, aey, aez = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleAdjustedExteriorPosition()))
+        local cx, cy, cz, radius = getShapeWorldBoundingSphere(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode)
+        DebugUtil.drawDebugCube(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode, radius, radius, radius,
+          0, 0, 1, 0, 0, 0)
 
-      local positions = vehicle:getVehicleCabHitPositions()
+        -- -- DebugUtil.drawDebugCube(node, sizeX, sizeY, sizeZ, r, g, b, offsetX, offsetY, offsetZ)
 
-      local cfx, cfy, cfz = localToWorld(vehicle.rootNode, unpack(positions.front))
-      local clx, cly, clz = localToWorld(vehicle.rootNode, unpack(positions.left))
-      local crx, cry, crz = localToWorld(vehicle.rootNode, unpack(positions.right))
-      local ccx, ccy, ccz = localToWorld(vehicle.rootNode, unpack(vehicle:getVehicleCabCenterPosition()))
+        -- -- DebugUtil.drawDebugParallelogram(x,z, widthX,widthZ, heightX,heightZ, heightOffset, r,g,b,a, fixedHeight)
+        -- -- DebugUtil.drawDebugParallelogram(cx, cz, radius, 0, 0, radius, cy - radius, 1, 0, 0, 0.5, false)
 
-      DebugUtil.drawDebugGizmoAtWorldPos(wdx, wdy, wdz, 1, 0, 0, 0, 1, 0, "interiorCameraPosition")
-      DebugUtil.drawDebugGizmoAtWorldPos(dex, dey, dez, 1, 0, 0, 0, 1, 0, "defaultExteriorPosition")
-      DebugUtil.drawDebugGizmoAtWorldPos(aex, aey, aez, 1, 0, 0, 0, 1, 0, "adjustedExteriorPosition")
-      DebugUtil.drawDebugGizmoAtWorldPos(cfx, cfy, cfz, 1, 0, 0, 0, 1, 0, "cabFrontHit")
-      DebugUtil.drawDebugGizmoAtWorldPos(clx, cly, clz, 1, 0, 0, 0, 1, 0, "cabLeftHit")
-      DebugUtil.drawDebugGizmoAtWorldPos(crx, cry, crz, 1, 0, 0, 0, 1, 0, "cabRightHit")
-      DebugUtil.drawDebugGizmoAtWorldPos(ccx, ccy, ccz, 1, 0, 0, 0, 1, 0, "cabCenterPosition")
-    end
+        -- local _, _, _, radius = getShapeGeometryBoundingSphere(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode)
+        -- DebugUtil.drawDebugCircleAtNode(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode, radius, 10)
 
-    local rVehicle = g_currentMission.interactiveVehicleInRange
-    if rVehicle ~= nil then
-      if rVehicle.spec_combine ~= nil and rVehicle.spec_combine.ladder ~= nil then
-        local animation = rVehicle.spec_animatedVehicle.animations[rVehicle.spec_combine.ladder.animName];
-        if animation ~= nil then
-          for _, part in ipairs(animation.parts) do
-            for index = 1, #part.animationValues do
-              local value = part.animationValues[index]
-              DebugUtil.drawDebugNode(value.node, getName(value.node))
-            end
-          end
-        end
+        -- local shadowFocusBoxNode = vehicle:getVehicleInteriorCamera().shadowFocusBoxNode
+        -- local sx, sy, sz = getScale(shadowFocusBoxNode)
+        -- DebugUtil.drawDebugNode(shadowFocusBoxNode, "shadowFocusBoxNode");
+        -- -- DebugUtil.drawDebugRectangle(shadowFocusBoxNode, minX, maxX, minZ, maxZ, yOffset, r, g, b, a, filled)
+        -- --DebugUtil.drawDebugCube(node, sizeX, sizeY, sizeZ, r, g, b, offsetX, offsetY, offsetZ)
+        -- DebugUtil.drawDebugRectangle(shadowFocusBoxNode, -sx, sx, -sz, sz, 0, 1, 0, 0, 0.5, false)
+        -- DebugUtil.drawDebugCube(shadowFocusBoxNode, sx * 2, sy * 2, sz * 2, 0, 0, 1, 0, 0, 0)
       end
+
+      -- if vehicle.spec_combine ~= nil and vehicle.spec_combine.ladder ~= nil then
+      --   local animation = vehicle.spec_animatedVehicle.animations[vehicle.spec_combine.ladder.animName];
+      --   if animation ~= nil then
+      --     for _, part in ipairs(animation.parts) do
+      --       for index = 1, #part.animationValues do
+      --         local value = part.animationValues[index]
+      --         DebugUtil.drawDebugNode(value.node, getName(value.node))
+      --       end
+      --     end
+      --   end
+      -- end
     end
   end
 end

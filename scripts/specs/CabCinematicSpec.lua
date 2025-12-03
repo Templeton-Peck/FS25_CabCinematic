@@ -15,12 +15,8 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getVehicleDefaultExteriorPosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleAdjustedExteriorPosition",
     CabCinematicSpec.getVehicleAdjustedExteriorPosition)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleCabHitPositions",
-    CabCinematicSpec.getVehicleCabHitPositions)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabSidePosition",
     CabCinematicSpec.getVehicleCabSidePosition)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCenterPosition",
-    CabCinematicSpec.getVehicleCabCenterPosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCinematicRequiredAnimation",
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
   SpecializationUtil.registerFunction(vehicleType, "playVehicleCabCinematicRequiredAnimations",
@@ -29,11 +25,14 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationFinished)
   SpecializationUtil.registerFunction(vehicleType, "getIsVehicleCabCinematicRequiredAnimationPlaying",
     CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationPlaying)
+  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPositions",
+    CabCinematicSpec.getCabCinematicPositions)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onDelete", CabCinematicSpec)
+  SpecializationUtil.registerEventListener(vehicleType, "onInitCabCinematic", CabCinematicSpec)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()
@@ -62,20 +61,7 @@ function CabCinematicSpec:getVehicleCategory()
 end
 
 function CabCinematicSpec:getVehicleInteriorCameraPosition()
-  if self.spec_cabCinematic.interiorCameraPosition ~= nil then
-    return self.spec_cabCinematic.interiorCameraPosition
-  end
-
-  local camera = self:getVehicleInteriorCamera()
-  if camera ~= nil then
-    local dx, dy, dz = getTranslation(camera.cameraPositionNode)
-    self.spec_cabCinematic.interiorCameraPosition = { localToLocal(getParent(camera.cameraPositionNode), self.rootNode,
-      dx, dy, dz) }
-  else
-    self.spec_cabCinematic.interiorCameraPosition = { 0, 0, 0 }
-  end
-
-  return self.spec_cabCinematic.interiorCameraPosition
+  return self:getCabCinematicPositions().camera
 end
 
 function CabCinematicSpec:getVehicleDefaultExteriorPosition()
@@ -96,7 +82,7 @@ function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
     return self.spec_cabCinematic.adjustedExteriorPosition
   end
 
-  local cabLeftHitPos = self:getVehicleCabHitPositions().left
+  local cabLeftHitPos = self:getCabCinematicPositions().cabLeft
   local defaultExteriorPosition = self:getVehicleDefaultExteriorPosition()
 
   local xOffset = 0.0
@@ -116,72 +102,8 @@ function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
   return self.spec_cabCinematic.adjustedExteriorPosition
 end
 
-function CabCinematicSpec:getVehicleCabCenterPosition()
-  local cameraPosition = self:getVehicleInteriorCameraPosition()
-  if self.spec_drivable == nil or self.spec_drivable.steeringWheel == nil then
-    return cameraPosition
-  end
-
-  local steeringWheelNode = self.spec_drivable.steeringWheel.node;
-  local _, _, swz = localToLocal(steeringWheelNode, self.rootNode, getTranslation(steeringWheelNode))
-  return {
-    cameraPosition[1],
-    cameraPosition[2],
-    (cameraPosition[3] + swz) / 2,
-  }
-end
-
-local function performLeftCabRaycast(vehicle, cx, cy, cz)
-  local dist = CabCinematicSpec.VEHICLE_RAYCAST_DISTANCE;
-
-  local sx, sy, sz = localToWorld(vehicle.rootNode, cx + dist, cy, cz)
-  local vx, vy, vz = localToWorld(vehicle.rootNode, cx, cy, cz)
-
-  local _, hitX, hitY, hitZ = CabCinematicUtil.raycastVehicle(vehicle, sx, sy, sz, vx, vy, vz, dist)
-
-  return { worldToLocal(vehicle.rootNode, hitX, hitY, hitZ) }
-end
-
-local function performFrontCabRaycast(vehicle, cx, cy, cz)
-  local dist = CabCinematicSpec.VEHICLE_RAYCAST_DISTANCE;
-
-  local sx, sy, sz = localToWorld(vehicle.rootNode, cx, cy, cz + dist)
-  local vx, vy, vz = localToWorld(vehicle.rootNode, cx, cy, cz)
-
-  local _, hitX, hitY, hitZ = CabCinematicUtil.raycastVehicle(vehicle, sx, sy, sz, vx, vy, vz, dist)
-
-  return { worldToLocal(vehicle.rootNode, hitX, hitY, hitZ) }
-end
-
-function CabCinematicSpec:getVehicleCabHitPositions()
-  if self.spec_cabCinematic.cabHitPositions ~= nil then
-    return self.spec_cabCinematic.cabHitPositions
-  end
-
-  local cx, cy, cz = unpack(self:getVehicleCabCenterPosition())
-  local frontHit = performFrontCabRaycast(self, cx, cy, cz)
-  local leftHit = performLeftCabRaycast(self, cx, cy, cz)
-
-  local frontDistance = MathUtil.vector3Length(frontHit[1] - cx, frontHit[2] - cy, frontHit[3] - cz)
-  local leftDistance = MathUtil.vector3Length(leftHit[1] - cx, leftHit[2] - cy, leftHit[3] - cz)
-
-  local adjustedLeft = {
-    cx + (frontDistance / leftDistance) * (leftHit[1] - cx),
-    leftHit[2],
-    leftHit[3],
-  }
-
-  self.spec_cabCinematic.cabHitPositions = {
-    front = frontHit,
-    left = adjustedLeft,
-    right = { adjustedLeft[1] - 2 * (adjustedLeft[1] - frontHit[1]), adjustedLeft[2], adjustedLeft[3] },
-  }
-
-  return self.spec_cabCinematic.cabHitPositions
-end
-
 function CabCinematicSpec:getVehicleCabSidePosition()
-  return self:getVehicleCabHitPositions().left
+  return self:getCabCinematicPositions().cabLeft
 end
 
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
@@ -232,20 +154,34 @@ function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationPlaying()
   return anim ~= nil and self:getIsAnimationPlaying(anim.name)
 end
 
+function CabCinematicSpec:getCabCinematicPositions()
+  if self.spec_cabCinematic.positions == nil then
+    local cameraPosition = CabCinematicUtil.getVehicleInteriorCameraPosition(self)
+    local steeringWheelPosition = CabCinematicUtil.getVehicleSteeringWheelPosition(self)
+    local cabPositions = CabCinematicUtil.getVehicleCabPositions(self, cameraPosition, steeringWheelPosition)
+    self.spec_cabCinematic.positions = CabCinematicUtil.merge(cabPositions, {
+      camera        = cameraPosition,
+      steeringWheel = steeringWheelPosition
+    })
+  end
+
+  return self.spec_cabCinematic.positions;
+end
+
 function CabCinematicSpec:onLoad()
   local spec                    = {}
   spec.vehicleCategory          = nil
+  spec.enterSide                = "left"
   spec.defaultExteriorPosition  = nil
   spec.adjustedExteriorPosition = nil
-  spec.interiorCameraPosition   = nil
-  spec.cabHitPositions          = nil
+  spec.positions                = nil
   self.spec_cabCinematic        = spec
 end
 
 function CabCinematicSpec:onDelete()
-  self.spec_cabCinematic.vehicleCategory          = nil
-  self.spec_cabCinematic.defaultExteriorPosition  = nil
+  self.spec_cabCinematic.vehicleCategory = nil
+  self.spec_cabCinematic.enterSide = nil
+  self.spec_cabCinematic.defaultExteriorPosition = nil
   self.spec_cabCinematic.adjustedExteriorPosition = nil
-  self.spec_cabCinematic.interiorCameraPosition   = nil
-  self.spec_cabCinematic.cabHitPositions          = nil
+  self.spec_cabCinematic.positions = nil
 end
