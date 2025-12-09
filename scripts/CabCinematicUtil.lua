@@ -12,9 +12,25 @@ function CabCinematicUtil.getNodeDistance3D(nodeA, nodeB)
   return MathUtil.vector3Length(xA - xB, yA - yB, zA - zB)
 end
 
-function CabCinematicUtil.merge(t1, t2)
-  for k, v in pairs(t2) do
-    t1[k] = v
+function CabCinematicUtil.merge(t1, ...)
+  local args = { ... }
+
+  for _, t2 in ipairs(args) do
+    for k, v in pairs(t2) do
+      t1[k] = v
+    end
+  end
+
+  return t1
+end
+
+function CabCinematicUtil.concat(t1, ...)
+  local args = { ... }
+
+  for _, t2 in ipairs(args) do
+    for _, v in ipairs(t2) do
+      table.insert(t1, v)
+    end
   end
 
   return t1
@@ -116,13 +132,18 @@ local function isNear(valueA, valueB, threshold)
   return math.abs(valueA - valueB) <= threshold
 end
 
-function CabCinematicUtil.getVehicleCabPositions(vehicle, cameraPosition, steeringWheelPosition)
+function CabCinematicUtil.getVehicleCabFeatures(vehicle, cameraPosition, steeringWheelPosition)
+  local _, lfy, _ = localToLocal(vehicle.spec_enterable.defaultCharacterTargets.leftFoot.targetNode, vehicle.rootNode, 0,
+    0,
+    0)
   local wfx, wfy, wfz, radius = getShapeWorldBoundingSphere(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode)
   local fx, fy, fz = worldToLocal(vehicle.rootNode, wfx, wfy, wfz)
 
   local focusBackZ = fz - (radius / 2)
   local focusFrontZ = fz + (radius / 2)
   local focusLeftX = fx + (radius / 2)
+  local focusTopY = fy + (radius / 2)
+  local centerY = (focusTopY + lfy) / 2
 
   local exit = { getTranslation(vehicle:getExitNode()) }
 
@@ -143,32 +164,35 @@ function CabCinematicUtil.getVehicleCabPositions(vehicle, cameraPosition, steeri
   )
 
   local adjustedBack = backHitResult.best and
-      { cameraPosition[1], cameraPosition[2], math.max(backHitResult.best[3], focusBackZ) } or
-      { cameraPosition[1], cameraPosition[2], focusBackZ }
+      { cameraPosition[1], centerY, math.max(backHitResult.best[3], focusBackZ) } or
+      { cameraPosition[1], centerY, focusBackZ }
 
   local adjustedFront = frontHitResult.best and
-      { steeringWheelPosition[1], cameraPosition[2], math.min(frontHitResult.best[3], focusFrontZ) } or
-      { steeringWheelPosition[1], cameraPosition[2], focusFrontZ }
+      { steeringWheelPosition[1], centerY, math.min(frontHitResult.best[3], focusFrontZ) } or
+      { steeringWheelPosition[1], centerY, focusFrontZ }
 
   local adjustedLeft = leftHitResult.best and
-      { math.min(leftHitResult.best[1], focusLeftX), cameraPosition[2], cameraPosition[3] } or
-      { focusLeftX, cameraPosition[2], cameraPosition[3] }
+      { math.min(leftHitResult.best[1], focusLeftX), centerY, cameraPosition[3] } or
+      { focusLeftX, centerY, cameraPosition[3] }
 
   local adjustedRight = { adjustedLeft[1] - 2 * (adjustedLeft[1] - adjustedFront[1]), adjustedLeft[2], adjustedLeft[3] }
 
-  local center = { cameraPosition[1], cameraPosition[2], (adjustedBack[3] + adjustedFront[3]) / 2 }
+  local center = { cameraPosition[1], centerY, (adjustedBack[3] + adjustedFront[3]) / 2 }
+  local bottom = { center[1], lfy, center[3] }
+  local top = { center[1], focusTopY, center[3] }
 
-  local seatingZ = (steeringWheelPosition[3] + cameraPosition[3]) / 2
+  local standupZ = (steeringWheelPosition[3] + cameraPosition[3]) / 2
 
   local isExitNodeLeftSide = MathUtil.round(exit[1] - center[1], 2) > 0.25
-  local isExitNodeFrontSide = MathUtil.round(exit[3] - seatingZ, 2) >= 0.5
-  local isExitNodeBackSide = MathUtil.round(exit[3] - seatingZ, 2) <= -0.5
+  local isExitNodeFrontSide = MathUtil.round(exit[3] - standupZ, 2) >= 0.5
+  local isExitNodeBackSide = MathUtil.round(exit[3] - standupZ, 2) <= -0.5
 
-  local seatingX = isExitNodeLeftSide and center[1] + 0.2 or center[1] - 0.2
-  local seating = { seatingX, center[2], seatingZ }
+  local standupX = isExitNodeLeftSide and center[1] + 0.2 or center[1] - 0.2
+  local standup = { standupX, cameraPosition[2], standupZ }
+  local seat = { cameraPosition[1], cameraPosition[2], cameraPosition[3] }
 
-  local leftDoor = { adjustedLeft[1], center[2], seating[3] }
-  local rightDoor = { adjustedRight[1], center[2], seating[3] }
+  local leftDoor = { adjustedLeft[1], cameraPosition[2], standup[3] }
+  local rightDoor = { adjustedRight[1], cameraPosition[2], standup[3] }
 
   if isExitNodeFrontSide then
     if not isNear(adjustedFront[3], steeringWheelPosition[3], 0.3) then
@@ -176,7 +200,7 @@ function CabCinematicUtil.getVehicleCabPositions(vehicle, cameraPosition, steeri
       rightDoor[3] = steeringWheelPosition[3]
     end
   elseif isExitNodeBackSide then
-    if isNear(seatingZ, center[3], 0.15) then
+    if isNear(standupZ, center[3], 0.15) then
       leftDoor[3] = cameraPosition[3]
       rightDoor[3] = cameraPosition[3]
     end
@@ -186,21 +210,166 @@ function CabCinematicUtil.getVehicleCabPositions(vehicle, cameraPosition, steeri
   end
 
   return {
-    exit = exit,
-    center = center,
-    front = adjustedFront,
-    left = adjustedLeft,
-    right = adjustedRight,
-    back = adjustedBack,
-    seating = seating,
-    -- backHitResult = backHitResult,
-    -- leftHitResult = leftHitResult,
-    -- frontHitResult = frontHitResult,
-    -- focusBack = { fx, fy, focusBackZ },
-    -- focusFront = { fx, fy, focusFrontZ },
-    -- focusLeft = { focusLeftX, fy, fz },
-
-    leftDoor = leftDoor,
-    rightDoor = rightDoor
+    isExitNodeLeftSide = isExitNodeLeftSide,
+    isExitNodeFrontSide = isExitNodeFrontSide,
+    isExitNodeBackSide = isExitNodeBackSide,
+    isExitNodeCenter = not isExitNodeFrontSide and not isExitNodeBackSide,
+    positions = {
+      exit = exit,
+      center = center,
+      front = adjustedFront,
+      left = adjustedLeft,
+      right = adjustedRight,
+      back = adjustedBack,
+      bottom = bottom,
+      top = top,
+      standup = standup,
+      seat = seat,
+      -- backHitResult = backHitResult,
+      -- leftHitResult = leftHitResult,
+      -- frontHitResult = frontHitResult,
+      -- focusBack = { fx, fy, focusBackZ },
+      -- focusFront = { fx, fy, focusFrontZ },
+      -- focusLeft = { focusLeftX, fy, fz },
+      leftDoor = leftDoor,
+      rightDoor = rightDoor
+    }
   }
+end
+
+function CabCinematicUtil.getVehiclePathPositions(vehicle, cabFeatures)
+  local category = vehicle:getVehicleCategory()
+  Log:info("CabCinematicUtil.getVehiclePathPositions category: %s", tostring(category))
+
+  local start = {
+    cabFeatures.positions.exit[1],
+    cabFeatures.positions.exit[2] + 1.80,
+    cabFeatures.positions.exit[3]
+  }
+
+  local pathStart = {
+    start
+  }
+
+  local pathEnd = {
+    cabFeatures.positions.leftDoor,
+    cabFeatures.positions.standup,
+    cabFeatures.positions.seat,
+  }
+
+  if category == 'harvesters' then
+    if cabFeatures.isExitNodeCenter then
+      local ladderBottom = {
+        start[1],
+        start[2],
+        start[3]
+      };
+
+      local ladderTop = {
+        ladderBottom[1] - 1.0,
+        cabFeatures.positions.leftDoor[2],
+        start[3]
+      };
+
+      return CabCinematicUtil.concat(
+        pathStart,
+        {
+          ladderBottom,
+          ladderTop,
+        },
+        pathEnd
+      )
+    end
+
+    return {}
+  end
+
+  if category == 'forageharvesters' then
+    if cabFeatures.isExitNodeBackSide then
+      local leftDoorCross = {
+        cabFeatures.positions.leftDoor[1] + 0.35,
+        cabFeatures.positions.leftDoor[2],
+        cabFeatures.positions.leftDoor[3]
+      };
+
+      local ladderBottom = {
+        leftDoorCross[1],
+        start[2] + 0.15,
+        start[3] + 0.25
+      };
+
+      local ladderTop = {
+        leftDoorCross[1],
+        leftDoorCross[2],
+        ladderBottom[3] + 1.0
+      };
+
+      return CabCinematicUtil.concat(
+        pathStart,
+        {
+          ladderBottom,
+          ladderTop,
+          leftDoorCross,
+        },
+        pathEnd
+      )
+    end
+
+    return {}
+  end
+
+  if category == 'beetharvesters' then
+    if cabFeatures.isExitNodeBackSide then
+      local leftDoorCross = {
+        cabFeatures.positions.leftDoor[1] + 0.35,
+        cabFeatures.positions.leftDoor[2],
+        cabFeatures.positions.leftDoor[3]
+      };
+
+      local ladderTop = {
+        leftDoorCross[1] + 0.2,
+        leftDoorCross[2],
+        start[3]
+      };
+
+      local ladderBottom = {
+        ladderTop[1] + 1.0,
+        start[2],
+        ladderTop[3]
+      };
+
+      return CabCinematicUtil.concat(
+        pathStart,
+        {
+          ladderBottom,
+          ladderTop,
+          leftDoorCross,
+        },
+        pathEnd
+      )
+    end
+  end
+
+  if category == 'tractorss' then
+    return CabCinematicUtil.concat(
+      pathStart,
+      pathEnd
+    )
+  end
+
+  if category == 'tractorsm' then
+    return CabCinematicUtil.concat(
+      pathStart,
+      pathEnd
+    )
+  end
+
+  if category == 'tractorsl' then
+    return CabCinematicUtil.concat(
+      pathStart,
+      pathEnd
+    )
+  end
+
+  return {}
 end

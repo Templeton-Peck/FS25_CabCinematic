@@ -112,6 +112,14 @@ function CabCinematic:draw()
         DebugUtil.drawDebugCube(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode, radius, radius, radius,
           0, 0, 1, 0, 0, 0)
 
+        for _, wheel in pairs(vehicle.spec_wheels.wheels) do
+          local wheelNode = wheel.driveNode
+          if wheel.linkNode ~= wheel.driveNode then
+            wheelNode = wheel.linkNode
+          end
+          DebugUtil.drawDebugNode(wheelNode, getName(wheelNode))
+        end
+
         -- -- DebugUtil.drawDebugCube(node, sizeX, sizeY, sizeZ, r, g, b, offsetX, offsetY, offsetZ)
 
         -- -- DebugUtil.drawDebugParallelogram(x,z, widthX,widthZ, heightX,heightZ, heightOffset, r,g,b,a, fixedHeight)

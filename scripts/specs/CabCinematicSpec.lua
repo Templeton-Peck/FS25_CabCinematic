@@ -158,11 +158,13 @@ function CabCinematicSpec:getCabCinematicPositions()
   if self.spec_cabCinematic.positions == nil then
     local cameraPosition = CabCinematicUtil.getVehicleInteriorCameraPosition(self)
     local steeringWheelPosition = CabCinematicUtil.getVehicleSteeringWheelPosition(self)
-    local cabPositions = CabCinematicUtil.getVehicleCabPositions(self, cameraPosition, steeringWheelPosition)
-    self.spec_cabCinematic.positions = CabCinematicUtil.merge(cabPositions, {
-      camera        = cameraPosition,
-      steeringWheel = steeringWheelPosition
-    })
+    local cabFeatures = CabCinematicUtil.getVehicleCabFeatures(self, cameraPosition, steeringWheelPosition)
+    local pathPositions = CabCinematicUtil.getVehiclePathPositions(self, cabFeatures)
+    -- self.spec_cabCinematic.positions = CabCinematicUtil.merge(cabFeatures.positions, pathPositions, {
+    --   camera        = cameraPosition,
+    --   steeringWheel = steeringWheelPosition
+    -- })
+    self.spec_cabCinematic.positions = pathPositions
   end
 
   return self.spec_cabCinematic.positions;
