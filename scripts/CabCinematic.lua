@@ -11,10 +11,18 @@ CabCinematic = Mod:init({
   },
   flags = {
     skipAnimation = false,
-    disabled = true,
+    disabled = false,
     debug = true
   },
   debugAnimation = nil,
+  SUPPORTED_VEHICLE_CATEGORIES = {
+    'tractorss',
+    'tractorsm',
+    'tractorsl',
+    'harvesters',
+    'forageharvesters',
+    'beetharvesters',
+  }
 })
 
 CabCinematic.VEHICLE_INTERACT_DISTANCE = 3.0
@@ -49,17 +57,15 @@ function CabCinematic:getIsDisabled()
 end
 
 function CabCinematic:getIsVehicleSupported(vehicle)
-  local vehiclePreset = CabCinematicAnimation.PRESETS[vehicle.typeName]
-  if vehiclePreset == nil then
-    return false
-  end
-
   local vehicleCategory = vehicle:getVehicleCategory()
-  if vehiclePreset[vehicleCategory] == nil then
-    return false
+
+  for _, category in ipairs(self.SUPPORTED_VEHICLE_CATEGORIES) do
+    if vehicleCategory == category then
+      return true
+    end
   end
 
-  return true
+  return false
 end
 
 function CabCinematic:startCurrentAnimation()
