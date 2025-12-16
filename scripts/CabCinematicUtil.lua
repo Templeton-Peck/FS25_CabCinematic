@@ -1,5 +1,48 @@
 CabCinematicUtil = {}
 
+function CabCinematicUtil.printParentNodeHierarchy(node, prefix)
+  prefix = prefix or ""
+  local parent = getParent(node)
+  if parent ~= 0 then
+    Log:info("%s%s", prefix, getName(parent))
+    CabCinematicUtil.printParentNodeHierarchy(parent, prefix .. "  ")
+  end
+end
+
+function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, maxDepth, excludeKeys)
+  inputIndent = inputIndent or "  "
+  depth = depth or 0
+  maxDepth = maxDepth or 3
+
+  if depth > maxDepth then
+    return
+  end
+
+  local debugString = ""
+  for i, j in pairs(inputTable) do
+    local skip = false
+
+    if excludeKeys ~= nil then
+      for _, key in ipairs(excludeKeys) do
+        if i == key then
+          skip = true
+          break
+        end
+      end
+    end
+
+    if not skip then
+      print(inputIndent .. tostring(i) .. " :: " .. tostring(j))
+
+      if type(j) == "table" then
+        CabCinematicUtil.printTableRecursively(j, inputIndent .. "    ", depth + 1, maxDepth, excludeKeys)
+      end
+    end
+  end
+
+  return debugString
+end
+
 function CabCinematicUtil.getNodeDistance2D(nodeA, nodeB)
   local xA, zA = getWorldTranslation(nodeA)
   local xB, zB = getWorldTranslation(nodeB)
@@ -84,23 +127,25 @@ end
 
 function CabCinematicUtil.drawDebugNodeRelativePositions(node, positions)
   for name, position in pairs(positions) do
-    if position.hits ~= nil then
-      for index, hit in ipairs(position.hits) do
-        if (hit[1] == position.best[1] and hit[2] == position.best[2] and hit[3] == position.best[3]) then
-          local px, py, pz = localToWorld(node, unpack(position.best))
-          local text = string.format("%s best (%.2f, %.2f, %.2f) Dist: %.2f", name, position.best[1], position.best[2],
-            position.best[3], position.best[4])
-          DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
-        else
-          local px, py, pz = localToWorld(node, unpack(hit))
-          local text = string.format("%s %d (%.2f, %.2f, %.2f) Dist: %.2f", name, index, hit[1], hit[2], hit[3], hit[4])
-          DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
-        end
+    local px, py, pz = localToWorld(node, unpack(position))
+    local text = string.format("%s (%.2f, %.2f, %.2f)", name, position[1], position[2], position[3])
+    DebugUtil.drawDebugGizmoAtWorldPos(px, py, pz, 0, 1, 0, 0, 1, 0, text)
+  end
+end
+
+function CabCinematicUtil.drawDebugNodeRelativeHitResults(node, hitResults)
+  for name, hitResult in pairs(hitResults) do
+    for index, hit in ipairs(hitResult.hits) do
+      if (hit[1] == hitResult.best[1] and hit[2] == hitResult.best[2] and hit[3] == hitResult.best[3]) then
+        local px, py, pz = localToWorld(node, unpack(hitResult.best))
+        local text = string.format("%s best (%.2f, %.2f, %.2f) Dist: %.2f", name, hitResult.best[1], hitResult.best[2],
+          hitResult.best[3], hitResult.best[4])
+        DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
+      else
+        local px, py, pz = localToWorld(node, unpack(hit))
+        local text = string.format("%s %d (%.2f, %.2f, %.2f) Dist: %.2f", name, index, hit[1], hit[2], hit[3], hit[4])
+        DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
       end
-    else
-      local px, py, pz = localToWorld(node, unpack(position))
-      local text = string.format("%s (%.2f, %.2f, %.2f)", name, position[1], position[2], position[3])
-      DebugUtil.drawDebugGizmoAtWorldPos(px, py, pz, 0, 1, 0, 0, 1, 0, text)
     end
   end
 end
@@ -132,7 +177,51 @@ local function isNear(valueA, valueB, threshold)
   return math.abs(valueA - valueB) <= threshold
 end
 
-function CabCinematicUtil.getVehicleCabFeatures(vehicle, cameraPosition, steeringWheelPosition)
+function CabCinematicUtil.getWheelExternalPosition(wheel)
+  local rootNode = wheel.vehicle.rootNode
+
+  local extX = wheel.isLeft and -math.huge or math.huge
+  local extY, extZ = 0, 0
+
+  local function getHalfWidth(vw)
+    local w = (vw.width) or (wheel.physics and (wheel.physics.width or wheel.physics.wheelShapeWidth)) or 0
+    return 0.5 * w
+  end
+
+  local function testNode(node, halfW)
+    if node == nil or node == 0 or halfW == 0 then
+      return
+    end
+
+    local x1, y1, z1 = localToLocal(node, rootNode, halfW, 0, 0)
+    local x2, y2, z2 = localToLocal(node, rootNode, -halfW, 0, 0)
+
+    if wheel.isLeft then
+      if x1 > extX then extX, extY, extZ = x1, y1, z1 end
+      if x2 > extX then extX, extY, extZ = x2, y2, z2 end
+    else
+      if x1 < extX then extX, extY, extZ = x1, y1, z1 end
+      if x2 < extX then extX, extY, extZ = x2, y2, z2 end
+    end
+  end
+
+  if wheel.visualWheels ~= nil and #wheel.visualWheels > 0 then
+    for _, vw in ipairs(wheel.visualWheels) do
+      if vw.node ~= nil and vw.node ~= 0 then
+        testNode(vw.node, getHalfWidth(vw))
+      end
+    end
+  else
+    local node = wheel.driveNode or wheel.node
+    if node ~= nil and node ~= 0 then
+      testNode(node, getHalfWidth(wheel))
+    end
+  end
+
+  return { extX, extY, extZ }
+end
+
+function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWheelPosition)
   local _, lfy, _ = localToLocal(vehicle.spec_enterable.defaultCharacterTargets.leftFoot.targetNode, vehicle.rootNode, 0,
     0,
     0)
@@ -209,30 +298,52 @@ function CabCinematicUtil.getVehicleCabFeatures(vehicle, cameraPosition, steerin
     rightDoor[3] = clamp(rightDoor[3], adjustedBack[3] + 0.35, adjustedBack[3] + 0.55)
   end
 
+  local wheelPositions = {}
+  for _, wheel in pairs(vehicle.spec_wheels.wheels) do
+    table.insert(wheelPositions, CabCinematicUtil.getWheelExternalPosition(wheel))
+  end
+
+  local exitWheel = nil
+  local minDist = math.huge
+  for _, wheelPos in ipairs(wheelPositions) do
+    local dist = MathUtil.vector2Length(exit[1] - wheelPos[1], exit[3] - wheelPos[3])
+    if dist < minDist then
+      minDist = dist
+      exitWheel = wheelPos
+    end
+  end
+
   return {
     isExitNodeLeftSide = isExitNodeLeftSide,
     isExitNodeFrontSide = isExitNodeFrontSide,
     isExitNodeBackSide = isExitNodeBackSide,
     isExitNodeCenter = not isExitNodeFrontSide and not isExitNodeBackSide,
     positions = {
-      exit = exit,
-      center = center,
-      front = adjustedFront,
-      left = adjustedLeft,
-      right = adjustedRight,
-      back = adjustedBack,
-      bottom = bottom,
-      top = top,
-      standup = standup,
-      seat = seat,
-      -- backHitResult = backHitResult,
-      -- leftHitResult = leftHitResult,
-      -- frontHitResult = frontHitResult,
-      -- focusBack = { fx, fy, focusBackZ },
-      -- focusFront = { fx, fy, focusFrontZ },
-      -- focusLeft = { focusLeftX, fy, fz },
-      leftDoor = leftDoor,
-      rightDoor = rightDoor
+      camera        = cameraPosition,
+      steeringWheel = steeringWheelPosition,
+      exit          = exit,
+      standup       = standup,
+      seat          = seat,
+      exitWheel     = exitWheel,
+      leftDoor      = leftDoor,
+      rightDoor     = rightDoor
+    },
+    debugPositions = {
+      center     = center,
+      front      = adjustedFront,
+      left       = adjustedLeft,
+      right      = adjustedRight,
+      back       = adjustedBack,
+      bottom     = bottom,
+      top        = top,
+      focusBack  = { fx, fy, focusBackZ },
+      focusFront = { fx, fy, focusFrontZ },
+      focusLeft  = { focusLeftX, fy, fz },
+    },
+    debugHits = {
+      backHitResult  = backHitResult,
+      frontHitResult = frontHitResult,
+      leftHitResult  = leftHitResult,
     }
   }
 end
@@ -260,7 +371,7 @@ function CabCinematicUtil.getVehiclePathPositions(vehicle, cabFeatures)
   if category == 'harvesters' then
     if cabFeatures.isExitNodeCenter then
       local ladderBottom = {
-        start[1],
+        math.min(start[1], cabFeatures.positions.exitWheel[1] + 1),
         start[2],
         start[3]
       };
@@ -351,6 +462,21 @@ function CabCinematicUtil.getVehiclePathPositions(vehicle, cabFeatures)
   end
 
   if category == 'tractorss' then
+    if isNear(cabFeatures.positions.exitWheel[1], cabFeatures.positions.exit[1], 0.1) then
+      local leftDoorCross = {
+        (cabFeatures.positions.center[1] + cabFeatures.positions.leftDoor[1]),
+        cabFeatures.positions.leftDoor[2],
+        cabFeatures.positions.exit[3]
+      };
+
+      return CabCinematicUtil.concat(
+        pathStart,
+        {
+          leftDoorCross
+        },
+        pathEnd
+      )
+    end
     return CabCinematicUtil.concat(
       pathStart,
       pathEnd

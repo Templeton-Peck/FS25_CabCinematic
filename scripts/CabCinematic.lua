@@ -106,48 +106,13 @@ function CabCinematic:draw()
         nil
     if vehicle ~= nil then
       if vehicle.spec_cabCinematic ~= nil then
-        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, vehicle:getCabCinematicPositions())
-
-        local cx, cy, cz, radius = getShapeWorldBoundingSphere(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode)
-        DebugUtil.drawDebugCube(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode, radius, radius, radius,
-          0, 0, 1, 0, 0, 0)
-
-        for _, wheel in pairs(vehicle.spec_wheels.wheels) do
-          local wheelNode = wheel.driveNode
-          if wheel.linkNode ~= wheel.driveNode then
-            wheelNode = wheel.linkNode
-          end
-          DebugUtil.drawDebugNode(wheelNode, getName(wheelNode))
-        end
-
-        -- -- DebugUtil.drawDebugCube(node, sizeX, sizeY, sizeZ, r, g, b, offsetX, offsetY, offsetZ)
-
-        -- -- DebugUtil.drawDebugParallelogram(x,z, widthX,widthZ, heightX,heightZ, heightOffset, r,g,b,a, fixedHeight)
-        -- -- DebugUtil.drawDebugParallelogram(cx, cz, radius, 0, 0, radius, cy - radius, 1, 0, 0, 0.5, false)
-
-        -- local _, _, _, radius = getShapeGeometryBoundingSphere(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode)
-        -- DebugUtil.drawDebugCircleAtNode(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode, radius, 10)
-
-        -- local shadowFocusBoxNode = vehicle:getVehicleInteriorCamera().shadowFocusBoxNode
-        -- local sx, sy, sz = getScale(shadowFocusBoxNode)
-        -- DebugUtil.drawDebugNode(shadowFocusBoxNode, "shadowFocusBoxNode");
-        -- -- DebugUtil.drawDebugRectangle(shadowFocusBoxNode, minX, maxX, minZ, maxZ, yOffset, r, g, b, a, filled)
-        -- --DebugUtil.drawDebugCube(node, sizeX, sizeY, sizeZ, r, g, b, offsetX, offsetY, offsetZ)
-        -- DebugUtil.drawDebugRectangle(shadowFocusBoxNode, -sx, sx, -sz, sz, 0, 1, 0, 0, 0.5, false)
-        -- DebugUtil.drawDebugCube(shadowFocusBoxNode, sx * 2, sy * 2, sz * 2, 0, 0, 1, 0, 0, 0)
+        -- local features = vehicle:getCabCinematicFeatures()
+        local pathPositions = vehicle:getCabCinematicPathPositions()
+        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
+        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, pathPositions)
+        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
+        -- CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
       end
-
-      -- if vehicle.spec_combine ~= nil and vehicle.spec_combine.ladder ~= nil then
-      --   local animation = vehicle.spec_animatedVehicle.animations[vehicle.spec_combine.ladder.animName];
-      --   if animation ~= nil then
-      --     for _, part in ipairs(animation.parts) do
-      --       for index = 1, #part.animationValues do
-      --         local value = part.animationValues[index]
-      --         DebugUtil.drawDebugNode(value.node, getName(value.node))
-      --       end
-      --     end
-      --   end
-      -- end
     end
   end
 end

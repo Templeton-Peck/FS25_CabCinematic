@@ -25,8 +25,10 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationFinished)
   SpecializationUtil.registerFunction(vehicleType, "getIsVehicleCabCinematicRequiredAnimationPlaying",
     CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationPlaying)
-  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPositions",
-    CabCinematicSpec.getCabCinematicPositions)
+  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures",
+    CabCinematicSpec.getCabCinematicFeatures)
+  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPathPositions",
+    CabCinematicSpec.getCabCinematicPathPositions)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -61,7 +63,7 @@ function CabCinematicSpec:getVehicleCategory()
 end
 
 function CabCinematicSpec:getVehicleInteriorCameraPosition()
-  return self:getCabCinematicPositions().camera
+  return self:getCabCinematicFeatures().positions.camera
 end
 
 function CabCinematicSpec:getVehicleDefaultExteriorPosition()
@@ -82,7 +84,7 @@ function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
     return self.spec_cabCinematic.adjustedExteriorPosition
   end
 
-  local cabLeftHitPos = self:getCabCinematicPositions().cabLeft
+  local cabLeftHitPos = self:getCabCinematicFeatures().positions.leftDoor
   local defaultExteriorPosition = self:getVehicleDefaultExteriorPosition()
 
   local xOffset = 0.0
@@ -103,7 +105,7 @@ function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
 end
 
 function CabCinematicSpec:getVehicleCabSidePosition()
-  return self:getCabCinematicPositions().cabLeft
+  return self:getCabCinematicFeatures().positions.leftDoor
 end
 
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
@@ -154,36 +156,41 @@ function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationPlaying()
   return anim ~= nil and self:getIsAnimationPlaying(anim.name)
 end
 
-function CabCinematicSpec:getCabCinematicPositions()
-  if self.spec_cabCinematic.positions == nil then
+function CabCinematicSpec:getCabCinematicFeatures()
+  if self.spec_cabCinematic.features == nil then
     local cameraPosition = CabCinematicUtil.getVehicleInteriorCameraPosition(self)
     local steeringWheelPosition = CabCinematicUtil.getVehicleSteeringWheelPosition(self)
-    local cabFeatures = CabCinematicUtil.getVehicleCabFeatures(self, cameraPosition, steeringWheelPosition)
-    local pathPositions = CabCinematicUtil.getVehiclePathPositions(self, cabFeatures)
-    -- self.spec_cabCinematic.positions = CabCinematicUtil.merge(cabFeatures.positions, pathPositions, {
-    --   camera        = cameraPosition,
-    --   steeringWheel = steeringWheelPosition
-    -- })
-    self.spec_cabCinematic.positions = pathPositions
+    local features = CabCinematicUtil.getVehicleFeatures(self, cameraPosition, steeringWheelPosition)
+    self.spec_cabCinematic.features = features
   end
 
-  return self.spec_cabCinematic.positions;
+  return self.spec_cabCinematic.features;
+end
+
+function CabCinematicSpec:getCabCinematicPathPositions()
+  if self.spec_cabCinematic.pathPositions == nil then
+    local cabFeatures = self:getCabCinematicFeatures()
+    local pathPositions = CabCinematicUtil.getVehiclePathPositions(self, cabFeatures)
+    self.spec_cabCinematic.pathPositions = pathPositions
+  end
+
+  return self.spec_cabCinematic.pathPositions;
 end
 
 function CabCinematicSpec:onLoad()
   local spec                    = {}
   spec.vehicleCategory          = nil
-  spec.enterSide                = "left"
   spec.defaultExteriorPosition  = nil
   spec.adjustedExteriorPosition = nil
-  spec.positions                = nil
+  spec.features                 = nil
+  spec.pathPositions            = nil
   self.spec_cabCinematic        = spec
 end
 
 function CabCinematicSpec:onDelete()
   self.spec_cabCinematic.vehicleCategory = nil
-  self.spec_cabCinematic.enterSide = nil
   self.spec_cabCinematic.defaultExteriorPosition = nil
   self.spec_cabCinematic.adjustedExteriorPosition = nil
-  self.spec_cabCinematic.positions = nil
+  self.spec_cabCinematic.features = nil
+  self.spec_cabCinematic.pathPositions = nil
 end
