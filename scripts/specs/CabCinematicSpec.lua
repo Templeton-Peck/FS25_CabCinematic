@@ -27,8 +27,6 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationPlaying)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures",
     CabCinematicSpec.getCabCinematicFeatures)
-  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPathPositions",
-    CabCinematicSpec.getCabCinematicPathPositions)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -167,16 +165,6 @@ function CabCinematicSpec:getCabCinematicFeatures()
   return self.spec_cabCinematic.features;
 end
 
-function CabCinematicSpec:getCabCinematicPathPositions()
-  if self.spec_cabCinematic.pathPositions == nil then
-    local cabFeatures = self:getCabCinematicFeatures()
-    local pathPositions = CabCinematicUtil.getVehiclePathPositions(self, cabFeatures)
-    self.spec_cabCinematic.pathPositions = pathPositions
-  end
-
-  return self.spec_cabCinematic.pathPositions;
-end
-
 function CabCinematicSpec:onLoad()
   local spec                    = {}
   spec.vehicleCategory          = nil
@@ -192,5 +180,4 @@ function CabCinematicSpec:onDelete()
   self.spec_cabCinematic.defaultExteriorPosition = nil
   self.spec_cabCinematic.adjustedExteriorPosition = nil
   self.spec_cabCinematic.features = nil
-  self.spec_cabCinematic.pathPositions = nil
 end

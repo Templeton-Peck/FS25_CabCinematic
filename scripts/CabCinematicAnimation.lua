@@ -128,22 +128,7 @@ function CabCinematicAnimation:buildLeaveAdjustmentKeyframe()
 end
 
 function CabCinematicAnimation:buildPresetKeyframes()
-  local pathPositions = self.vehicle:getCabCinematicPathPositions()
-  local keyframes = {}
-
-  for i = 1, #pathPositions, 1 do
-    local startPos = pathPositions[i]
-    local stopPos = pathPositions[i + 1]
-
-    if startPos ~= nil and stopPos ~= nil then
-      local keyframe = CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
-        startPos,
-        stopPos
-      )
-      table.insert(keyframes, keyframe)
-    end
-  end
+  local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, self.vehicle)
 
   if self.type == CabCinematicAnimation.TYPES.LEAVE then
     local reversedKeyframes = {}

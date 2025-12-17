@@ -277,11 +277,11 @@ function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWh
   local isExitNodeBackSide = MathUtil.round(exit[3] - standupZ, 2) <= -0.5
 
   local standupX = isExitNodeLeftSide and center[1] + 0.2 or center[1] - 0.2
-  local standup = { standupX, cameraPosition[2], standupZ }
+  local standup = { standupX, cameraPosition[2] + 0.1, standupZ }
   local seat = { cameraPosition[1], cameraPosition[2], cameraPosition[3] }
 
-  local leftDoor = { adjustedLeft[1], cameraPosition[2], standup[3] }
-  local rightDoor = { adjustedRight[1], cameraPosition[2], standup[3] }
+  local leftDoor = { adjustedLeft[1], standup[2], standup[3] }
+  local rightDoor = { adjustedRight[1], standup[2], standup[3] }
 
   if isExitNodeFrontSide then
     if not isNear(adjustedFront[3], steeringWheelPosition[3], 0.3) then
@@ -348,154 +348,7 @@ function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWh
   }
 end
 
-function CabCinematicUtil.getVehiclePathPositions(vehicle, cabFeatures)
-  local category = vehicle:getVehicleCategory()
-  Log:info("CabCinematicUtil.getVehiclePathPositions category: %s", tostring(category))
-
-  local start = {
-    cabFeatures.positions.exit[1],
-    cabFeatures.positions.exit[2] + 1.80,
-    cabFeatures.positions.exit[3]
-  }
-
-  local pathStart = {
-    start
-  }
-
-  local pathEnd = {
-    cabFeatures.positions.leftDoor,
-    cabFeatures.positions.standup,
-    cabFeatures.positions.seat,
-  }
-
-  if category == 'harvesters' then
-    if cabFeatures.isExitNodeCenter then
-      local ladderBottom = {
-        math.min(start[1], cabFeatures.positions.exitWheel[1] + 1),
-        start[2],
-        start[3]
-      };
-
-      local ladderTop = {
-        ladderBottom[1] - 1.0,
-        cabFeatures.positions.leftDoor[2],
-        start[3]
-      };
-
-      return CabCinematicUtil.concat(
-        pathStart,
-        {
-          ladderBottom,
-          ladderTop,
-        },
-        pathEnd
-      )
-    end
-
-    return {}
-  end
-
-  if category == 'forageharvesters' then
-    if cabFeatures.isExitNodeBackSide then
-      local leftDoorCross = {
-        cabFeatures.positions.leftDoor[1] + 0.35,
-        cabFeatures.positions.leftDoor[2],
-        cabFeatures.positions.leftDoor[3]
-      };
-
-      local ladderBottom = {
-        leftDoorCross[1],
-        start[2] + 0.15,
-        start[3] + 0.25
-      };
-
-      local ladderTop = {
-        leftDoorCross[1],
-        leftDoorCross[2],
-        ladderBottom[3] + 1.0
-      };
-
-      return CabCinematicUtil.concat(
-        pathStart,
-        {
-          ladderBottom,
-          ladderTop,
-          leftDoorCross,
-        },
-        pathEnd
-      )
-    end
-
-    return {}
-  end
-
-  if category == 'beetharvesters' then
-    if cabFeatures.isExitNodeBackSide then
-      local leftDoorCross = {
-        cabFeatures.positions.leftDoor[1] + 0.35,
-        cabFeatures.positions.leftDoor[2],
-        cabFeatures.positions.leftDoor[3]
-      };
-
-      local ladderTop = {
-        leftDoorCross[1] + 0.2,
-        leftDoorCross[2],
-        start[3]
-      };
-
-      local ladderBottom = {
-        ladderTop[1] + 1.0,
-        start[2],
-        ladderTop[3]
-      };
-
-      return CabCinematicUtil.concat(
-        pathStart,
-        {
-          ladderBottom,
-          ladderTop,
-          leftDoorCross,
-        },
-        pathEnd
-      )
-    end
-  end
-
-  if category == 'tractorss' then
-    if isNear(cabFeatures.positions.exitWheel[1], cabFeatures.positions.exit[1], 0.1) then
-      local leftDoorCross = {
-        (cabFeatures.positions.center[1] + cabFeatures.positions.leftDoor[1]),
-        cabFeatures.positions.leftDoor[2],
-        cabFeatures.positions.exit[3]
-      };
-
-      return CabCinematicUtil.concat(
-        pathStart,
-        {
-          leftDoorCross
-        },
-        pathEnd
-      )
-    end
-    return CabCinematicUtil.concat(
-      pathStart,
-      pathEnd
-    )
-  end
-
-  if category == 'tractorsm' then
-    return CabCinematicUtil.concat(
-      pathStart,
-      pathEnd
-    )
-  end
-
-  if category == 'tractorsl' then
-    return CabCinematicUtil.concat(
-      pathStart,
-      pathEnd
-    )
-  end
-
-  return {}
+function CabCinematicUtil.getPlayerEyesightHeight(player)
+  local _, y, _ = getTranslation(player.camera.firstPersonCamera)
+  return y
 end

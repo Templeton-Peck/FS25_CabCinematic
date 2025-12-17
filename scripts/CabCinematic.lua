@@ -112,10 +112,8 @@ function CabCinematic:draw()
         nil
     if vehicle ~= nil then
       if vehicle.spec_cabCinematic ~= nil then
-        -- local features = vehicle:getCabCinematicFeatures()
-        local pathPositions = vehicle:getCabCinematicPathPositions()
-        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
-        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, pathPositions)
+        local features = vehicle:getCabCinematicFeatures()
+        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
         -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
         -- CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
       end
