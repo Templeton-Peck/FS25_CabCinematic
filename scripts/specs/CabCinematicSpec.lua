@@ -21,12 +21,14 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationPlaying)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures",
     CabCinematicSpec.getCabCinematicFeatures)
+  SpecializationUtil.registerFunction(vehicleType, "setCabCinematicSkipAnimationAllowed",
+    CabCinematicSpec.setCabCinematicSkipAnimationAllowed)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onDelete", CabCinematicSpec)
-  SpecializationUtil.registerEventListener(vehicleType, "onInitCabCinematic", CabCinematicSpec)
+  SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", CabCinematicSpec)
 end
 
 function CabCinematicSpec:getVehicleInteriorCamera()
@@ -117,14 +119,50 @@ function CabCinematicSpec:getCabCinematicFeatures()
   return self.spec_cabCinematic.features;
 end
 
+function CabCinematicSpec:setCabCinematicSkipAnimationAllowed(allowed)
+  local actionEvents = self.spec_cabCinematic.actionEvents;
+  if actionEvents[InputAction.CAB_CINEMATIC_SKIP] ~= nil then
+    g_inputBinding:setActionEventActive(actionEvents[InputAction.CAB_CINEMATIC_SKIP].actionEventId, allowed)
+    g_inputBinding:setActionEventTextVisibility(actionEvents[InputAction.CAB_CINEMATIC_SKIP].actionEventId, allowed)
+  end
+end
+
 function CabCinematicSpec:onLoad()
   local spec             = {}
+  spec.actionEvents      = {}
   spec.vehicleCategory   = nil
   spec.features          = nil
   self.spec_cabCinematic = spec
 end
 
 function CabCinematicSpec:onDelete()
-  self.spec_cabCinematic.vehicleCategory = nil
-  self.spec_cabCinematic.features = nil
+  local spec = self.spec_cabCinematic
+
+  self:clearActionEventsTable(spec.actionEvents)
+  spec.vehicleCategory = nil
+  spec.features = nil
+  spec.actionEvents = nil
+end
+
+function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
+  if self.isClient then
+    local spec = self.spec_cabCinematic
+    self:clearActionEventsTable(spec.actionEvents)
+
+    if isActiveForInputIgnoreSelection then
+      local _, eventId = self:addActionEvent(spec.actionEvents, InputAction.CAB_CINEMATIC_SKIP, self,
+        CabCinematicSpec.onCabCinematicSkipAnimationInput, false, true, false, true, nil)
+
+      if eventId then
+        g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_HIGH)
+        g_inputBinding:setActionEventText(eventId, g_i18n:getText("input_CAB_CINEMATIC_SKIP"))
+        g_inputBinding:setActionEventActive(eventId, false)
+        g_inputBinding:setActionEventTextVisibility(eventId, false)
+      end
+    end
+  end
+end
+
+function CabCinematicSpec.onCabCinematicSkipAnimationInput(self, actionName, state, arg3, arg4, isAnalog)
+  CabCinematic:setSkipAnimationInputState(state == 1)
 end

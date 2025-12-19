@@ -1,11 +1,6 @@
 CabCinematic = Mod:init({
   camera = CabCinematicCamera.new(),
   cinematicAnimation = nil,
-  vehicle = nil,
-  finishCallback = nil,
-  inputEventIds = {
-    skipAnimation = nil,
-  },
   inputStates = {
     skipAnimation = false,
   },
@@ -15,6 +10,7 @@ CabCinematic = Mod:init({
     debug = false
   },
   debugAnimation = nil,
+  VEHICLE_INTERACT_DISTANCE = 3.0,
   SUPPORTED_VEHICLE_CATEGORIES = {
     'tractorss',
     'tractorsm',
@@ -22,10 +18,8 @@ CabCinematic = Mod:init({
     'harvesters',
     'forageharvesters',
     'beetharvesters',
-  }
+  },
 })
-
-CabCinematic.VEHICLE_INTERACT_DISTANCE = 3.0
 
 function CabCinematic:isPlayerInFirstPerson()
   if g_currentVehicle ~= nil then
@@ -68,17 +62,22 @@ function CabCinematic:getIsVehicleSupported(vehicle)
   return false
 end
 
+function CabCinematic:setSkipAnimationInputState(state)
+  self.inputStates.skipAnimation = state
+end
+
 function CabCinematic:startCurrentAnimation()
   if self.flags.debug then
     self.debugAnimation = self.cinematicAnimation
   end
 
-  g_inputBinding:setActionEventTextVisibility(CabCinematic.inputEventIds.skipAnimation, true)
-  CabCinematic.inputStates.skipAnimation = false
+  self:setSkipAnimationInputState(false)
   self.cinematicAnimation:start()
+  self.cinematicAnimation.vehicle:setCabCinematicSkipAnimationAllowed(true)
 end
 
 function CabCinematic:stopCurrentAnimation()
+  self.cinematicAnimation.vehicle:setCabCinematicSkipAnimationAllowed(false)
   self.cinematicAnimation:stop()
 
   if not self.flags.debug then
@@ -87,8 +86,7 @@ function CabCinematic:stopCurrentAnimation()
 
   self.cinematicAnimation = nil
 
-  CabCinematic.inputStates.skipAnimation = false
-  g_inputBinding:setActionEventTextVisibility(CabCinematic.inputEventIds.skipAnimation, false)
+  self:setSkipAnimationInputState(false)
 end
 
 function CabCinematic:update(dt)
@@ -139,11 +137,6 @@ function CabCinematic:delete()
     self.camera = nil
   end
 
-  if self.inputEventIds.skipAnimation ~= nil then
-    g_inputBinding:removeActionEvent(self.inputEventIds.skipAnimation)
-    self.inputEventIds.skipAnimation = nil
-  end
-
   if self.cinematicAnimation ~= nil then
     self.cinematicAnimation:delete()
     self.cinematicAnimation = nil
@@ -186,11 +179,6 @@ function CabCinematic.onVehicleCameraActivate(self, superFunc, ...)
   Log:info(string.format("onVehicleCameraActivate called"))
   -- self.resetCameraOnVehicleSwitch = false
   superFunc(self, ...)
-end
-
-function CabCinematic.onSkipAnimationInput(actionName, state, arg3, arg4, isAnalog)
-  Log:info(string.format("onSkipAnimationInput called with state %d", state))
-  CabCinematic.inputStates.skipAnimation = state == 1
 end
 
 function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
@@ -289,28 +277,6 @@ function CabCinematic.onPlayerSwitchVehicleCamera(enterable, superFunc, ...)
   return superFunc(enterable, ...)
 end
 
-function CabCinematic.registerPlayerActionEvents(playerInput, superFunc, ...)
-  superFunc(playerInput, ...)
-
-  if CabCinematic.inputEventIds.skipAnimation ~= nil then
-    return
-  end
-
-  Log:info("CabCinematic.registerPlayerActionEvents called")
-
-  local ok, eventId = g_inputBinding:registerActionEvent(InputAction.CAB_CINEMATIC_SKIP, CabCinematic,
-    CabCinematic.onSkipAnimationInput, true, true, true, true)
-
-  if ok then
-    CabCinematic.inputEventIds.skipAnimation = eventId
-    g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_HIGH)
-    g_inputBinding:setActionEventText(eventId, g_i18n:getText("input_CAB_CINEMATIC_SKIP"))
-    g_inputBinding:setActionEventTextVisibility(eventId, false)
-  else
-    Log:error("Failed to register action event for CabCinematic")
-  end
-end
-
 function CabCinematic.onEnterOrLeaveCombine(combine, superFunc, ...)
   if CabCinematic:getIsActive() or CabCinematic:getIsReadyToStart() then
     return
@@ -321,8 +287,6 @@ end
 
 local function init()
   VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
-  PlayerInputComponent.registerActionEvents = Utils.overwrittenFunction(
-    PlayerInputComponent.registerActionEvents, CabCinematic.registerPlayerActionEvents)
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
     CabCinematic.onPlayerEnterVehicle)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
