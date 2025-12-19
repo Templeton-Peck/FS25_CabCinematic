@@ -12,7 +12,7 @@ CabCinematic = Mod:init({
   flags = {
     skipAnimation = false,
     disabled = false,
-    debug = true
+    debug = false
   },
   debugAnimation = nil,
   SUPPORTED_VEHICLE_CATEGORIES = {
@@ -114,8 +114,8 @@ function CabCinematic:draw()
       if vehicle.spec_cabCinematic ~= nil then
         local features = vehicle:getCabCinematicFeatures()
         CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
-        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
-        -- CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
+        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
+        CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
       end
     end
   end
@@ -188,9 +188,9 @@ function CabCinematic.onVehicleCameraActivate(self, superFunc, ...)
   superFunc(self, ...)
 end
 
-function CabCinematic:onSkipAnimationInput(actionName, state, arg3, arg4, isAnalog)
+function CabCinematic.onSkipAnimationInput(actionName, state, arg3, arg4, isAnalog)
   Log:info(string.format("onSkipAnimationInput called with state %d", state))
-  self.inputStates.skipAnimation = state == 1
+  CabCinematic.inputStates.skipAnimation = state == 1
 end
 
 function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
@@ -321,8 +321,8 @@ end
 
 local function init()
   VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
-  PlayerInputComponent.registerGlobalPlayerActionEvents = Utils.overwrittenFunction(
-    PlayerInputComponent.registerGlobalPlayerActionEvents, CabCinematic.registerPlayerActionEvents)
+  PlayerInputComponent.registerActionEvents = Utils.overwrittenFunction(
+    PlayerInputComponent.registerActionEvents, CabCinematic.registerPlayerActionEvents)
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
     CabCinematic.onPlayerEnterVehicle)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
