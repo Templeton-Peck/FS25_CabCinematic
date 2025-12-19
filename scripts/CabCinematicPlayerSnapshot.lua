@@ -17,5 +17,5 @@ function CabCinematicPlayerSnapshot:delete()
 end
 
 function CabCinematicPlayerSnapshot:getLocalPosition(referenceNode)
-  return worldToLocal(referenceNode, self.position[1], self.position[2], self.position[3])
+  return { worldToLocal(referenceNode, self.position[1], self.position[2], self.position[3]) }
 end

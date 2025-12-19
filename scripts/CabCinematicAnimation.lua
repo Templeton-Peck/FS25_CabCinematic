@@ -74,63 +74,42 @@ function CabCinematicAnimation:getIsPaused()
   return self.isPaused
 end
 
-function CabCinematicAnimation:getEnterAdjustmentKeyframeType()
+function CabCinematicAnimation:buildEnterAdjustmentKeyframe(keyframes)
   if self.playerSnapshot == nil then
-    return CabCinematicAnimationKeyframe.TYPES.WALK
+    return nil
   end
 
-  if self.vehicle:getLastSpeed() >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED then
-    return CabCinematicAnimationKeyframe.TYPES.RUN
-  elseif self.playerSnapshot.speed >= CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_PLAYER_SPEED then
-    return CabCinematicAnimationKeyframe.TYPES.RUN
+  local playerPosition = self.playerSnapshot:getLocalPosition(self.vehicle.rootNode)
+  local animationPosition = keyframes[1].startPosition;
+
+  local playerDistance = MathUtil.vector3Length(playerPosition[1] - animationPosition[1],
+    playerPosition[2] - animationPosition[2], playerPosition[3] - animationPosition[3])
+
+  if playerDistance > CabCinematicAnimation.PRE_MOVEMENT_DISTANCE then
+    Log:info(string.format(
+      "Calculating pre-movement keyframe - Player position (%.2f, %.2f, %.2f), ExitNode position (%.2f, %.2f, %.2f) - Distance: %.2f",
+      playerPosition[1], playerPosition[2], playerPosition[3], animationPosition[1], animationPosition[2],
+      animationPosition[3], playerDistance))
+
+    return CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.WALK,
+      playerPosition,
+      animationPosition
+    )
   else
-    return CabCinematicAnimationKeyframe.TYPES.WALK
+    Log:info(string.format("No pre-movement keyframe needed - distance: %.2f", playerDistance))
   end
 end
 
-function CabCinematicAnimation:buildEnterAdjustmentKeyframe()
-  -- if self.playerSnapshot == nil then
-  --   return nil
-  -- end
-
-  -- local plx, ply, plz = self.playerSnapshot:getLocalPosition(self.vehicle.rootNode)
-  -- local elx, ely, elz = unpack(self:getEnterAdjustmentKeyframeEndPosition())
-
-  -- local playerDistance = MathUtil.vector3Length(elx - plx, ely - ply, elz - plz)
-
-  -- if playerDistance > CabCinematicAnimation.PRE_MOVEMENT_DISTANCE then
-  --   Log:info(string.format(
-  --     "Calculating pre-movement keyframe - Player position (%.2f, %.2f, %.2f), ExitNode position (%.2f, %.2f, %.2f) - Distance: %.2f",
-  --     plx, ply, plz, elx, ely, elz, playerDistance))
-
-  --   return CabCinematicAnimationKeyframe.new(
-  --     self:getEnterAdjustmentKeyframeType(),
-  --     { plx, ply, plz },
-  --     { elx, ely, elz }
-  --   )
-  -- else
-  --   Log:info(string.format("No pre-movement keyframe needed - distance: %.2f", playerDistance))
-  -- end
-
-  return nil
-end
-
-function CabCinematicAnimation:buildLeaveAdjustmentKeyframe()
-  -- if self:isVehicleRequiringExteriorPositionAdjustment() then
-  --   return CabCinematicAnimationKeyframe.new(
-  --     self:getEnterAdjustmentKeyframeType(),
-  --     self.vehicle:getVehicleAdjustedExteriorPosition(),
-  --     self.vehicle:getVehicleDefaultExteriorPosition()
-  --   )
-  -- end
-
-  return nil
-end
-
-function CabCinematicAnimation:buildPresetKeyframes()
+function CabCinematicAnimation:buildKeyframes()
   local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, self.vehicle)
 
-  if self.type == CabCinematicAnimation.TYPES.LEAVE then
+  if self.type == CabCinematicAnimation.TYPES.ENTER then
+    local enterAdjustmentKeyframe = self:buildEnterAdjustmentKeyframe(keyframes)
+    if enterAdjustmentKeyframe ~= nil then
+      table.insert(keyframes, 1, enterAdjustmentKeyframe)
+    end
+  elseif self.type == CabCinematicAnimation.TYPES.LEAVE then
     local reversedKeyframes = {}
     for _, keyframe in ipairs(keyframes) do
       keyframe:reverse()
@@ -145,7 +124,7 @@ function CabCinematicAnimation:buildPresetKeyframes()
 end
 
 function CabCinematicAnimation:prepare()
-  self.keyframes = self:buildPresetKeyframes()
+  self.keyframes = self:buildKeyframes()
   self.duration = 0
   for _, keyframe in ipairs(self.keyframes) do
     self.duration = self.duration + keyframe:getDuration()

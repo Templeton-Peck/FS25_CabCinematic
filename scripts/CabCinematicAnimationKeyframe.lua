@@ -22,12 +22,12 @@ CabCinematicAnimationKeyframe.SPEEDS = {
 
 CabCinematicAnimationKeyframe.VIEW_BOBBING = {
   [CabCinematicAnimationKeyframe.TYPES.WALK] = {
-    verticalAmplitude = 0.02,
-    horizontalAmplitude = 0.015,
-    frequency = 1.7,
+    verticalAmplitude = 0.01,
+    horizontalAmplitude = 0.01,
+    frequency = 1.5,
   },
   [CabCinematicAnimationKeyframe.TYPES.RUN] = {
-    verticalAmplitude = 0.04,
+    verticalAmplitude = 0.03,
     horizontalAmplitude = 0.03,
     frequency = 2.5,
   },
@@ -37,9 +37,9 @@ CabCinematicAnimationKeyframe.VIEW_BOBBING = {
     frequency = 2.25,
   },
   [CabCinematicAnimationKeyframe.TYPES.SEAT] = {
-    verticalAmplitude = 0.0,
-    horizontalAmplitude = 0.0,
-    frequency = 0.0,
+    verticalAmplitude = 0.035,
+    horizontalAmplitude = 0.015,
+    frequency = 2.0,
   },
 }
 
@@ -142,7 +142,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
   if vehicleFeatures.isExitNodeCenter then
     local keyframes = {}
     local isEnterFarFromWheel = math.abs(enterPosition[1] - vehicleFeatures.positions.exitWheel[1]) >
-    KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
+        KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
 
     local ladderBottom = {}
 
@@ -313,12 +313,9 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
   local category = vehicle:getVehicleCategory()
 
-  local _, cy, _ = getTranslation(getParent(player.camera.firstPersonCamera))
-  local _, vcy, _ = localToLocal(getParent(player.camera.firstPersonCamera), vehicle.rootNode, 0, cy, 0)
-
   local enterPosition = {
     vehicleFeatures.positions.exit[1],
-    vcy,
+    vehicleFeatures.positions.exit[2],
     vehicleFeatures.positions.exit[3]
   }
 
@@ -347,7 +344,7 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
   ))
 
   table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-    CabCinematicAnimationKeyframe.TYPES.WALK,
+    CabCinematicAnimationKeyframe.TYPES.SEAT,
     vehicleFeatures.positions.standup,
     vehicleFeatures.positions.seat
   ))
