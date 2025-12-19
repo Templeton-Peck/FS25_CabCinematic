@@ -189,6 +189,7 @@ function CabCinematic.onVehicleCameraActivate(self, superFunc, ...)
 end
 
 function CabCinematic:onSkipAnimationInput(actionName, state, arg3, arg4, isAnalog)
+  Log:info(string.format("onSkipAnimationInput called with state %d", state))
   self.inputStates.skipAnimation = state == 1
 end
 

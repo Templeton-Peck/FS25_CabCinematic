@@ -235,6 +235,11 @@ function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWh
   local centerY = (focusTopY + lfy) / 2
 
   local exit = { getTranslation(vehicle:getExitNode()) }
+  local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight();
+  local wex, wey, wez = getWorldTranslation(vehicle:getExitNode())
+  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez) + 0.05
+  local _, wpy, _ = worldToLocal(vehicle.rootNode, wex, wty, wez)
+  exit[2] = wpy + playerEyeHeight
 
   local backHitResult = CabCinematicUtil.raycastVehicleFarthest(
     vehicle,
@@ -277,7 +282,7 @@ function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWh
   local isExitNodeBackSide = MathUtil.round(exit[3] - standupZ, 2) <= -0.5
 
   local standupX = isExitNodeLeftSide and center[1] + 0.2 or center[1] - 0.2
-  local standup = { standupX, cameraPosition[2] + 0.1, standupZ }
+  local standup = { standupX, math.max(math.min(cameraPosition[2] + 0.1, top[2] - 0.1), cameraPosition[2]), standupZ }
   local seat = { cameraPosition[1], cameraPosition[2], cameraPosition[3] }
 
   local leftDoor = { adjustedLeft[1], standup[2], standup[3] }
@@ -348,7 +353,6 @@ function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWh
   }
 end
 
-function CabCinematicUtil.getPlayerEyesightHeight(player)
-  local _, y, _ = getTranslation(player.camera.firstPersonCamera)
-  return y
+function CabCinematicUtil.getPlayerEyesightHeight()
+  return 1.75
 end
