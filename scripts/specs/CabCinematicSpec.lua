@@ -11,12 +11,6 @@ function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCameraPosition",
     CabCinematicSpec.getVehicleInteriorCameraPosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCategory", CabCinematicSpec.getVehicleCategory)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleDefaultExteriorPosition",
-    CabCinematicSpec.getVehicleDefaultExteriorPosition)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleAdjustedExteriorPosition",
-    CabCinematicSpec.getVehicleAdjustedExteriorPosition)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleCabSidePosition",
-    CabCinematicSpec.getVehicleCabSidePosition)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCinematicRequiredAnimation",
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
   SpecializationUtil.registerFunction(vehicleType, "playVehicleCabCinematicRequiredAnimations",
@@ -62,48 +56,6 @@ end
 
 function CabCinematicSpec:getVehicleInteriorCameraPosition()
   return self:getCabCinematicFeatures().positions.camera
-end
-
-function CabCinematicSpec:getVehicleDefaultExteriorPosition()
-  if self.spec_cabCinematic.defaultExteriorPosition ~= nil then
-    return self.spec_cabCinematic.defaultExteriorPosition
-  end
-
-  local _, wpy, _ = getWorldTranslation(getParent(g_localPlayer.camera.firstPersonCamera))
-  local wex, _, wez = getWorldTranslation(self:getExitNode())
-  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, 0, wez) + 0.05
-  self.spec_cabCinematic.defaultExteriorPosition = { worldToLocal(self.rootNode, wex, wty + (wpy - wty), wez) }
-
-  return self.spec_cabCinematic.defaultExteriorPosition
-end
-
-function CabCinematicSpec:getVehicleAdjustedExteriorPosition()
-  if self.spec_cabCinematic.adjustedExteriorPosition ~= nil then
-    return self.spec_cabCinematic.adjustedExteriorPosition
-  end
-
-  local cabLeftHitPos = self:getCabCinematicFeatures().positions.leftDoor
-  local defaultExteriorPosition = self:getVehicleDefaultExteriorPosition()
-
-  local xOffset = 0.0
-  local yOffset = 0.0
-  local zOffset = 0.0
-
-  if (self.typeName == "combineDrivable" and self:getVehicleCategory() == "forageharvesters") then
-    zOffset = 0.2
-  end
-
-  self.spec_cabCinematic.adjustedExteriorPosition = {
-    cabLeftHitPos[1] + xOffset,
-    defaultExteriorPosition[2] + yOffset,
-    defaultExteriorPosition[3] + zOffset
-  }
-
-  return self.spec_cabCinematic.adjustedExteriorPosition
-end
-
-function CabCinematicSpec:getVehicleCabSidePosition()
-  return self:getCabCinematicFeatures().positions.leftDoor
 end
 
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
@@ -166,18 +118,13 @@ function CabCinematicSpec:getCabCinematicFeatures()
 end
 
 function CabCinematicSpec:onLoad()
-  local spec                    = {}
-  spec.vehicleCategory          = nil
-  spec.defaultExteriorPosition  = nil
-  spec.adjustedExteriorPosition = nil
-  spec.features                 = nil
-  spec.pathPositions            = nil
-  self.spec_cabCinematic        = spec
+  local spec             = {}
+  spec.vehicleCategory   = nil
+  spec.features          = nil
+  self.spec_cabCinematic = spec
 end
 
 function CabCinematicSpec:onDelete()
   self.spec_cabCinematic.vehicleCategory = nil
-  self.spec_cabCinematic.defaultExteriorPosition = nil
-  self.spec_cabCinematic.adjustedExteriorPosition = nil
   self.spec_cabCinematic.features = nil
 end
