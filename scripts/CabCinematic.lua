@@ -74,9 +74,11 @@ function CabCinematic:startCurrentAnimation()
   self:setSkipAnimationInputState(false)
   self.cinematicAnimation:start()
   self.cinematicAnimation.vehicle:setCabCinematicSkipAnimationAllowed(true)
+  g_currentMission.isPlayerFrozen = true
 end
 
 function CabCinematic:stopCurrentAnimation()
+  g_currentMission.isPlayerFrozen = false
   self.cinematicAnimation.vehicle:setCabCinematicSkipAnimationAllowed(false)
   self.cinematicAnimation:stop()
 
