@@ -139,7 +139,7 @@ function CabCinematicAnimationKeyframe:printDebug()
 end
 
 local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCategory, vehicleFeatures)
-  if vehicleFeatures.isExitNodeCenter then
+  if vehicleFeatures.flags.isEnterCenter then
     local keyframes = {}
     local isEnterFarFromWheel = math.abs(enterPosition[1] - vehicleFeatures.positions.exitWheel[1]) >
         KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
@@ -150,7 +150,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
       ladderBottom = {
         vehicleFeatures.positions.exitWheel[1] + KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE,
         enterPosition[2],
-        vehicleFeatures.positions.exit[3]
+        vehicleFeatures.positions.enter[3]
       };
 
       table.insert(keyframes, CabCinematicAnimationKeyframe.new(
@@ -191,7 +191,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
 end
 
 local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  if vehicleFeatures.isExitNodeBackSide then
+  if vehicleFeatures.flags.isEnterBackSide then
     local doorCross = {
       doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       doorPosition[2],
@@ -241,7 +241,7 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, category
 end
 
 local function buildForageHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  if vehicleFeatures.isExitNodeBackSide then
+  if vehicleFeatures.flags.isEnterBackSide then
     local doorCross = {
       doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       doorPosition[2],
@@ -313,10 +313,12 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
   local category = vehicle:getVehicleCategory()
 
+  Log:info("Building keyframes for vehicle '" .. vehicle.typeName .. "' of category '" .. category .. "'")
+
   local enterPosition = {
-    vehicleFeatures.positions.exit[1],
-    vehicleFeatures.positions.exit[2],
-    vehicleFeatures.positions.exit[3]
+    vehicleFeatures.positions.enter[1],
+    vehicleFeatures.positions.enter[2],
+    vehicleFeatures.positions.enter[3]
   }
 
   local doorPosition = {
@@ -327,7 +329,7 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
 
   local keyframes = {}
 
-  if vehicle.typeName == "tractor" then
+  if category == 'tractorss' or category == 'tractorsm' or category == 'tractorsl' then
     keyframes = buildTractorKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
   elseif category == 'harvesters' then
     keyframes = buildHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
@@ -335,6 +337,13 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
     keyframes = buildForageHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
   elseif category == 'beetharvesters' then
     keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+  else
+    Log:info("No specific keyframe builder found for vehicle category '" .. category .. "', using default keyframes")
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      enterPosition,
+      doorPosition
+    ))
   end
 
   table.insert(keyframes, CabCinematicAnimationKeyframe.new(

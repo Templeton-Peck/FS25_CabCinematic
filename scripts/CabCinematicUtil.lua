@@ -43,6 +43,69 @@ function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, 
   return debugString
 end
 
+function CabCinematicUtil.drawDebugNodeRelativePositions(node, positions)
+  for name, position in pairs(positions) do
+    local px, py, pz = localToWorld(node, unpack(position))
+    local text = string.format("%s (%.2f, %.2f, %.2f)", name, position[1], position[2], position[3])
+    DebugUtil.drawDebugGizmoAtWorldPos(px, py, pz, 0, 1, 0, 0, 1, 0, text)
+  end
+end
+
+function CabCinematicUtil.drawDebugNodeRelativeHitResults(node, hitResults)
+  for name, hitResult in pairs(hitResults) do
+    for index, hit in ipairs(hitResult.hits) do
+      if (hit[1] == hitResult.best[1] and hit[2] == hitResult.best[2] and hit[3] == hitResult.best[3]) then
+        local px, py, pz = localToWorld(node, unpack(hitResult.best))
+        local text = string.format("%s best (%.2f, %.2f, %.2f) Dist: %.2f", name, hitResult.best[1], hitResult.best[2],
+          hitResult.best[3], hitResult.best[4])
+        DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
+      else
+        local px, py, pz = localToWorld(node, unpack(hit))
+        local text = string.format("%s %d (%.2f, %.2f, %.2f) Dist: %.2f", name, index, hit[1], hit[2], hit[3], hit[4])
+        DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
+      end
+    end
+  end
+end
+
+function CabCinematicUtil.drawDebugBoundingBox(node, boundingBox)
+  -- Extract min/max coordinates for each axis
+  local minX = boundingBox.left[1]
+  local maxX = boundingBox.right[1]
+  local minY = boundingBox.bottom[2]
+  local maxY = boundingBox.top[2]
+  local minZ = boundingBox.back[3]
+  local maxZ = boundingBox.front[3]
+
+  -- Convert the 8 corners to world coordinates
+  local x1, y1, z1 = localToWorld(node, minX, minY, maxZ) -- left-bottom-front
+  local x2, y2, z2 = localToWorld(node, maxX, minY, maxZ) -- right-bottom-front
+  local x3, y3, z3 = localToWorld(node, maxX, minY, minZ) -- right-bottom-back
+  local x4, y4, z4 = localToWorld(node, minX, minY, minZ) -- left-bottom-back
+  local x5, y5, z5 = localToWorld(node, minX, maxY, maxZ) -- left-top-front
+  local x6, y6, z6 = localToWorld(node, maxX, maxY, maxZ) -- right-top-front
+  local x7, y7, z7 = localToWorld(node, maxX, maxY, minZ) -- right-top-back
+  local x8, y8, z8 = localToWorld(node, minX, maxY, minZ) -- left-top-back
+
+  -- Bottom rectangle
+  DebugUtil.drawDebugLine(x1, y1, z1, x2, y2, z2, 1, 1, 0)
+  DebugUtil.drawDebugLine(x2, y2, z2, x3, y3, z3, 1, 1, 0)
+  DebugUtil.drawDebugLine(x3, y3, z3, x4, y4, z4, 1, 1, 0)
+  DebugUtil.drawDebugLine(x4, y4, z4, x1, y1, z1, 1, 1, 0)
+
+  -- Top rectangle
+  DebugUtil.drawDebugLine(x5, y5, z5, x6, y6, z6, 1, 1, 0)
+  DebugUtil.drawDebugLine(x6, y6, z6, x7, y7, z7, 1, 1, 0)
+  DebugUtil.drawDebugLine(x7, y7, z7, x8, y8, z8, 1, 1, 0)
+  DebugUtil.drawDebugLine(x8, y8, z8, x5, y5, z5, 1, 1, 0)
+
+  -- Vertical lines
+  DebugUtil.drawDebugLine(x1, y1, z1, x5, y5, z5, 1, 1, 0)
+  DebugUtil.drawDebugLine(x2, y2, z2, x6, y6, z6, 1, 1, 0)
+  DebugUtil.drawDebugLine(x3, y3, z3, x7, y7, z7, 1, 1, 0)
+  DebugUtil.drawDebugLine(x4, y4, z4, x8, y8, z8, 1, 1, 0)
+end
+
 function CabCinematicUtil.getNodeDistance2D(nodeA, nodeB)
   local xA, zA = getWorldTranslation(nodeA)
   local xB, zB = getWorldTranslation(nodeB)
@@ -125,31 +188,6 @@ function CabCinematicUtil.raycastVehicleFarthest(vehicle, startX, startY, startZ
   return CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, false)
 end
 
-function CabCinematicUtil.drawDebugNodeRelativePositions(node, positions)
-  for name, position in pairs(positions) do
-    local px, py, pz = localToWorld(node, unpack(position))
-    local text = string.format("%s (%.2f, %.2f, %.2f)", name, position[1], position[2], position[3])
-    DebugUtil.drawDebugGizmoAtWorldPos(px, py, pz, 0, 1, 0, 0, 1, 0, text)
-  end
-end
-
-function CabCinematicUtil.drawDebugNodeRelativeHitResults(node, hitResults)
-  for name, hitResult in pairs(hitResults) do
-    for index, hit in ipairs(hitResult.hits) do
-      if (hit[1] == hitResult.best[1] and hit[2] == hitResult.best[2] and hit[3] == hitResult.best[3]) then
-        local px, py, pz = localToWorld(node, unpack(hitResult.best))
-        local text = string.format("%s best (%.2f, %.2f, %.2f) Dist: %.2f", name, hitResult.best[1], hitResult.best[2],
-          hitResult.best[3], hitResult.best[4])
-        DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
-      else
-        local px, py, pz = localToWorld(node, unpack(hit))
-        local text = string.format("%s %d (%.2f, %.2f, %.2f) Dist: %.2f", name, index, hit[1], hit[2], hit[3], hit[4])
-        DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
-      end
-    end
-  end
-end
-
 function CabCinematicUtil.getVehicleInteriorCameraPosition(vehicle)
   local camera = vehicle:getVehicleInteriorCamera()
   if camera ~= nil then
@@ -221,136 +259,224 @@ function CabCinematicUtil.getWheelExternalPosition(wheel)
   return { extX, extY, extZ }
 end
 
-function CabCinematicUtil.getVehicleFeatures(vehicle, cameraPosition, steeringWheelPosition)
-  local _, lfy, _ = localToLocal(vehicle.spec_enterable.defaultCharacterTargets.leftFoot.targetNode, vehicle.rootNode, 0,
-    0,
-    0)
-  local wfx, wfy, wfz, radius = getShapeWorldBoundingSphere(vehicle:getVehicleInteriorCamera().shadowFocusBoxNode)
-  local fx, fy, fz = worldToLocal(vehicle.rootNode, wfx, wfy, wfz)
+function CabCinematicUtil.getCabCharacterFootY(vehicle, positions)
+  local leftFoot = vehicle.spec_enterable.defaultCharacterTargets.leftFoot
+  if leftFoot ~= nil then
+    local _, bottomY, _ = localToLocal(leftFoot.targetNode, vehicle.rootNode, 0, 0, 0)
+    return bottomY
+  end
 
-  local focusBackZ = fz - (radius / 2)
-  local focusFrontZ = fz + (radius / 2)
-  local focusLeftX = fx + (radius / 2)
-  local focusTopY = fy + (radius / 2)
-  local centerY = (focusTopY + lfy) / 2
+  local rightFoot = vehicle.spec_enterable.defaultCharacterTargets.rightFoot
+  if rightFoot ~= nil then
+    local _, bottomY, _ = localToLocal(rightFoot.targetNode, vehicle.rootNode, 0, 0, 0)
+    return bottomY
+  end
 
-  local exit = { getTranslation(vehicle:getExitNode()) }
+  return positions.camera[2] - 1.5
+end
+
+function CabCinematicUtil.raycastCabBoundingBox(vehicle, positions)
+  local backHitResult = CabCinematicUtil.raycastVehicleFarthest(
+    vehicle,
+    positions.camera[1], positions.camera[2], positions.camera[3] - 2.0,
+    positions.camera[1], positions.camera[2], positions.camera[3]
+  )
+
+  local frontHitResult = CabCinematicUtil.raycastVehicleClosest(
+    vehicle,
+    positions.camera[1], positions.camera[2], positions.steeringWheel[3] + 2.0,
+    positions.camera[1], positions.camera[2], positions.steeringWheel[3]
+  )
+
+  local leftHitResult = CabCinematicUtil.raycastVehicleFarthest(
+    vehicle,
+    positions.camera[1] + 2.0, positions.camera[2], positions.camera[3],
+    positions.camera[1], positions.camera[2], positions.camera[3]
+  )
+
+  local rightHitResult = CabCinematicUtil.raycastVehicleFarthest(
+    vehicle,
+    positions.camera[1] - 2.0, positions.camera[2], positions.steeringWheel[3],
+    positions.camera[1], positions.camera[2], positions.steeringWheel[3]
+  )
+
+  local topHitResult = CabCinematicUtil.raycastVehicleFarthest(
+    vehicle,
+    positions.camera[1], positions.camera[2] + 2.0, positions.camera[3],
+    positions.camera[1], positions.camera[2], positions.camera[3]
+  )
+
+  local back = backHitResult.best or { positions.camera[1], positions.camera[2], positions.camera[3] - 0.5 }
+  local front = frontHitResult.best or { positions.camera[1], positions.camera[2], positions.steeringWheel[3] + 0.5 }
+  local left = leftHitResult.best or { positions.camera[1] + 0.5, positions.camera[2], positions.camera[3] }
+  local right = rightHitResult.best or { positions.camera[1] - 0.5, positions.camera[2], positions.camera[3] }
+  local top = topHitResult.best or { positions.camera[1], positions.camera[2] + 0.5, positions.camera[3] }
+  local bottom = { positions.camera[1], positions.camera[2] - 1.5, positions.camera[3] }
+
+  return {
+    back = back,
+    front = front,
+    left = left,
+    right = right,
+    top = top,
+    bottom = bottom,
+    debugHits = {
+      backHitResult = backHitResult,
+      frontHitResult = frontHitResult,
+      leftHitResult = leftHitResult,
+      rightHitResult = rightHitResult,
+      topHitResult = topHitResult,
+    }
+  }
+end
+
+function CabCinematicUtil.getCabBoundingBox(vehicle, positions)
+  local raycastResult = CabCinematicUtil.raycastCabBoundingBox(vehicle, positions)
+  local characterFootY = CabCinematicUtil.getCabCharacterFootY(vehicle, positions)
+  local debugPositions = {}
+
+  local shadowFocusBoxNode = vehicle:getVehicleInteriorCamera().shadowFocusBoxNode
+  if shadowFocusBoxNode ~= nil then
+    local wfx, wfy, wfz, radius = getShapeWorldBoundingSphere(shadowFocusBoxNode)
+    local fx, fy, fz            = worldToLocal(vehicle.rootNode, wfx, wfy, wfz)
+
+    local focusBackZ            = fz - (radius / 2)
+    local focusFrontZ           = fz + (radius / 2)
+    local focusLeftX            = fx + (radius / 2)
+    local focusRightX           = fx - (radius / 2)
+    local focusTopY             = fy + (radius / 2)
+    local focusBottomY          = fy - (radius / 2)
+
+    raycastResult.back[3]       = math.max(raycastResult.back[3], focusBackZ)
+    raycastResult.front[3]      = math.min(raycastResult.front[3], focusFrontZ)
+    raycastResult.left[1]       = math.min(raycastResult.left[1], focusLeftX)
+    raycastResult.right[1]      = math.max(raycastResult.right[1], focusRightX)
+    raycastResult.top[2]        = math.max(raycastResult.top[2], focusTopY)
+    raycastResult.bottom[2]     = math.min(raycastResult.bottom[2], focusBottomY)
+
+    debugPositions.focusBack    = { fx, fy, focusBackZ }
+    debugPositions.focusFront   = { fx, fy, focusFrontZ }
+    debugPositions.focusLeft    = { focusLeftX, fy, fz }
+    debugPositions.focusRight   = { focusRightX, fy, fz }
+    debugPositions.focusTop     = { fx, focusTopY, fz }
+    debugPositions.focusBottom  = { fx, focusBottomY, fz }
+  end
+
+  raycastResult.bottom[2] = math.max(raycastResult.bottom[2], characterFootY)
+
+  local center = {
+    (raycastResult.left[1] + raycastResult.right[1]) / 2,
+    (raycastResult.bottom[2] + raycastResult.top[2]) / 2,
+    (raycastResult.back[3] + raycastResult.front[3]) / 2,
+  }
+
+  return {
+    debugHits = raycastResult.debugHits,
+    debugPositions = debugPositions,
+    positions = {
+      back = raycastResult.back,
+      front = raycastResult.front,
+      left = raycastResult.left,
+      right = raycastResult.right,
+      top = raycastResult.top,
+      bottom = raycastResult.bottom,
+      center = center,
+    },
+  }
+end
+
+function CabCinematicUtil.getCabEnterPosition(vehicle, positions)
   local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight();
   local wex, wey, wez = getWorldTranslation(vehicle:getExitNode())
   local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez) + 0.05
   local _, wpy, _ = worldToLocal(vehicle.rootNode, wex, wty, wez)
-  exit[2] = wpy + playerEyeHeight
+  return { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
+end
 
-  local backHitResult = CabCinematicUtil.raycastVehicleFarthest(
-    vehicle,
-    cameraPosition[1], cameraPosition[2], cameraPosition[3] - 2.0,
-    cameraPosition[1], cameraPosition[2], cameraPosition[3]
-  )
-  local frontHitResult = CabCinematicUtil.raycastVehicleClosest(
-    vehicle,
-    steeringWheelPosition[1], cameraPosition[2], steeringWheelPosition[3] + 2.0,
-    steeringWheelPosition[1], cameraPosition[2], steeringWheelPosition[3]
-  )
-  local leftHitResult = CabCinematicUtil.raycastVehicleFarthest(
-    vehicle,
-    cameraPosition[1] + 2.0, cameraPosition[2], cameraPosition[3],
-    cameraPosition[1], cameraPosition[2], cameraPosition[3]
-  )
-
-  local adjustedBack = backHitResult.best and
-      { cameraPosition[1], centerY, math.max(backHitResult.best[3], focusBackZ) } or
-      { cameraPosition[1], centerY, focusBackZ }
-
-  local adjustedFront = frontHitResult.best and
-      { steeringWheelPosition[1], centerY, math.min(frontHitResult.best[3], focusFrontZ) } or
-      { steeringWheelPosition[1], centerY, focusFrontZ }
-
-  local adjustedLeft = leftHitResult.best and
-      { math.min(leftHitResult.best[1], focusLeftX), centerY, cameraPosition[3] } or
-      { focusLeftX, centerY, cameraPosition[3] }
-
-  local adjustedRight = { adjustedLeft[1] - 2 * (adjustedLeft[1] - adjustedFront[1]), adjustedLeft[2], adjustedLeft[3] }
-
-  local center = { cameraPosition[1], centerY, (adjustedBack[3] + adjustedFront[3]) / 2 }
-  local bottom = { center[1], lfy, center[3] }
-  local top = { center[1], focusTopY, center[3] }
-
-  local standupZ = (steeringWheelPosition[3] + cameraPosition[3]) / 2
-
-  local isExitNodeLeftSide = MathUtil.round(exit[1] - center[1], 2) > 0.25
-  local isExitNodeFrontSide = MathUtil.round(exit[3] - standupZ, 2) >= 0.5
-  local isExitNodeBackSide = MathUtil.round(exit[3] - standupZ, 2) <= -0.5
-
-  local standupX = isExitNodeLeftSide and center[1] + 0.2 or center[1] - 0.2
-  local standup = { standupX, math.max(math.min(cameraPosition[2] + 0.1, top[2] - 0.1), cameraPosition[2]), standupZ }
-  local seat = { cameraPosition[1], cameraPosition[2], cameraPosition[3] }
-
-  local leftDoor = { adjustedLeft[1], standup[2], standup[3] }
-  local rightDoor = { adjustedRight[1], standup[2], standup[3] }
-
-  if isExitNodeFrontSide then
-    if not isNear(adjustedFront[3], steeringWheelPosition[3], 0.3) then
-      leftDoor[3] = steeringWheelPosition[3]
-      rightDoor[3] = steeringWheelPosition[3]
-    end
-  elseif isExitNodeBackSide then
-    if isNear(standupZ, center[3], 0.15) then
-      leftDoor[3] = cameraPosition[3]
-      rightDoor[3] = cameraPosition[3]
-    end
-
-    leftDoor[3] = clamp(leftDoor[3], adjustedBack[3] + 0.35, adjustedBack[3] + 0.55)
-    rightDoor[3] = clamp(rightDoor[3], adjustedBack[3] + 0.35, adjustedBack[3] + 0.55)
-  end
-
+function CabCinematicUtil.getCabExitWheelPosition(vehicle, positions)
   local wheelPositions = {}
   for _, wheel in pairs(vehicle.spec_wheels.wheels) do
     table.insert(wheelPositions, CabCinematicUtil.getWheelExternalPosition(wheel))
   end
 
-  local exitWheel = nil
+  local exitWheelPosition = nil
   local minDist = math.huge
   for _, wheelPos in ipairs(wheelPositions) do
-    local dist = MathUtil.vector2Length(exit[1] - wheelPos[1], exit[3] - wheelPos[3])
+    local dist = MathUtil.vector2Length(positions.exit[1] - wheelPos[1], positions.exit[3] - wheelPos[3])
     if dist < minDist then
       minDist = dist
-      exitWheel = wheelPos
+      exitWheelPosition = wheelPos
     end
   end
 
+  return exitWheelPosition or wheelPositions[1]
+end
+
+function CabCinematicUtil.getCabStandupPosition(vehicle, positions, flags)
+  local standupX = flags.isEnterLeftSide and positions.center[1] + 0.2 or positions.center[1] - 0.2
+  -- local standupY = math.max(math.min(positions.camera[2] + 0.1, positions.top[2] - 0.1), positions.camera[2])
+  local standupY = positions.camera[2] + 0.05
+  local standupZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
+  return { standupX, standupY, standupZ }
+end
+
+function CabCinematicUtil.getCabDoors(vehicle, positions, flags)
+  local leftDoor = { positions.left[1], positions.camera[2], positions.standup[3] }
+  local rightDoor = { positions.right[1], positions.camera[2], positions.standup[3] }
+
+  if flags.isEnterFrontSide then
+    if not isNear(positions.front[3], positions.steeringWheel[3], 0.3) then
+      leftDoor[3] = positions.steeringWheel[3]
+      rightDoor[3] = positions.steeringWheel[3]
+    end
+  elseif flags.isEnterBackSide then
+    if isNear(positions.standup[3], positions.center[3], 0.15) then
+      leftDoor[3] = positions.camera[3]
+      rightDoor[3] = positions.camera[3]
+    end
+
+    leftDoor[3] = clamp(leftDoor[3], positions.back[3] + 0.35, positions.back[3] + 0.55)
+    rightDoor[3] = clamp(rightDoor[3], positions.back[3] + 0.35, positions.back[3] + 0.55)
+  end
+
   return {
-    isExitNodeLeftSide = isExitNodeLeftSide,
-    isExitNodeFrontSide = isExitNodeFrontSide,
-    isExitNodeBackSide = isExitNodeBackSide,
-    isExitNodeCenter = not isExitNodeFrontSide and not isExitNodeBackSide,
+    leftDoor = leftDoor,
+    rightDoor = rightDoor
+  }
+end
+
+function CabCinematicUtil.getVehicleFeatures(vehicle)
+  local r = {
+    flags = {},
+    debugPositions = {},
+    debugHits = {},
     positions = {
-      camera        = cameraPosition,
-      steeringWheel = steeringWheelPosition,
-      exit          = exit,
-      standup       = standup,
-      seat          = seat,
-      exitWheel     = exitWheel,
-      leftDoor      = leftDoor,
-      rightDoor     = rightDoor
-    },
-    debugPositions = {
-      center     = center,
-      front      = adjustedFront,
-      left       = adjustedLeft,
-      right      = adjustedRight,
-      back       = adjustedBack,
-      bottom     = bottom,
-      top        = top,
-      focusBack  = { fx, fy, focusBackZ },
-      focusFront = { fx, fy, focusFrontZ },
-      focusLeft  = { focusLeftX, fy, fz },
-    },
-    debugHits = {
-      backHitResult  = backHitResult,
-      frontHitResult = frontHitResult,
-      leftHitResult  = leftHitResult,
+      camera = CabCinematicUtil.getVehicleInteriorCameraPosition(vehicle),
+      steeringWheel = CabCinematicUtil.getVehicleSteeringWheelPosition(vehicle),
+      exit = { getTranslation(vehicle:getExitNode()) }
     }
   }
+
+  r.positions.enter = CabCinematicUtil.getCabEnterPosition(vehicle, r.positions)
+  r.positions.exitWheel = CabCinematicUtil.getCabExitWheelPosition(vehicle, r.positions)
+  r.positions.seat = { r.positions.camera[1], r.positions.camera[2], r.positions.camera[3] }
+
+  local cabBoundingBox = CabCinematicUtil.getCabBoundingBox(vehicle, r.positions)
+  r.positions = CabCinematicUtil.merge(r.positions, cabBoundingBox.positions)
+  r.debugPositions = CabCinematicUtil.merge(r.debugPositions, cabBoundingBox.debugPositions)
+  r.debugHits = CabCinematicUtil.merge(r.debugHits, cabBoundingBox.debugHits)
+
+  local middleZ = (r.positions.steeringWheel[3] + r.positions.camera[3]) / 2
+  r.flags.isEnterLeftSide = MathUtil.round(r.positions.enter[1] - cabBoundingBox.positions.center[1], 2) > 0.25
+  r.flags.isEnterFrontSide = MathUtil.round(r.positions.enter[3] - middleZ, 2) >= 0.5
+  r.flags.isEnterBackSide = MathUtil.round(r.positions.enter[3] - middleZ, 2) <= -0.5
+  r.flags.isEnterCenter = not r.flags.isEnterFrontSide and not r.flags.isEnterBackSide
+
+  r.positions.standup = CabCinematicUtil.getCabStandupPosition(vehicle, r.positions, r.flags)
+  local doors = CabCinematicUtil.getCabDoors(vehicle, r.positions, r.flags)
+  r.positions = CabCinematicUtil.merge(r.positions, doors)
+
+  return r;
 end
 
 function CabCinematicUtil.getPlayerEyesightHeight()

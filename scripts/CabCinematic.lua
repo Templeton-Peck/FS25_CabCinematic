@@ -116,6 +116,7 @@ function CabCinematic:draw()
         CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
         CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
         CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
+        CabCinematicUtil.drawDebugBoundingBox(vehicle.rootNode, features.positions)
       end
     end
   end

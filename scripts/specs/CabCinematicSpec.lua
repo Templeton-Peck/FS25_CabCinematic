@@ -110,9 +110,7 @@ end
 
 function CabCinematicSpec:getCabCinematicFeatures()
   if self.spec_cabCinematic.features == nil then
-    local cameraPosition = CabCinematicUtil.getVehicleInteriorCameraPosition(self)
-    local steeringWheelPosition = CabCinematicUtil.getVehicleSteeringWheelPosition(self)
-    local features = CabCinematicUtil.getVehicleFeatures(self, cameraPosition, steeringWheelPosition)
+    local features = CabCinematicUtil.getVehicleFeatures(self)
     self.spec_cabCinematic.features = features
   end
 
