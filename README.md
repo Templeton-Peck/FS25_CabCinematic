@@ -21,7 +21,10 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Improve animation accuracy using vehicle nodes
 - [x] Implement vehicle freezing during cinematics
 - [x] Better seat animations
-- [ ] Minor bug fixes with ladders
+- [ ] Minor bug fix with ladders
+- [ ] Minor fovY bug fix
+- [ ] Improve old tractors which use narrow doors
+- [ ] Fix animation for large tractors which use tracks
 
 ### V1
 
@@ -62,4 +65,3 @@ https://github.com/user-attachments/assets/4c978b29-7b1e-40b9-acba-5128765c7beb
 https://github.com/user-attachments/assets/7f043281-0dec-4092-a99d-3eba4f6f2eaa
 
 https://github.com/user-attachments/assets/2410b4d6-6498-486b-be15-b04df5f95abc
-
