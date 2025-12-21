@@ -56,15 +56,15 @@ Following console commands are for testing and debugging purposes.
 - `ccSkipAnimation` : Skip animation when entering or exiting a vehicle.
 - `ccDebug` : Draw debug gizmos and lines for animation and vehicle.
 
-### Frequently asked Questions (FAQ)
+### Frequently asked questions (FAQ)
 
-- **Q:** Why are the animations not working for my vehicle?
+> **Q:** Why are the animations not working for my vehicle?
+> 
+> **A:** The mod relies on specific vehicle properties to create accurate animations. If a vehicle lacks these properties or has unique configurations, the animations may not function correctly. Please report such vehicles for further investigation.
 
-**A:** The mod relies on specific vehicle properties to create accurate animations. If a vehicle lacks these properties or has unique configurations, the animations may not function correctly. Please report such vehicles for further investigation.
-
-- **Q:** Doors won't open/close during animations. Why?
-
-**A:** The mod is not designed to provide door animations. To enable door interaction, you’ll need to install the Interactive Control (IC) mod. I’m planning to fully integrate the IC mod for certain vehicles, such as combines, where you’ll need to climb a ladder to access and open the door.
+> **Q:** Doors won't open/close during animations. Why?
+> 
+> **A:** The mod is not designed to provide door animations. To enable door interaction, you’ll need to install the Interactive Control (IC) mod. I’m planning to fully integrate the IC mod for certain vehicles, such as combines, where you’ll need to climb a ladder to access and open the door.
 
 ## Preview
 
