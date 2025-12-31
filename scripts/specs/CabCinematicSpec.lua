@@ -63,10 +63,11 @@ end
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
   if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
     local ladder = self.spec_combine.ladder
-    if ladder.animName ~= nil then
+    if ladder ~= nil and ladder.animName ~= nil then
       return {
         name = ladder.animName,
-        speed = ladder.animSpeedScale * ladder.foldDirection,
+        speed = ladder.animSpeedScale,
+        direction = ladder.foldDirection or 1
       }
     end
   end
@@ -77,8 +78,6 @@ end
 function CabCinematicSpec:playVehicleCabCinematicRequiredAnimations()
   local anim = self:getVehicleCabCinematicRequiredAnimation()
   if anim ~= nil then
-    -- Log:info("play ladder animation %s, speed %s, time %s", anim.name, tostring(anim.speed),
-    --   tostring(self:getAnimationTime(anim.name)))
     self:playAnimation(anim.name, anim.speed, self:getAnimationTime(anim.name), true)
   end
 end
@@ -90,7 +89,9 @@ function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationFinished()
 
   local anim = self:getVehicleCabCinematicRequiredAnimation()
   if anim ~= nil then
-    return self:getAnimationTime(anim.name) >= 1.0
+    local time = self:getAnimationTime(anim.name)
+    local logicalTime = (anim.direction == 1) and time or (1 - time)
+    return logicalTime >= (1 - 0.001)
   else
     return true
   end

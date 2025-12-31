@@ -29,7 +29,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Better seat animations
 - [x] Minor fovY bug fix
 - [x] Fix camera switching
-- [ ] Minor bug fix with ladders
+- [x] Minor bug fix with ladders
 - [ ] Improve old tractors which use narrow doors
 - [ ] Fix animation for large tractors which use tracks
 
