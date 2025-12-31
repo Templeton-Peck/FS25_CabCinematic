@@ -13,7 +13,8 @@ CabCinematicCamera = {
 local CabCinematicCamera_mt = Class(CabCinematicCamera)
 
 local function createCameraNode()
-  local cameraNode = createCamera("CabCinematicCamera", math.rad(90), 0.1, 5000)
+  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
+  local cameraNode = createCamera("CabCinematicCamera", fovY, 0.1, 5000)
   setRotation(cameraNode, 0, 0, 0)
   setTranslation(cameraNode, 0, 0, 0)
   return cameraNode
@@ -90,6 +91,11 @@ end
 
 function CabCinematicCamera:syncPosition()
   setTranslation(self.cameraNode, self.cameraX, self.cameraY, self.cameraZ)
+end
+
+function CabCinematicCamera:syncFovY()
+  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
+  setFovY(self.cameraNode, fovY)
 end
 
 function CabCinematicCamera:link(node)

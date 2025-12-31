@@ -78,7 +78,7 @@ function CabCinematicAnimationKeyframe:getDuration()
 end
 
 function CabCinematicAnimationKeyframe:getViewBobbingOffset(t)
-  if self.distance == 0 then
+  if CabCinematic.flags.bobbing == false or self.distance == 0 then
     return 0, 0, 0
   end
 
@@ -128,14 +128,14 @@ function CabCinematicAnimationKeyframe:drawDebug(rootNode)
 end
 
 function CabCinematicAnimationKeyframe:printDebug()
-  Log:info(string.format(
+  Log:info(
     "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
     self.type,
     self.startPosition[1], self.startPosition[2], self.startPosition[3],
     self.endPosition[1], self.endPosition[2], self.endPosition[3],
     self.speed,
     self.distance,
-    self:getDuration()))
+    self:getDuration())
 end
 
 local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCategory, vehicleFeatures)

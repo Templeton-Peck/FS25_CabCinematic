@@ -5,6 +5,7 @@ CabCinematic = Mod:init({
     skipAnimation = false,
   },
   flags = {
+    bobbing = true,
     skipAnimation = false,
     disabled = false,
     debug = false
@@ -22,8 +23,9 @@ CabCinematic = Mod:init({
 })
 
 function CabCinematic:isPlayerInFirstPerson()
-  if g_currentVehicle ~= nil then
-    return g_cameraManager:getActiveCamera() == g_currentVehicle:getVehicleInteriorCamera().cameraNode
+  local currentVehicle = g_localPlayer:getCurrentVehicle()
+  if currentVehicle ~= nil then
+    return g_cameraManager:getActiveCamera() == currentVehicle:getVehicleIndoorCamera().cameraNode
   end
 
   return g_localPlayer.camera.isFirstPerson;
@@ -178,12 +180,6 @@ function CabCinematic:onDebugConsoleCommand()
   end
 end
 
-function CabCinematic.onVehicleCameraActivate(self, superFunc, ...)
-  Log:info(string.format("onVehicleCameraActivate called"))
-  -- self.resetCameraOnVehicleSwitch = false
-  superFunc(self, ...)
-end
-
 function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
   if CabCinematic:getIsActive() then
     return
@@ -212,7 +208,7 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
   local playerDistance = CabCinematicUtil.getNodeDistance3D(g_localPlayer.rootNode, exitNode)
   local isPlayerInVehicleExitNodeRange = playerDistance <= CabCinematic.VEHICLE_INTERACT_DISTANCE
 
-  Log:info(string.format("Player distance: %.2fm", playerDistance))
+  Log:info("Player distance: %.2fm", playerDistance)
 
   if not isPlayerInVehicleExitNodeRange then
     return
@@ -223,6 +219,10 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     function()
       if (not vehicle:getIsAIActive()) then
         vehicle.spec_enterable:restoreVehicleCharacter()
+
+        if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
+          vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, 1, nil, true, true)
+        end
       end
 
       return vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
@@ -233,6 +233,10 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
 
   if (not vehicle:getIsAIActive()) then
     vehicle.spec_enterable:deleteVehicleCharacter()
+
+    if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
+      vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, -1, nil, true, false)
+    end
   end
 end
 
@@ -258,6 +262,10 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
 
   if (not vehicle:getIsAIActive()) then
     vehicle.spec_enterable:deleteVehicleCharacter()
+
+    if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
+      vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, -1, nil, true, true)
+    end
   end
 
   CabCinematic.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, vehicle,
@@ -266,6 +274,8 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
       if (not vehicle:getIsAIActive()) then
         vehicle.spec_enterable:restoreVehicleCharacter()
       end
+
+      g_localPlayer.camera:switchToPerspective(true)
 
       return superFunc(enterable)
     end)
@@ -288,8 +298,25 @@ function CabCinematic.onEnterOrLeaveCombine(combine, superFunc, ...)
   return superFunc(combine, ...)
 end
 
+function CabCinematic.onVehicleCameraFovySettingChanged(vehicleCamera)
+  CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
+end
+
+function CabCinematic.onPlayerCameraFovySettingChanged(playerCamera, superFunc, ...)
+  local currentVehicle = g_localPlayer:getCurrentVehicle()
+  if currentVehicle ~= nil then
+    CabCinematicUtil.syncVehicleCameraFovY(currentVehicle:getVehicleIndoorCamera())
+    CabCinematic.camera:syncFovY()
+  end
+
+  return superFunc(playerCamera, ...)
+end
+
 local function init()
-  VehicleCamera.onActivate = Utils.overwrittenFunction(VehicleCamera.onActivate, CabCinematic.onVehicleCameraActivate)
+  VehicleCamera.onFovySettingChanged = Utils.overwrittenFunction(VehicleCamera.onFovySettingChanged,
+    CabCinematic.onVehicleCameraFovySettingChanged)
+  PlayerCamera.onFovySettingChanged = Utils.overwrittenFunction(PlayerCamera.onFovySettingChanged,
+    CabCinematic.onPlayerCameraFovySettingChanged)
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
     CabCinematic.onPlayerEnterVehicle)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
@@ -306,7 +333,7 @@ local function init()
   for typeName, typeEntry in pairs(g_vehicleTypeManager:getTypes()) do
     if typeEntry ~= nil and SpecializationUtil.hasSpecialization(Enterable, typeEntry.specializations) then
       if not SpecializationUtil.hasSpecialization(CabCinematicSpec, typeEntry.specializations) then
-        Log:info(string.format("[CabCinematicSpec] Add spec to '%s'", typeName))
+        Log:info("[CabCinematicSpec] Add spec to '%s'", typeName)
         g_vehicleTypeManager:addSpecialization(typeName, CabCinematic.name .. ".cabCinematicSpec")
       end
     end

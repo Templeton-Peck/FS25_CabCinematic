@@ -27,8 +27,9 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Improve animation accuracy using vehicle nodes
 - [x] Implement vehicle freezing during cinematics
 - [x] Better seat animations
+- [x] Minor fovY bug fix
+- [x] Fix camera switching
 - [ ] Minor bug fix with ladders
-- [ ] Minor fovY bug fix
 - [ ] Improve old tractors which use narrow doors
 - [ ] Fix animation for large tractors which use tracks
 
@@ -72,6 +73,9 @@ Following console commands are for testing and debugging purposes.
 > 
 > **A:** The mod is not designed to provide door animations. To enable door interaction, you’ll need to install the Interactive Control (IC) mod. I’m planning to fully integrate the IC mod for certain vehicles, such as combines, where you’ll need to climb a ladder to access and open the door.
 
+> **Q:** The vehicle camera FOV setting seem to be ignored. Why?
+>
+> **A:** The mod enforces a consistent FOV for vehicle cameras to ensure a smooth cinematic experience. If you want to adjust the FOV, change the "First Person FOV" option in the game settings.
 ## Preview
 
 https://github.com/user-attachments/assets/573625d1-088f-496b-9e8a-25be32d2a286

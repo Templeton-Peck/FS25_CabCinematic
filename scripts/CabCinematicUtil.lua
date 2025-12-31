@@ -188,8 +188,8 @@ function CabCinematicUtil.raycastVehicleFarthest(vehicle, startX, startY, startZ
   return CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, false)
 end
 
-function CabCinematicUtil.getVehicleInteriorCameraPosition(vehicle)
-  local camera = vehicle:getVehicleInteriorCamera()
+function CabCinematicUtil.getVehicleIndoorCameraPosition(vehicle)
+  local camera = vehicle:getVehicleIndoorCamera()
   if camera ~= nil then
     local dx, dy, dz = getTranslation(camera.cameraPositionNode)
     return { localToLocal(getParent(camera.cameraPositionNode), vehicle.rootNode, dx, dy, dz) }
@@ -335,7 +335,7 @@ function CabCinematicUtil.getCabBoundingBox(vehicle, positions)
   local characterFootY = CabCinematicUtil.getCabCharacterFootY(vehicle, positions)
   local debugPositions = {}
 
-  local shadowFocusBoxNode = vehicle:getVehicleInteriorCamera().shadowFocusBoxNode
+  local shadowFocusBoxNode = vehicle:getVehicleIndoorCamera().shadowFocusBoxNode
   if shadowFocusBoxNode ~= nil then
     local wfx, wfy, wfz, radius = getShapeWorldBoundingSphere(shadowFocusBoxNode)
     local fx, fy, fz            = worldToLocal(vehicle.rootNode, wfx, wfy, wfz)
@@ -388,7 +388,7 @@ end
 function CabCinematicUtil.getCabEnterPosition(vehicle, positions)
   local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight();
   local wex, wey, wez = getWorldTranslation(vehicle:getExitNode())
-  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez) + 0.05
+  local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez)
   local _, wpy, _ = worldToLocal(vehicle.rootNode, wex, wty, wez)
   return { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
 end
@@ -414,7 +414,6 @@ end
 
 function CabCinematicUtil.getCabStandupPosition(vehicle, positions, flags)
   local standupX = flags.isEnterLeftSide and positions.center[1] + 0.2 or positions.center[1] - 0.2
-  -- local standupY = math.max(math.min(positions.camera[2] + 0.1, positions.top[2] - 0.1), positions.camera[2])
   local standupY = positions.camera[2] + 0.05
   local standupZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
   return { standupX, standupY, standupZ }
@@ -451,7 +450,7 @@ function CabCinematicUtil.getVehicleFeatures(vehicle)
     debugPositions = {},
     debugHits = {},
     positions = {
-      camera = CabCinematicUtil.getVehicleInteriorCameraPosition(vehicle),
+      camera = CabCinematicUtil.getVehicleIndoorCameraPosition(vehicle),
       steeringWheel = CabCinematicUtil.getVehicleSteeringWheelPosition(vehicle),
       exit = { getTranslation(vehicle:getExitNode()) }
     }
@@ -481,4 +480,14 @@ end
 
 function CabCinematicUtil.getPlayerEyesightHeight()
   return 1.75
+end
+
+function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
+  if (vehicleCamera ~= nil and vehicleCamera.cameraNode ~= nil) then
+    local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
+    vehicleCamera.fovY = fovY
+    vehicleCamera.fovMin = fovY
+    vehicleCamera.fovMax = fovY
+    setFovY(vehicleCamera.cameraNode, fovY)
+  end
 end

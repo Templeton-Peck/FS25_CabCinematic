@@ -7,9 +7,7 @@ function CabCinematicSpec.prerequisitesPresent(specializations)
 end
 
 function CabCinematicSpec.registerFunctions(vehicleType)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCamera", CabCinematicSpec.getVehicleInteriorCamera)
-  SpecializationUtil.registerFunction(vehicleType, "getVehicleInteriorCameraPosition",
-    CabCinematicSpec.getVehicleInteriorCameraPosition)
+  SpecializationUtil.registerFunction(vehicleType, "getVehicleIndoorCamera", CabCinematicSpec.getVehicleIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCategory", CabCinematicSpec.getVehicleCategory)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCinematicRequiredAnimation",
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
@@ -31,14 +29,20 @@ function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", CabCinematicSpec)
 end
 
-function CabCinematicSpec:getVehicleInteriorCamera()
+function CabCinematicSpec:getVehicleIndoorCamera()
+  if self.spec_cabCinematic.indoorCamera ~= nil then
+    return self.spec_cabCinematic.indoorCamera
+  end
+
   if self.spec_enterable and self.spec_enterable.cameras then
     for _, camera in ipairs(self.spec_enterable.cameras) do
-      if camera.isInside then
+      if camera.isInside and camera.isRotatable then
+        self.spec_cabCinematic.indoorCamera = camera
         return camera
       end
     end
   end
+
   return nil
 end
 
@@ -56,26 +60,13 @@ function CabCinematicSpec:getVehicleCategory()
   return self.spec_cabCinematic.vehicleCategory
 end
 
-function CabCinematicSpec:getVehicleInteriorCameraPosition()
-  return self:getCabCinematicFeatures().positions.camera
-end
-
 function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
   if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
     local ladder = self.spec_combine.ladder
     if ladder.animName ~= nil then
       return {
         name = ladder.animName,
-        speed = math.abs(ladder.animSpeedScale)
-      }
-    end
-  end
-
-  if self.spec_enterable and self.spec_enterable.enterAnimation then
-    if string.find(self.spec_enterable.enterAnimation:lower(), "ladder") ~= nil then
-      return {
-        name = self.spec_enterable.enterAnimation,
-        speed = 1
+        speed = ladder.animSpeedScale * ladder.foldDirection,
       }
     end
   end
@@ -86,6 +77,8 @@ end
 function CabCinematicSpec:playVehicleCabCinematicRequiredAnimations()
   local anim = self:getVehicleCabCinematicRequiredAnimation()
   if anim ~= nil then
+    -- Log:info("play ladder animation %s, speed %s, time %s", anim.name, tostring(anim.speed),
+    --   tostring(self:getAnimationTime(anim.name)))
     self:playAnimation(anim.name, anim.speed, self:getAnimationTime(anim.name), true)
   end
 end
@@ -128,15 +121,19 @@ end
 function CabCinematicSpec:onLoad()
   local spec             = {}
   spec.actionEvents      = {}
+  spec.indoorCamera      = nil
   spec.vehicleCategory   = nil
   spec.features          = nil
   self.spec_cabCinematic = spec
+
+  CabCinematicUtil.syncVehicleCameraFovY(self:getVehicleIndoorCamera())
 end
 
 function CabCinematicSpec:onDelete()
   local spec = self.spec_cabCinematic
 
   self:clearActionEventsTable(spec.actionEvents)
+  spec.indoorCamera = nil
   spec.vehicleCategory = nil
   spec.features = nil
   spec.actionEvents = nil
