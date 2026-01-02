@@ -288,7 +288,7 @@ local function buildForageHarvesterKeyframes(enterPosition, doorPosition, catego
   return {}
 end
 
-local function buildTractorKeyframes(startPosition, endPosition, category, vehicleFeatures)
+local function buildTractorKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
   -- if category == 'tractorss' then
   --   return {}
   -- end
@@ -301,11 +301,55 @@ local function buildTractorKeyframes(startPosition, endPosition, category, vehic
   --   return {}
   -- end
 
+  if vehicleFeatures.flags.isBiTracks and vehicleFeatures.flags.isTracksOnly then
+    local wheel = vehicleFeatures.positions.wheelLeftBack or vehicleFeatures.positions.wheelRightBack
+    local ladderBottom = {
+      wheel[1] or doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
+      enterPosition[2],
+      enterPosition[3]
+    };
+
+    local ladderTop = {
+      ladderBottom[1],
+      doorPosition[2],
+      ladderBottom[3] - KEYFRAME_OFFSETS.LADDER_SLOPE
+    };
+
+    local doorCross = {
+      ladderBottom[1],
+      doorPosition[2],
+      doorPosition[3]
+    };
+
+    return {
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        enterPosition,
+        ladderBottom
+      ),
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        ladderBottom,
+        ladderTop
+      ),
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        ladderTop,
+        doorCross
+      ),
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        doorCross,
+        doorPosition
+      )
+    }
+  end
+
   return {
     CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
-      startPosition,
-      endPosition
+      enterPosition,
+      doorPosition
     )
   }
 end

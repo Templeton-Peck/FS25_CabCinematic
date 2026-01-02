@@ -225,7 +225,7 @@ local function isNear(valueA, valueB, threshold)
   return math.abs(valueA - valueB) <= threshold
 end
 
-function CabCinematicUtil.getWheelFeatures(vehicle, wheel, positions)
+function CabCinematicUtil.getPneumaticWheelFeatures(vehicle, wheel, positions)
   if wheel == nil or wheel.visualWheels == nil or #wheel.visualWheels == 0 then
     return nil
   end
@@ -262,6 +262,71 @@ function CabCinematicUtil.getWheelFeatures(vehicle, wheel, positions)
         result.treadPosition = { x, y, z - vw.radius }
       else
         result.treadPosition = { x, y, z + vw.radius }
+      end
+    end
+  end
+
+  return result
+end
+
+function CabCinematicUtil.getCrawlerWheelFeatures(vehicle, crawler, positions)
+  local x, y, z = localToLocal(crawler.linkNode, vehicle.rootNode, getTranslation(crawler.linkNode))
+
+  local result = {
+    position = { x, y, z },
+    sidewallPosition = { x, y, z },
+    treadPosition = { x, y, z },
+  }
+
+  local getHalfWidth = function(wheel)
+    local w = (wheel.physics and (wheel.physics.width or wheel.physics.wheelShapeWidth)) or 0
+    return 0.5 * w
+  end
+
+  if crawler.wheels ~= nil and #crawler.wheels > 0 then
+    local summedPosition = { 0, 0, 0 }
+    local wheelsCount = 0
+    local largestZWheel = nil
+    local smallestZWheel = nil
+
+    for _, wheel in ipairs(crawler.wheels) do
+      local node = wheel.wheel.driveNode or wheel.wheel.node
+      if node ~= nil and node ~= 0 then
+        local x, y, z = localToLocal(node, vehicle.rootNode, getTranslation(node))
+        summedPosition[1] = summedPosition[1] + x
+        summedPosition[2] = summedPosition[2] + y
+        summedPosition[3] = summedPosition[3] + z
+        wheelsCount = wheelsCount + 1
+
+        if (largestZWheel == nil or z > largestZWheel[3]) then
+          largestZWheel = { x, y, z, radius = wheel.wheel.physics.radius, width = getHalfWidth(wheel.wheel) }
+        end
+
+        if (smallestZWheel == nil or z < smallestZWheel[3]) then
+          smallestZWheel = { x, y, z, radius = wheel.wheel.physics.radius, width = getHalfWidth(wheel.wheel) }
+        end
+      end
+    end
+
+    if wheelsCount > 0 and largestZWheel ~= nil and smallestZWheel ~= nil then
+      local avgX = summedPosition[1] / wheelsCount
+      local avgY = summedPosition[2] / wheelsCount
+      local avgZ = summedPosition[3] / wheelsCount
+
+      local sidewallOffsetX = crawler.isLeft and largestZWheel.width or -largestZWheel.width
+
+      result.position = { avgX, avgY, avgZ }
+      result.sidewallPosition = { avgX + sidewallOffsetX, avgY, avgZ }
+      result.treadPosition = { avgX, avgY, avgZ }
+
+      local isFront = avgZ > positions.root[3]
+      local largestZDist = math.abs(positions.root[3] - largestZWheel[3])
+      local smallestZDist = math.abs(positions.root[3] - smallestZWheel[3])
+
+      if largestZDist <= smallestZDist then
+        result.treadPosition[3] = largestZWheel[3] + (isFront and -largestZWheel.radius or largestZWheel.radius)
+      else
+        result.treadPosition[3] = smallestZWheel[3] + (isFront and -smallestZWheel.radius or smallestZWheel.radius)
       end
     end
   end
@@ -395,8 +460,35 @@ function CabCinematicUtil.getCabBoundingBox(vehicle, positions)
   }
 end
 
-function CabCinematicUtil.getWheelPositions(vehicle, positions)
+function CabCinematicUtil.getCrawlersCount(vehicle)
+  return vehicle.spec_crawlers ~= nil and vehicle.spec_crawlers.crawlers ~= nil and
+      #vehicle.spec_crawlers.crawlers or 0
+end
+
+function CabCinematicUtil.getPneumaticWheelsCount(vehicle)
+  local count = 0
+
+  if vehicle.spec_wheels ~= nil and vehicle.spec_wheels.wheels ~= nil then
+    for _, wheel in pairs(vehicle.spec_wheels.wheels) do
+      if wheel.visualWheels ~= nil then
+        count = count + #wheel.visualWheels
+      end
+    end
+  end
+
+  return count
+end
+
+function CabCinematicUtil.getWheelsFeatures(vehicle, positions)
+  local crawlersCount = CabCinematicUtil.getCrawlersCount(vehicle)
+  local wheelsCount = CabCinematicUtil.getPneumaticWheelsCount(vehicle)
+
   local result = {
+    flags = {
+      isQuadTracks = crawlersCount == 4,
+      isBiTracks = crawlersCount == 2,
+      isTracksOnly = crawlersCount > 0 and wheelsCount == 0,
+    },
     positions = {
       wheelLeftFront = nil,
       wheelRightFront = nil,
@@ -413,28 +505,59 @@ function CabCinematicUtil.getWheelPositions(vehicle, positions)
     },
   }
 
-  for _, wheel in pairs(vehicle.spec_wheels.wheels) do
-    local wheelFeatures = CabCinematicUtil.getWheelFeatures(vehicle, wheel, positions)
-    if wheelFeatures ~= nil then
-      if wheelFeatures.position[1] > positions.root[1] then
-        if wheelFeatures.position[3] > positions.root[3] then
-          result.positions.wheelRightFront = wheelFeatures.position
-          result.positions.wheelRightFrontTread = wheelFeatures.treadPosition
-          result.positions.wheelRightFrontSidewall = wheelFeatures.sidewallPosition
+  if crawlersCount > 0 then
+    for _, crawler in pairs(vehicle.spec_crawlers.crawlers) do
+      local crawlerFeatures = CabCinematicUtil.getCrawlerWheelFeatures(vehicle, crawler, positions)
+      if crawlerFeatures ~= nil then
+        if crawler.isLeft then
+          if crawlerFeatures.position[3] > positions.root[3] then
+            result.positions.wheelLeftFront = crawlerFeatures.position
+            result.positions.wheelLeftFrontTread = crawlerFeatures.treadPosition
+            result.positions.wheelLeftFrontSidewall = crawlerFeatures.sidewallPosition
+          else
+            result.positions.wheelLeftBack = crawlerFeatures.position
+            result.positions.wheelLeftBackTread = crawlerFeatures.treadPosition
+            result.positions.wheelLeftBackSidewall = crawlerFeatures.sidewallPosition
+          end
         else
-          result.positions.wheelRightBack = wheelFeatures.position
-          result.positions.wheelRightBackTread = wheelFeatures.treadPosition
-          result.positions.wheelRightBackSidewall = wheelFeatures.sidewallPosition
+          if crawlerFeatures.position[3] > positions.root[3] then
+            result.positions.wheelRightFront = crawlerFeatures.position
+            result.positions.wheelRightFrontTread = crawlerFeatures.treadPosition
+            result.positions.wheelRightFrontSidewall = crawlerFeatures.sidewallPosition
+          else
+            result.positions.wheelRightBack = crawlerFeatures.position
+            result.positions.wheelRightBackTread = crawlerFeatures.treadPosition
+            result.positions.wheelRightBackSidewall = crawlerFeatures.sidewallPosition
+          end
         end
-      else
-        if wheelFeatures.position[3] > positions.root[3] then
-          result.positions.wheelLeftFront = wheelFeatures.position
-          result.positions.wheelLeftFrontTread = wheelFeatures.treadPosition
-          result.positions.wheelLeftFrontSidewall = wheelFeatures.sidewallPosition
+      end
+    end
+  end
+
+  if wheelsCount > 0 then
+    for _, wheel in pairs(vehicle.spec_wheels.wheels) do
+      local wheelFeatures = CabCinematicUtil.getPneumaticWheelFeatures(vehicle, wheel, positions)
+      if wheelFeatures ~= nil then
+        if wheelFeatures.position[1] > positions.root[1] then
+          if wheelFeatures.position[3] > positions.root[3] then
+            result.positions.wheelRightFront = wheelFeatures.position
+            result.positions.wheelRightFrontTread = wheelFeatures.treadPosition
+            result.positions.wheelRightFrontSidewall = wheelFeatures.sidewallPosition
+          else
+            result.positions.wheelRightBack = wheelFeatures.position
+            result.positions.wheelRightBackTread = wheelFeatures.treadPosition
+            result.positions.wheelRightBackSidewall = wheelFeatures.sidewallPosition
+          end
         else
-          result.positions.wheelLeftBack = wheelFeatures.position
-          result.positions.wheelLeftBackTread = wheelFeatures.treadPosition
-          result.positions.wheelLeftBackSidewall = wheelFeatures.sidewallPosition
+          if wheelFeatures.position[3] > positions.root[3] then
+            result.positions.wheelLeftFront = wheelFeatures.position
+            result.positions.wheelLeftFrontTread = wheelFeatures.treadPosition
+            result.positions.wheelLeftFrontSidewall = wheelFeatures.sidewallPosition
+          else
+            result.positions.wheelLeftBack = wheelFeatures.position
+            result.positions.wheelLeftBackTread = wheelFeatures.treadPosition
+            result.positions.wheelLeftBackSidewall = wheelFeatures.sidewallPosition
+          end
         end
       end
     end
@@ -568,8 +691,10 @@ function CabCinematicUtil.getVehicleFeatures(vehicle)
     }
   }
 
-  local wheelPositions = CabCinematicUtil.getWheelPositions(vehicle, r.positions)
-  r.positions = CabCinematicUtil.merge(r.positions, wheelPositions.positions)
+  local wheelsFeatures = CabCinematicUtil.getWheelsFeatures(vehicle, r.positions)
+  r.positions = CabCinematicUtil.merge(r.positions, wheelsFeatures.positions)
+  r.flags = CabCinematicUtil.merge(r.flags, wheelsFeatures.flags)
+
   r.positions.seat = { r.positions.camera[1], r.positions.camera[2], r.positions.camera[3] }
   r.positions.enterWheel = CabCinematicUtil.getCabEnterWheelPosition(vehicle, r.positions)
   r.positions.enter = CabCinematicUtil.getCabEnterPosition(vehicle, r.positions)
