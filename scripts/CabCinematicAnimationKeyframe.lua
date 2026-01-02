@@ -141,14 +141,15 @@ end
 local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCategory, vehicleFeatures)
   if vehicleFeatures.flags.isEnterCenter then
     local keyframes = {}
-    local isEnterFarFromWheel = math.abs(enterPosition[1] - vehicleFeatures.positions.exitWheel[1]) >
-        KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
+    local enterWheel = vehicleFeatures.positions.enterWheel
+    local isEnterFarFromWheel = enterWheel ~= nil and
+        math.abs(enterPosition[1] - enterWheel[1]) > KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
 
     local ladderBottom = {}
 
     if isEnterFarFromWheel then
       ladderBottom = {
-        vehicleFeatures.positions.exitWheel[1] + KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE,
+        enterWheel[1] + KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE,
         enterPosition[2],
         vehicleFeatures.positions.enter[3]
       };
