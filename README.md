@@ -31,7 +31,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Fix camera switching
 - [x] Minor bug fix with ladders
 - [x] Improve old tractors which use narrow doors
-- [ ] Fix animation for large tractors which use tracks
+- [x] Fix animation for large tractors which use tracks
 
 ### V1
 
