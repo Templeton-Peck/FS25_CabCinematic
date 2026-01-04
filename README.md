@@ -76,6 +76,11 @@ Following console commands are for testing and debugging purposes.
 > **Q:** The vehicle camera FOV setting seem to be ignored. Why?
 >
 > **A:** The mod enforces a consistent FOV for vehicle cameras to ensure a smooth cinematic experience. If you want to adjust the FOV, change the "First Person FOV" option in the game settings.
+
+> **Q:** I can't enter vehicle sometimes. Why?
+>
+> **A:** The mod assumes the player is positioned near the vehicle’s entry point to maintain realistic behavior. If you are too far away, standing behind the vehicle, or on the opposite side, entering the vehicle won't be possible.
+
 ## Preview
 
 https://github.com/user-attachments/assets/573625d1-088f-496b-9e8a-25be32d2a286

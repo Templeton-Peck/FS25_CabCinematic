@@ -1,6 +1,7 @@
 CabCinematic = Mod:init({
   camera = CabCinematicCamera.new(),
   cinematicAnimation = nil,
+  lastTargetedVehicle = nil,
   inputStates = {
     skipAnimation = false,
   },
@@ -110,8 +111,7 @@ function CabCinematic:draw()
       self.debugAnimation:drawDebug()
     end
 
-    local vehicle = g_currentMission.interactiveVehicleInRange or self.debugAnimation and self.debugAnimation.vehicle or
-        nil
+    local vehicle = self.debugAnimation ~= nil and self.debugAnimation.vehicle or self.lastTargetedVehicle or nil
     if vehicle ~= nil then
       if vehicle.spec_cabCinematic ~= nil then
         local features = vehicle:getCabCinematicFeatures()
@@ -131,11 +131,30 @@ function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccDebug", "Debug animation", "onDebugConsoleCommand", self)
 end
 
+function CabCinematic:startMission()
+  g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematic.VEHICLE_INTERACT_DISTANCE)
+  g_localPlayer.targeter:addFilterToTargetType(CabCinematic, function(hitNode)
+    if hitNode ~= nil and hitNode ~= 0 and CollisionFlag.getHasGroupFlagSet(hitNode, CollisionFlag.VEHICLE) then
+      local vehicle = g_currentMission:getNodeObject(hitNode)
+      if vehicle ~= nil then
+        vehicle = vehicle.rootVehicle or vehicle
+        CabCinematic.lastTargetedVehicle = vehicle
+      end
+    end
+
+    return true
+  end)
+end
+
 function CabCinematic:delete()
   removeConsoleCommand("ccPauseAnimation")
   removeConsoleCommand("ccSkipAnimation")
   removeConsoleCommand("ccDisable")
   removeConsoleCommand("ccDebug")
+
+  if self.lastTargetedVehicle ~= nil then
+    self.lastTargetedVehicle = nil
+  end
 
   if self.camera ~= nil then
     self.camera:delete()
@@ -185,10 +204,17 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     return
   end
 
-  local vehicle = g_currentMission.interactiveVehicleInRange
-  if vehicle == nil then
+  if CabCinematic.lastTargetedVehicle == nil then
     return
   end
+
+  if g_currentMission.interactiveVehicleInRange ~= nil then
+    g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_NONE
+  end
+
+  local vehicle = CabCinematic.lastTargetedVehicle
+  g_currentMission.interactiveVehicleInRange = vehicle
+  g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_ENTERABLE
 
   if CabCinematic:getIsDisabled() or not CabCinematic:getIsVehicleSupported(vehicle) then
     return superFunc(playerInput, ...)
@@ -198,21 +224,15 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     return
   end
 
+  if CabCinematicUtil.isPlayerInVehicleEnterRange(g_localPlayer, vehicle, CabCinematic.VEHICLE_INTERACT_DISTANCE) == false then
+    return
+  end
+
   pcall(function()
     executeConsoleCommand("cls")
   end)
 
   Log:info("enterableActionEventEnter called")
-
-  local exitNode = vehicle:getExitNode()
-  local playerDistance = CabCinematicUtil.getNodeDistance3D(g_localPlayer.rootNode, exitNode)
-  local isPlayerInVehicleExitNodeRange = playerDistance <= CabCinematic.VEHICLE_INTERACT_DISTANCE
-
-  Log:info("Player distance: %.2fm", playerDistance)
-
-  if not isPlayerInVehicleExitNodeRange then
-    return
-  end
 
   CabCinematic.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle,
     CabCinematic.camera,
@@ -339,6 +359,5 @@ local function init()
     end
   end
 end
-
 
 init()

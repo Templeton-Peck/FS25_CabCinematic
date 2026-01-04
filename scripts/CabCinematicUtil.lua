@@ -1,5 +1,13 @@
 CabCinematicUtil = {}
 
+local function clamp(value, min, max)
+  return math.min(math.max(value, min), max)
+end
+
+local function isNear(valueA, valueB, threshold)
+  return math.abs(valueA - valueB) <= threshold
+end
+
 function CabCinematicUtil.printParentNodeHierarchy(node, prefix)
   prefix = prefix or ""
   local parent = getParent(node)
@@ -215,14 +223,6 @@ end
 function CabCinematicUtil.getVehicleExitPosition(vehicle)
   local exitNode = vehicle:getExitNode()
   return { localToLocal(getParent(exitNode), vehicle.rootNode, getTranslation(exitNode)) }
-end
-
-local function clamp(value, min, max)
-  return math.min(math.max(value, min), max)
-end
-
-local function isNear(valueA, valueB, threshold)
-  return math.abs(valueA - valueB) <= threshold
 end
 
 function CabCinematicUtil.getPneumaticWheelFeatures(vehicle, wheel, positions)
@@ -729,4 +729,17 @@ function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
     vehicleCamera.fovMax = fovY
     setFovY(vehicleCamera.cameraNode, fovY)
   end
+end
+
+function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
+  local vehicleFeatures = CabCinematicUtil.getVehicleFeatures(vehicle)
+  local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
+  local ex, ey, ez = unpack(vehicleFeatures.positions.enter)
+
+  if (ex > 0 and px < ex) or (ex < 0 and px > ex) then
+    return false
+  end
+
+  local dist = MathUtil.vector3Length(px - ex, py - ey, pz - ez)
+  return dist <= range
 end
