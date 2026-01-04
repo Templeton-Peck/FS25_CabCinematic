@@ -20,6 +20,7 @@ CabCinematic = Mod:init({
     'harvesters',
     'forageharvesters',
     'beetharvesters',
+    'teleloadervehicles'
   },
 })
 
@@ -62,6 +63,9 @@ function CabCinematic:getIsVehicleSupported(vehicle)
     end
   end
 
+  if self.flags.debug then
+    Log:info("Vehicle category '%s' is not supported for cab cinematic", tostring(vehicleCategory))
+  end
   return false
 end
 

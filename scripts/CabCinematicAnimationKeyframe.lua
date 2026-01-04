@@ -354,6 +354,16 @@ local function buildTractorKeyframes(enterPosition, doorPosition, category, vehi
   }
 end
 
+local function buildTeleloadersKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+  return {
+    CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      enterPosition,
+      doorPosition
+    )
+  }
+end
+
 function CabCinematicAnimationKeyframe.build(player, vehicle)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
   local category = vehicle:getVehicleCategory()
@@ -376,6 +386,8 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
 
   if category == 'tractorss' or category == 'tractorsm' or category == 'tractorsl' then
     keyframes = buildTractorKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+  elseif category == 'teleloadervehicles' then
+    keyframes = buildTeleloadersKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
   elseif category == 'harvesters' then
     keyframes = buildHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
   elseif category == 'forageharvesters' then
