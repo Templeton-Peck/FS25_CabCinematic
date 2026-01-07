@@ -141,7 +141,8 @@ end
 local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCategory, vehicleFeatures)
   if vehicleFeatures.flags.isEnterCenter then
     local keyframes = {}
-    local enterWheel = vehicleFeatures.positions.enterWheel
+    local enterWheel = vehicleFeatures.nodes.enterWheel:getVehicleTranslation()
+    local leftDoor = vehicleFeatures.nodes.leftDoor:getVehicleTranslation()
     local isEnterFarFromWheel = enterWheel ~= nil and
         math.abs(enterPosition[1] - enterWheel[1]) > KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
 
@@ -151,7 +152,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
       ladderBottom = {
         enterWheel[1] + KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE,
         enterPosition[2],
-        vehicleFeatures.positions.enter[3]
+        enterPosition[3]
       };
 
       table.insert(keyframes, CabCinematicAnimationKeyframe.new(
@@ -169,7 +170,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
 
     local ladderTop = {
       ladderBottom[1] - KEYFRAME_OFFSETS.LADDER_SLOPE,
-      vehicleFeatures.positions.leftDoor[2],
+      leftDoor[2],
       ladderBottom[3]
     };
 
@@ -302,7 +303,8 @@ local function buildTractorKeyframes(enterPosition, doorPosition, category, vehi
   -- end
 
   if vehicleFeatures.flags.isBiTracks and vehicleFeatures.flags.isTracksOnly then
-    local wheel = vehicleFeatures.positions.wheelLeftBack or vehicleFeatures.positions.wheelRightBack
+    local wheelNode = vehicleFeatures.nodes.wheelLeftBack or vehicleFeatures.nodes.wheelRightBack
+    local wheel = wheelNode:getVehicleTranslation()
     local ladderBottom = {
       wheel[1] or doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       enterPosition[2],
@@ -370,18 +372,10 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
 
   Log:info("Building keyframes for vehicle '" .. vehicle.typeName .. "' of category '" .. category .. "'")
 
-  local enterPosition = {
-    vehicleFeatures.positions.enter[1],
-    vehicleFeatures.positions.enter[2],
-    vehicleFeatures.positions.enter[3]
-  }
-
-  local doorPosition = {
-    vehicleFeatures.positions.leftDoor[1],
-    vehicleFeatures.positions.leftDoor[2],
-    vehicleFeatures.positions.leftDoor[3]
-  }
-
+  local enterPosition = vehicleFeatures.nodes.enter:getVehicleTranslation()
+  local doorPosition = vehicleFeatures.nodes.leftDoor:getVehicleTranslation()
+  local standupPosition = vehicleFeatures.nodes.standup:getVehicleTranslation()
+  local seatPosition = vehicleFeatures.nodes.seat:getVehicleTranslation()
   local keyframes = {}
 
   if category == 'tractorss' or category == 'tractorsm' or category == 'tractorsl' then
@@ -406,13 +400,13 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
   table.insert(keyframes, CabCinematicAnimationKeyframe.new(
     CabCinematicAnimationKeyframe.TYPES.WALK,
     doorPosition,
-    vehicleFeatures.positions.standup
+    standupPosition
   ))
 
   table.insert(keyframes, CabCinematicAnimationKeyframe.new(
     CabCinematicAnimationKeyframe.TYPES.SEAT,
-    vehicleFeatures.positions.standup,
-    vehicleFeatures.positions.seat
+    standupPosition,
+    seatPosition
   ))
 
   return keyframes

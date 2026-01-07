@@ -201,6 +201,37 @@ function CabCinematicUtil.isVehicleTractor(vehicle)
   return category == "tractorss" or category == "tractorsm" or category == "tractorl"
 end
 
+function CabCinematicUtil.buildParentsNodes(vehicle)
+  local frameRoot = createTransformGroup("cc_frameRootNode")
+  link(vehicle.rootNode, frameRoot)
+  setTranslation(frameRoot, 0, 0, 0)
+  setRotation(frameRoot, 0, 0, 0)
+
+  local cabRoot = createTransformGroup("cc_cabRootNode")
+  local indoorCamera = vehicle:getVehicleIndoorCamera()
+  if indoorCamera ~= nil then
+    link(getParent(indoorCamera.cameraPositionNode), cabRoot)
+  else
+    link(vehicle.rootNode, cabRoot)
+  end
+  setTranslation(cabRoot, 0, 0, 0)
+  setRotation(cabRoot, 0, 0, 0)
+
+  return {
+    cabRoot = cabRoot,
+    frameRoot = frameRoot,
+  }
+end
+
+function CabCinematicUtil.deleteParentNodes(nodesParents)
+  if nodesParents ~= nil then
+    for _, node in pairs(nodesParents) do
+      unlink(node)
+      delete(node)
+    end
+  end
+end
+
 function CabCinematicUtil.getVehicleIndoorCameraPosition(vehicle)
   local camera = vehicle:getVehicleIndoorCamera()
   if camera ~= nil then
@@ -679,42 +710,76 @@ function CabCinematicUtil.getCabDoors(vehicle, positions, flags)
 end
 
 function CabCinematicUtil.getVehicleFeatures(vehicle)
-  local r = {
-    flags = {},
-    debugPositions = {},
-    debugHits = {},
-    positions = {
-      root = { localToLocal(getParent(vehicle.rootNode), vehicle.rootNode, getTranslation(vehicle.rootNode)) },
-      camera = CabCinematicUtil.getVehicleIndoorCameraPosition(vehicle),
-      steeringWheel = CabCinematicUtil.getVehicleSteeringWheelPosition(vehicle),
-      exit = CabCinematicUtil.getVehicleExitPosition(vehicle)
-    }
+  local flags = {}
+  local debugPositions = {}
+  local debugHits = {}
+  local positions = {
+    root = { localToLocal(getParent(vehicle.rootNode), vehicle.rootNode, getTranslation(vehicle.rootNode)) },
+    camera = CabCinematicUtil.getVehicleIndoorCameraPosition(vehicle),
+    steeringWheel = CabCinematicUtil.getVehicleSteeringWheelPosition(vehicle),
+    exit = CabCinematicUtil.getVehicleExitPosition(vehicle)
   }
 
-  local wheelsFeatures = CabCinematicUtil.getWheelsFeatures(vehicle, r.positions)
-  r.positions = CabCinematicUtil.merge(r.positions, wheelsFeatures.positions)
-  r.flags = CabCinematicUtil.merge(r.flags, wheelsFeatures.flags)
+  local wheelsFeatures = CabCinematicUtil.getWheelsFeatures(vehicle, positions)
+  CabCinematicUtil.merge(positions, wheelsFeatures.positions)
+  CabCinematicUtil.merge(flags, wheelsFeatures.flags)
 
-  r.positions.seat = { r.positions.camera[1], r.positions.camera[2], r.positions.camera[3] }
-  r.positions.enterWheel = CabCinematicUtil.getCabEnterWheelPosition(vehicle, r.positions)
-  r.positions.enter = CabCinematicUtil.getCabEnterPosition(vehicle, r.positions)
+  positions.seat = { positions.camera[1], positions.camera[2], positions.camera[3] }
+  positions.enterWheel = CabCinematicUtil.getCabEnterWheelPosition(vehicle, positions)
+  positions.enter = CabCinematicUtil.getCabEnterPosition(vehicle, positions)
 
-  local cabBoundingBox = CabCinematicUtil.getCabBoundingBox(vehicle, r.positions)
-  r.positions = CabCinematicUtil.merge(r.positions, cabBoundingBox.positions)
-  r.debugPositions = CabCinematicUtil.merge(r.debugPositions, cabBoundingBox.debugPositions)
-  r.debugHits = CabCinematicUtil.merge(r.debugHits, cabBoundingBox.debugHits)
+  local cabBoundingBox = CabCinematicUtil.getCabBoundingBox(vehicle, positions)
+  CabCinematicUtil.merge(positions, cabBoundingBox.positions)
+  CabCinematicUtil.merge(debugPositions, cabBoundingBox.debugPositions)
+  CabCinematicUtil.merge(debugHits, cabBoundingBox.debugHits)
 
-  local middleZ = (r.positions.steeringWheel[3] + r.positions.camera[3]) / 2
-  r.flags.isEnterLeftSide = MathUtil.round(r.positions.enter[1] - cabBoundingBox.positions.center[1], 2) > 0.25
-  r.flags.isEnterFrontSide = MathUtil.round(r.positions.enter[3] - middleZ, 2) >= 0.5
-  r.flags.isEnterBackSide = MathUtil.round(r.positions.enter[3] - middleZ, 2) <= -0.5
-  r.flags.isEnterCenter = not r.flags.isEnterFrontSide and not r.flags.isEnterBackSide
+  local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
+  flags.isEnterLeftSide = MathUtil.round(positions.enter[1] - cabBoundingBox.positions.center[1], 2) > 0.25
+  flags.isEnterFrontSide = MathUtil.round(positions.enter[3] - middleZ, 2) >= 0.5
+  flags.isEnterBackSide = MathUtil.round(positions.enter[3] - middleZ, 2) <= -0.5
+  flags.isEnterCenter = not flags.isEnterFrontSide and not flags.isEnterBackSide
 
-  r.positions.standup = CabCinematicUtil.getCabStandupPosition(vehicle, r.positions, r.flags)
-  local doors = CabCinematicUtil.getCabDoors(vehicle, r.positions, r.flags)
-  r.positions = CabCinematicUtil.merge(r.positions, doors)
+  positions.standup = CabCinematicUtil.getCabStandupPosition(vehicle, positions, flags)
+  local doors = CabCinematicUtil.getCabDoors(vehicle, positions, flags)
+  CabCinematicUtil.merge(positions, doors)
 
-  return r;
+  local nodes = {
+    root = CabCinematicNode.newFrameNode("root", vehicle):setVehicleTranslation(positions.root),
+    exit = CabCinematicNode.newFrameNode("exit", vehicle):setVehicleTranslation(positions.exit),
+    enterWheel = CabCinematicNode.newFrameNode("enterWheel", vehicle):setVehicleTranslation(positions.enterWheel),
+    enter = CabCinematicNode.newFrameNode("enter", vehicle):setVehicleTranslation(positions.enter),
+    camera = CabCinematicNode.newCabNode("camera", vehicle):setVehicleTranslation(positions.camera),
+    steeringWheel = CabCinematicNode.newCabNode("steeringWheel", vehicle):setVehicleTranslation(positions.steeringWheel),
+    standup = CabCinematicNode.newCabNode("standup", vehicle):setVehicleTranslation(positions.standup),
+    seat = CabCinematicNode.newCabNode("seat", vehicle):setVehicleTranslation(positions.seat),
+  }
+
+  for name, pos in pairs(wheelsFeatures.positions) do
+    nodes[name] = CabCinematicNode.newFrameNode(name, vehicle):setVehicleTranslation(pos)
+  end
+
+  for name, pos in pairs(doors) do
+    nodes[name] = CabCinematicNode.newCabNode(name, vehicle):setVehicleTranslation(pos)
+  end
+
+  for name, pos in pairs(cabBoundingBox.positions) do
+    nodes[name] = CabCinematicNode.newCabNode(name, vehicle):setVehicleTranslation(pos)
+  end
+
+  return {
+    nodes = nodes,
+    flags = flags,
+    debugPositions = debugPositions,
+    debugHits = debugHits,
+  }
+end
+
+function CabCinematicUtil.deleteVehicleFeatures(vehicleFeatures)
+  if vehicleFeatures ~= nil then
+    for _, node in pairs(vehicleFeatures.nodes) do
+      node:delete()
+    end
+  end
 end
 
 function CabCinematicUtil.getPlayerEyesightHeight()
@@ -734,7 +799,7 @@ end
 function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   local vehicleFeatures = CabCinematicUtil.getVehicleFeatures(vehicle)
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
-  local ex, ey, ez = unpack(vehicleFeatures.positions.enter)
+  local ex, ey, ez = unpack(vehicleFeatures.nodes.enter:getVehicleTranslation())
 
   if (ex > 0 and px < ex) or (ex < 0 and px > ex) then
     return false

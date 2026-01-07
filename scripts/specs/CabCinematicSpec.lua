@@ -9,6 +9,8 @@ end
 function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleIndoorCamera", CabCinematicSpec.getVehicleIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCategory", CabCinematicSpec.getVehicleCategory)
+  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicNodesParents",
+    CabCinematicSpec.getCabCinematicNodesParents)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCinematicRequiredAnimation",
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
   SpecializationUtil.registerFunction(vehicleType, "playVehicleCabCinematicRequiredAnimations",
@@ -119,9 +121,18 @@ function CabCinematicSpec:setCabCinematicSkipAnimationAllowed(allowed)
   end
 end
 
+function CabCinematicSpec:getCabCinematicNodesParents()
+  if self.spec_cabCinematic.nodesParents == nil then
+    self.spec_cabCinematic.nodesParents = CabCinematicUtil.buildParentsNodes(self)
+  end
+
+  return self.spec_cabCinematic.nodesParents
+end
+
 function CabCinematicSpec:onLoad()
   local spec             = {}
   spec.actionEvents      = {}
+  spec.nodesParents      = nil
   spec.indoorCamera      = nil
   spec.vehicleCategory   = nil
   spec.features          = nil
@@ -134,10 +145,13 @@ function CabCinematicSpec:onDelete()
   local spec = self.spec_cabCinematic
 
   self:clearActionEventsTable(spec.actionEvents)
-  spec.indoorCamera = nil
+  CabCinematicUtil.deleteVehicleFeatures(spec.features)
+  CabCinematicUtil.deleteParentNodes(spec.nodesParents)
+  spec.actionEvents    = nil
+  spec.nodesParents    = nil
+  spec.indoorCamera    = nil
   spec.vehicleCategory = nil
-  spec.features = nil
-  spec.actionEvents = nil
+  spec.features        = nil
 end
 
 function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)

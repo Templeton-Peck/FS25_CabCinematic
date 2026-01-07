@@ -12,7 +12,7 @@ CabCinematic = Mod:init({
     debug = false
   },
   debugAnimation = nil,
-  VEHICLE_INTERACT_DISTANCE = 3.0,
+  VEHICLE_INTERACT_DISTANCE = 4.0,
   SUPPORTED_VEHICLE_CATEGORIES = {
     'tractorss',
     'tractorsm',
