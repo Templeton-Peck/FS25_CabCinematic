@@ -9,16 +9,12 @@ end
 function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleIndoorCamera", CabCinematicSpec.getVehicleIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCategory", CabCinematicSpec.getVehicleCategory)
+  SpecializationUtil.registerFunction(vehicleType, "setVehicleIndoorCameraActive",
+    CabCinematicSpec.setVehicleIndoorCameraActive)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicNodesParents",
     CabCinematicSpec.getCabCinematicNodesParents)
   SpecializationUtil.registerFunction(vehicleType, "getVehicleCabCinematicRequiredAnimation",
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
-  SpecializationUtil.registerFunction(vehicleType, "playVehicleCabCinematicRequiredAnimations",
-    CabCinematicSpec.playVehicleCabCinematicRequiredAnimations)
-  SpecializationUtil.registerFunction(vehicleType, "getIsVehicleCabCinematicRequiredAnimationFinished",
-    CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationFinished)
-  SpecializationUtil.registerFunction(vehicleType, "getIsVehicleCabCinematicRequiredAnimationPlaying",
-    CabCinematicSpec.getIsVehicleCabCinematicRequiredAnimationPlaying)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures",
     CabCinematicSpec.getCabCinematicFeatures)
   SpecializationUtil.registerFunction(vehicleType, "setCabCinematicSkipAnimationAllowed",
@@ -48,6 +44,18 @@ function CabCinematicSpec:getVehicleIndoorCamera()
   return nil
 end
 
+function CabCinematicSpec:setVehicleIndoorCameraActive()
+  local indoorCamera = self:getVehicleIndoorCamera()
+  if indoorCamera ~= nil then
+    for i, camera in pairs(self.spec_enterable.cameras) do
+      if camera == indoorCamera then
+        self:setActiveCameraIndex(i)
+        break
+      end
+    end
+  end
+end
+
 function CabCinematicSpec:getVehicleCategory()
   if self.spec_cabCinematic.vehicleCategory ~= nil then
     return self.spec_cabCinematic.vehicleCategory
@@ -67,41 +75,64 @@ function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
     local ladder = self.spec_combine.ladder
     if ladder ~= nil and ladder.animName ~= nil then
       return {
-        name = ladder.animName,
-        speed = ladder.animSpeedScale,
-        direction = ladder.foldDirection or 1
+        play = function()
+          self:playAnimation(ladder.animName, ladder.animSpeedScale, self:getAnimationTime(ladder.animName), true)
+        end,
+        isPlaying = function()
+          if self:getIsAIActive() then
+            return false
+          end
+
+          return self:getIsAnimationPlaying(ladder.animName)
+        end,
+        isFinished = function()
+          if self:getIsAIActive() then
+            return true
+          end
+
+          local time = self:getAnimationTime(ladder.animName)
+          local logicalTime = (ladder.foldDirection == 1) and time or (1 - time)
+          return logicalTime >= (1 - 0.001)
+        end
       }
     end
   end
 
-  return nil
-end
+  if self:getVehicleCategory() == "teleloadervehicles" then
+    if self.spec_foldable ~= nil and self.spec_foldable.animName ~= nil then
+      return {
+        play = function()
 
-function CabCinematicSpec:playVehicleCabCinematicRequiredAnimations()
-  local anim = self:getVehicleCabCinematicRequiredAnimation()
-  if anim ~= nil then
-    self:playAnimation(anim.name, anim.speed, self:getAnimationTime(anim.name), true)
+        end,
+        isPlaying = function()
+          if self:getIsAIActive() then
+            return false
+          end
+
+          return false
+        end,
+        isFinished = function()
+          if self:getIsAIActive() then
+            return true
+          end
+
+          return not self:getIsUnfolded()
+        end
+      }
+    end
   end
-end
 
-function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationFinished()
-  if self:getIsAIActive() then
-    return true
-  end
+  return {
+    play = function()
 
-  local anim = self:getVehicleCabCinematicRequiredAnimation()
-  if anim ~= nil then
-    local time = self:getAnimationTime(anim.name)
-    local logicalTime = (anim.direction == 1) and time or (1 - time)
-    return logicalTime >= (1 - 0.001)
-  else
-    return true
-  end
-end
-
-function CabCinematicSpec:getIsVehicleCabCinematicRequiredAnimationPlaying()
-  local anim = self:getVehicleCabCinematicRequiredAnimation()
-  return anim ~= nil and self:getIsAnimationPlaying(anim.name)
+    end,
+    isPlaying = function()
+      return false
+    end,
+    isFinished = function()
+      return true
+    end
+  }
 end
 
 function CabCinematicSpec:getCabCinematicFeatures()

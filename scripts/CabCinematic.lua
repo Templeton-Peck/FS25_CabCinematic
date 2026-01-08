@@ -78,10 +78,7 @@ function CabCinematic:startCurrentAnimation()
     self.debugAnimation = self.cinematicAnimation
   end
 
-  self:setSkipAnimationInputState(false)
   self.cinematicAnimation:start()
-  self.cinematicAnimation.vehicle:setCabCinematicSkipAnimationAllowed(true)
-  g_currentMission.isPlayerFrozen = true
 end
 
 function CabCinematic:stopCurrentAnimation()
@@ -99,12 +96,77 @@ function CabCinematic:stopCurrentAnimation()
 end
 
 function CabCinematic:update(dt)
-  if self:getIsReadyToStart() then
-    self:startCurrentAnimation()
-  elseif self:getIsReadyToStop() then
-    self:stopCurrentAnimation()
-  elseif self:getIsActive() then
-    self.cinematicAnimation:update(dt)
+  if self.cinematicAnimation ~= nil then
+    local vehicle = self.cinematicAnimation.vehicle
+
+    if self:getIsReadyToStop() then
+      g_currentMission.isPlayerFrozen = false
+      vehicle:setCabCinematicSkipAnimationAllowed(false)
+      self:setSkipAnimationInputState(false)
+
+      self.cinematicAnimation:stop()
+      if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.LEAVE then
+        local dirX, dirY, dirZ = localDirectionToWorld(self.camera.cameraNode, 0, 0, -1)
+        local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
+
+        Log:info("syncCamerasAtAnimationStop: setting player camera rotation to (%.2f, %.2f, %.2f)",
+          pitch, yaw, 0)
+
+        g_localPlayer.camera:setRotation(pitch, yaw, 0)
+      end
+
+      self.cinematicAnimation = nil
+      self.camera:deactivate()
+      self.camera:unlink()
+    elseif self:getIsActive() then
+      self.cinematicAnimation:update(dt)
+      local x, y, z = unpack(self.cinematicAnimation.currentPosition)
+      self.camera:setPosition(x, y, z)
+    else
+      local requiredAnimation = vehicle:getVehicleCabCinematicRequiredAnimation()
+
+      if not requiredAnimation.isPlaying() then
+        self:setSkipAnimationInputState(false)
+        vehicle:setCabCinematicSkipAnimationAllowed(true)
+        g_currentMission.isPlayerFrozen = true
+        self.camera:link(vehicle.rootNode)
+
+        local vehicleCamera = vehicle:getVehicleIndoorCamera();
+
+        if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.ENTER then
+          local dirX, dirY, dirZ = localDirectionToWorld(g_localPlayer.camera.cameraRootNode, 0, 0, 1)
+          local lX, lY, lZ = worldDirectionToLocal(getParent(vehicleCamera.rotateNode), dirX, dirY, dirZ)
+          local pitch, yaw = MathUtil.directionToPitchYaw(lX, lY, lZ)
+
+          vehicleCamera.rotX = pitch
+          vehicleCamera.rotY = yaw
+          vehicleCamera.rotZ = 0
+
+          Log:info("setting target camera rotation to (%.2f, %.2f, %.2f)", vehicleCamera.rotX, vehicleCamera.rotY, 0)
+
+          vehicleCamera:updateRotateNodeRotation()
+        end
+
+        local startPosition = { localToLocal(g_localPlayer.camera.cameraRootNode, vehicle.rootNode,
+          getTranslation(g_localPlayer.camera.cameraRootNode)) }
+        self.camera:setPosition(startPosition[1], startPosition[2], startPosition[3])
+        self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
+        self.camera:syncPosition()
+        self.camera:syncRotation()
+
+        vehicle:setVehicleIndoorCameraActive()
+        self.camera:activate()
+
+        if not requiredAnimation.isFinished() then
+          requiredAnimation.play()
+        elseif self:getIsReadyToStart() then
+          self.cinematicAnimation:start()
+        end
+      end
+    end
+
+    local vehicleCamera = vehicle:getVehicleIndoorCamera()
+    self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
     self.camera:update(dt)
   end
 end
@@ -119,10 +181,19 @@ function CabCinematic:draw()
     if vehicle ~= nil then
       if vehicle.spec_cabCinematic ~= nil then
         local features = vehicle:getCabCinematicFeatures()
-        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
-        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
-        CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
-        CabCinematicUtil.drawDebugBoundingBox(vehicle.rootNode, features.positions)
+        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
+        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
+        -- CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
+        -- CabCinematicUtil.drawDebugBoundingBox(vehicle.rootNode, features.positions)
+
+        local nodesParents = vehicle:getCabCinematicNodesParents()
+        for _, parentNode in pairs(nodesParents) do
+          DebugUtil.drawDebugNode(parentNode, getName(parentNode));
+        end
+
+        for _, node in pairs(features.nodes) do
+          node:drawDebug()
+        end
       end
     end
   end
@@ -239,7 +310,6 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
   Log:info("enterableActionEventEnter called")
 
   CabCinematic.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle,
-    CabCinematic.camera,
     function()
       if (not vehicle:getIsAIActive()) then
         vehicle.spec_enterable:restoreVehicleCharacter()
@@ -293,7 +363,6 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
   end
 
   CabCinematic.cinematicAnimation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, vehicle,
-    CabCinematic.camera,
     function()
       if (not vehicle:getIsAIActive()) then
         vehicle.spec_enterable:restoreVehicleCharacter()

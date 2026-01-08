@@ -98,7 +98,7 @@ end
 
 function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
   if self.distance == 0 then
-    return 0, 0, 0
+    return { 0, 0, 0 }
   end
 
   local duration = self:getDuration()
@@ -110,7 +110,7 @@ function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
 
   local bobX, bobY, bobZ = self:getViewBobbingOffset(t)
 
-  return baseX + bobX, baseY + bobY, baseZ + bobZ
+  return { baseX + bobX, baseY + bobY, baseZ + bobZ }
 end
 
 function CabCinematicAnimationKeyframe:reverse()
