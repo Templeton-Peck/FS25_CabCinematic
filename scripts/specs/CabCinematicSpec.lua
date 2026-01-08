@@ -99,24 +99,25 @@ function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
   end
 
   if self:getVehicleCategory() == "teleloadervehicles" then
-    if self.spec_foldable ~= nil and self.spec_foldable.animName ~= nil then
+    if self.spec_foldable ~= nil and self.spec_foldable.hasFoldingParts then
       return {
         play = function()
-
+          self:setFoldDirection(-self.spec_foldable.turnOnFoldDirection)
         end,
         isPlaying = function()
           if self:getIsAIActive() then
             return false
           end
 
-          return false
+          return self.spec_foldable.foldMoveDirection ~= 0
+              and self.spec_foldable.foldMoveDirection == -self.spec_foldable.turnOnFoldDirection
         end,
         isFinished = function()
           if self:getIsAIActive() then
             return true
           end
 
-          return not self:getIsUnfolded()
+          return self.spec_foldable.foldMoveDirection == 0 and not self:getIsUnfolded()
         end
       }
     end
