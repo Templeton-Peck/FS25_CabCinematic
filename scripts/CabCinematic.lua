@@ -109,7 +109,7 @@ function CabCinematic:update(dt)
         local dirX, dirY, dirZ = localDirectionToWorld(self.camera.cameraNode, 0, 0, -1)
         local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
 
-        Log:info("syncCamerasAtAnimationStop: setting player camera rotation to (%.2f, %.2f, %.2f)",
+        Log:info("Setting player camera rotation to (%.2f, %.2f, %.2f)",
           pitch, yaw, 0)
 
         g_localPlayer.camera:setRotation(pitch, yaw, 0)
@@ -142,14 +142,14 @@ function CabCinematic:update(dt)
           vehicleCamera.rotY = yaw
           vehicleCamera.rotZ = 0
 
-          Log:info("setting target camera rotation to (%.2f, %.2f, %.2f)", vehicleCamera.rotX, vehicleCamera.rotY, 0)
+          Log:info("Setting vehicle camera rotation to (%.2f, %.2f, %.2f)", vehicleCamera.rotX, vehicleCamera.rotY, 0)
 
           vehicleCamera:updateRotateNodeRotation()
         end
 
-        local startPosition = { localToLocal(g_localPlayer.camera.cameraRootNode, vehicle.rootNode,
-          getTranslation(g_localPlayer.camera.cameraRootNode)) }
-        self.camera:setPosition(startPosition[1], startPosition[2], startPosition[3])
+        local sx, sy, sz = localToLocal(g_localPlayer.camera.cameraRootNode, vehicle.rootNode,
+          getTranslation(g_localPlayer.camera.cameraRootNode))
+        self.camera:setPosition(sx, sy, sz)
         self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
         self.camera:syncPosition()
         self.camera:syncRotation()
