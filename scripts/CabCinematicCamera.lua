@@ -62,13 +62,6 @@ function CabCinematicCamera:deactivate()
   self:reset()
 end
 
-function CabCinematicCamera:setCameraActiveIfNeeded()
-  local activeCameraId = g_cameraManager:getActiveCamera()
-  if activeCameraId ~= self.cameraNode then
-    g_cameraManager:setActiveCamera(self.cameraNode)
-  end
-end
-
 function CabCinematicCamera:getIsActive()
   return self.isActive
 end
@@ -132,7 +125,6 @@ end
 
 function CabCinematicCamera:update()
   if self.isActive then
-    self:setCameraActiveIfNeeded()
     self:syncRotation()
     self:syncPosition()
   end

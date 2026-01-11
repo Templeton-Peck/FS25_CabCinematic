@@ -105,57 +105,21 @@ function CabCinematic:update(dt)
       self:setSkipAnimationInputState(false)
 
       self.cinematicAnimation:stop()
-      if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.LEAVE then
-        local dirX, dirY, dirZ = localDirectionToWorld(self.camera.cameraNode, 0, 0, -1)
-        local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
-
-        Log:info("Setting player camera rotation to (%.2f, %.2f, %.2f)",
-          pitch, yaw, 0)
-
-        g_localPlayer.camera:setRotation(pitch, yaw, 0)
-      end
+      self:prepareCamerasForAnimationStop()
 
       self.cinematicAnimation = nil
-      self.camera:deactivate()
-      self.camera:unlink()
     elseif self:getIsActive() then
       self.cinematicAnimation:update(dt)
       local x, y, z = unpack(self.cinematicAnimation.currentPosition)
       self.camera:setPosition(x, y, z)
     else
       local requiredAnimation = vehicle:getVehicleCabCinematicRequiredAnimation()
+      self:prepareCamerasForAnimationStart()
 
       if not requiredAnimation.isPlaying() then
         self:setSkipAnimationInputState(false)
         vehicle:setCabCinematicSkipAnimationAllowed(true)
         g_currentMission.isPlayerFrozen = true
-        self.camera:link(vehicle.rootNode)
-
-        local vehicleCamera = vehicle:getVehicleIndoorCamera();
-
-        if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.ENTER then
-          local dirX, dirY, dirZ = localDirectionToWorld(g_localPlayer.camera.cameraRootNode, 0, 0, 1)
-          local lX, lY, lZ = worldDirectionToLocal(getParent(vehicleCamera.rotateNode), dirX, dirY, dirZ)
-          local pitch, yaw = MathUtil.directionToPitchYaw(lX, lY, lZ)
-
-          vehicleCamera.rotX = pitch
-          vehicleCamera.rotY = yaw
-          vehicleCamera.rotZ = 0
-
-          Log:info("Setting vehicle camera rotation to (%.2f, %.2f, %.2f)", vehicleCamera.rotX, vehicleCamera.rotY, 0)
-
-          vehicleCamera:updateRotateNodeRotation()
-        end
-
-        local sx, sy, sz = localToLocal(g_localPlayer.camera.cameraRootNode, vehicle.rootNode,
-          getTranslation(g_localPlayer.camera.cameraRootNode))
-        self.camera:setPosition(sx, sy, sz)
-        self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
-        self.camera:syncPosition()
-        self.camera:syncRotation()
-
-        vehicle:setVehicleIndoorCameraActive()
-        self.camera:activate()
 
         if not requiredAnimation.isFinished() then
           requiredAnimation.play()
@@ -168,6 +132,57 @@ function CabCinematic:update(dt)
     local vehicleCamera = vehicle:getVehicleIndoorCamera()
     self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
     self.camera:update(dt)
+  end
+end
+
+function CabCinematic:prepareCamerasForAnimationStart()
+  if self.cinematicAnimation ~= nil then
+    local vehicle = self.cinematicAnimation.vehicle
+    self.camera:link(vehicle.rootNode)
+
+    local vehicleCamera = vehicle:getVehicleIndoorCamera();
+
+    if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.ENTER then
+      local playerCamera = g_localPlayer.camera.cameraRootNode
+      local dirX, dirY, dirZ = localDirectionToWorld(playerCamera, 0, 0, 1)
+      local lX, lY, lZ = worldDirectionToLocal(getParent(vehicleCamera.rotateNode), dirX, dirY, dirZ)
+      local pitch, yaw = MathUtil.directionToPitchYaw(lX, lY, lZ)
+
+      vehicleCamera.rotX = pitch
+      vehicleCamera.rotY = yaw
+      vehicleCamera.rotZ = 0
+      vehicleCamera:updateRotateNodeRotation()
+
+      local x, y, z = localToLocal(playerCamera, vehicle.rootNode, getTranslation(playerCamera))
+      self.camera:setPosition(x, y, z)
+      vehicle:setVehicleIndoorCameraActive()
+    elseif self.cinematicAnimation.type == CabCinematicAnimation.TYPES.LEAVE then
+      local x, y, z = getTranslation(vehicleCamera.cameraPositionNode)
+      self.camera:setPosition(x, y, z)
+    end
+
+    self.camera:setRotation(vehicleCamera.rotX, vehicleCamera.rotY, vehicleCamera.rotZ)
+    self.camera:syncPosition()
+    self.camera:syncRotation()
+    self.camera:activate()
+  end
+end
+
+function CabCinematic:prepareCamerasForAnimationStop()
+  if self.cinematicAnimation ~= nil then
+    local vehicle = self.cinematicAnimation.vehicle
+    if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.ENTER then
+      self.camera:deactivate()
+      self.camera:unlink()
+      vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
+    elseif self.cinematicAnimation.type == CabCinematicAnimation.TYPES.LEAVE then
+      local dirX, dirY, dirZ = localDirectionToWorld(self.camera.cameraNode, 0, 0, -1)
+      local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
+      g_localPlayer.camera:setRotation(pitch, yaw, 0)
+      self.camera:deactivate()
+      self.camera:unlink()
+      g_cameraManager:setActiveCamera(g_localPlayer.camera.firstPersonCamera)
+    end
   end
 end
 
@@ -318,8 +333,6 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
           vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, 1, nil, true, true)
         end
       end
-
-      return vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
     end)
   CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
 
@@ -405,11 +418,20 @@ function CabCinematic.onPlayerCameraFovySettingChanged(playerCamera, superFunc, 
   return superFunc(playerCamera, ...)
 end
 
+function CabCinematic.onPlayerCameraMakeCurrent(playerCamera, superFunc, ...)
+  if CabCinematic:getIsActive() then
+    return
+  end
+
+  return superFunc(playerCamera, ...)
+end
+
 local function init()
   VehicleCamera.onFovySettingChanged = Utils.overwrittenFunction(VehicleCamera.onFovySettingChanged,
     CabCinematic.onVehicleCameraFovySettingChanged)
   PlayerCamera.onFovySettingChanged = Utils.overwrittenFunction(PlayerCamera.onFovySettingChanged,
     CabCinematic.onPlayerCameraFovySettingChanged)
+  PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, CabCinematic.onPlayerCameraMakeCurrent)
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
     CabCinematic.onPlayerEnterVehicle)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)

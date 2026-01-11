@@ -42,6 +42,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 ### V1.1
 
 - [ ] Testing with other camera-related mods to prevent conflicts
+- [ ] Track IR support
 - [ ] Sounds
 
 ### V2
