@@ -53,7 +53,7 @@ function CabCinematicCamera:reset()
 end
 
 function CabCinematicCamera:activate()
-  self:setCameraActiveIfNeeded()
+  g_cameraManager:setActiveCamera(self.cameraNode)
   self.isActive = true
 end
 
