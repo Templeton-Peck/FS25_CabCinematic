@@ -801,7 +801,7 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
   local ex, ey, ez = unpack(vehicleFeatures.nodes.enter:getVehicleTranslation())
 
-  if (ex > 0 and px < ex) or (ex < 0 and px > ex) then
+  if (ex > 0 and px < math.max(ex - 0.5, 0)) or (ex < 0 and px > math.min(ex + 0.5, 0)) then
     return false
   end
 

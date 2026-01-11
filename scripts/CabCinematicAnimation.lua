@@ -94,15 +94,23 @@ function CabCinematicAnimation:buildEnterAdjustmentKeyframe(keyframes)
   end
 end
 
+function CabCinematicAnimation:getIsEnter()
+  return self.type == CabCinematicAnimation.TYPES.ENTER
+end
+
+function CabCinematicAnimation:getIsLeave()
+  return self.type == CabCinematicAnimation.TYPES.LEAVE
+end
+
 function CabCinematicAnimation:buildKeyframes()
   local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, self.vehicle)
 
-  if self.type == CabCinematicAnimation.TYPES.ENTER then
+  if self:getIsEnter() then
     local enterAdjustmentKeyframe = self:buildEnterAdjustmentKeyframe(keyframes)
     if enterAdjustmentKeyframe ~= nil then
       table.insert(keyframes, 1, enterAdjustmentKeyframe)
     end
-  elseif self.type == CabCinematicAnimation.TYPES.LEAVE then
+  elseif self:getIsLeave() then
     local reversedKeyframes = {}
     for _, keyframe in ipairs(keyframes) do
       keyframe:reverse()

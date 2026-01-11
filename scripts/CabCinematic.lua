@@ -114,7 +114,6 @@ function CabCinematic:update(dt)
       self.camera:setPosition(x, y, z)
     else
       local requiredAnimation = vehicle:getVehicleCabCinematicRequiredAnimation()
-      self:prepareCamerasForAnimationStart()
 
       if not requiredAnimation.isPlaying() then
         self:setSkipAnimationInputState(false)
@@ -122,8 +121,10 @@ function CabCinematic:update(dt)
         g_currentMission.isPlayerFrozen = true
 
         if not requiredAnimation.isFinished() then
+          self:prepareCamerasForAnimationStart()
           requiredAnimation.play()
         elseif self:getIsReadyToStart() then
+          self:prepareCamerasForAnimationStart()
           self.cinematicAnimation:start()
         end
       end
@@ -142,7 +143,7 @@ function CabCinematic:prepareCamerasForAnimationStart()
 
     local vehicleCamera = vehicle:getVehicleIndoorCamera();
 
-    if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.ENTER then
+    if self.cinematicAnimation:getIsEnter() then
       local playerCamera = g_localPlayer.camera.cameraRootNode
       local dirX, dirY, dirZ = localDirectionToWorld(playerCamera, 0, 0, 1)
       local lX, lY, lZ = worldDirectionToLocal(getParent(vehicleCamera.rotateNode), dirX, dirY, dirZ)
@@ -153,10 +154,11 @@ function CabCinematic:prepareCamerasForAnimationStart()
       vehicleCamera.rotZ = 0
       vehicleCamera:updateRotateNodeRotation()
 
+      vehicle:setVehicleIndoorCameraActive()
+
       local x, y, z = localToLocal(playerCamera, vehicle.rootNode, getTranslation(playerCamera))
       self.camera:setPosition(x, y, z)
-      vehicle:setVehicleIndoorCameraActive()
-    elseif self.cinematicAnimation.type == CabCinematicAnimation.TYPES.LEAVE then
+    elseif self.cinematicAnimation:getIsLeave() then
       local x, y, z = getTranslation(vehicleCamera.cameraPositionNode)
       self.camera:setPosition(x, y, z)
     end
@@ -171,11 +173,11 @@ end
 function CabCinematic:prepareCamerasForAnimationStop()
   if self.cinematicAnimation ~= nil then
     local vehicle = self.cinematicAnimation.vehicle
-    if self.cinematicAnimation.type == CabCinematicAnimation.TYPES.ENTER then
+    if self.cinematicAnimation:getIsEnter() then
       self.camera:deactivate()
       self.camera:unlink()
       vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
-    elseif self.cinematicAnimation.type == CabCinematicAnimation.TYPES.LEAVE then
+    elseif self.cinematicAnimation:getIsLeave() then
       local dirX, dirY, dirZ = localDirectionToWorld(self.camera.cameraNode, 0, 0, -1)
       local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
       g_localPlayer.camera:setRotation(pitch, yaw, 0)
@@ -290,7 +292,7 @@ function CabCinematic:onDebugConsoleCommand()
 end
 
 function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
-  if CabCinematic:getIsActive() then
+  if CabCinematic:getIsActive() or CabCinematic:getIsReadyToStart() then
     return
   end
 
@@ -348,7 +350,7 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
 end
 
 function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
-  if CabCinematic:getIsActive() then
+  if CabCinematic:getIsActive() or CabCinematic:getIsReadyToStart() then
     return
   end
 
@@ -387,23 +389,6 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
     end)
 end
 
-function CabCinematic.onPlayerSwitchVehicleCamera(enterable, superFunc, ...)
-  Log:info("onPlayerSwitchVehicleCamera called")
-  if CabCinematic:getIsActive() then
-    return
-  end
-
-  return superFunc(enterable, ...)
-end
-
-function CabCinematic.onEnterOrLeaveCombine(combine, superFunc, ...)
-  if CabCinematic:getIsActive() or CabCinematic:getIsReadyToStart() then
-    return
-  end
-
-  return superFunc(combine, ...)
-end
-
 function CabCinematic.onVehicleCameraFovySettingChanged(vehicleCamera)
   CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
 end
@@ -418,12 +403,12 @@ function CabCinematic.onPlayerCameraFovySettingChanged(playerCamera, superFunc, 
   return superFunc(playerCamera, ...)
 end
 
-function CabCinematic.onPlayerCameraMakeCurrent(playerCamera, superFunc, ...)
-  if CabCinematic:getIsActive() then
+function CabCinematic.ignoreWhenActive(self, superFunc, ...)
+  if CabCinematic:getIsActive() or CabCinematic:getIsReadyToStart() then
     return
   end
 
-  return superFunc(playerCamera, ...)
+  return superFunc(self, ...)
 end
 
 local function init()
@@ -431,14 +416,18 @@ local function init()
     CabCinematic.onVehicleCameraFovySettingChanged)
   PlayerCamera.onFovySettingChanged = Utils.overwrittenFunction(PlayerCamera.onFovySettingChanged,
     CabCinematic.onPlayerCameraFovySettingChanged)
-  PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, CabCinematic.onPlayerCameraMakeCurrent)
+  PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, CabCinematic.ignoreWhenActive)
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter,
     CabCinematic.onPlayerEnterVehicle)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
   Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch,
-    CabCinematic.onPlayerSwitchVehicleCamera)
+    CabCinematic.ignoreWhenActive)
   Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematic.onEnterOrLeaveCombine)
   Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematic.onEnterOrLeaveCombine)
+  Foldable.actionEventFold = Utils.overwrittenFunction(Foldable.actionEventFold, CabCinematic.ignoreWhenActive)
+  Foldable.actionEventFoldMiddle = Utils.overwrittenFunction(Foldable.actionEventFoldMiddle,
+    CabCinematic.ignoreWhenActive)
+  Foldable.actionEventFoldAll = Utils.overwrittenFunction(Foldable.actionEventFoldAll, CabCinematic.ignoreWhenActive)
 
   if g_specializationManager:getSpecializationByName("cabCinematicSpec") == nil then
     g_specializationManager:addSpecialization("cabCinematicSpec", "CabCinematicSpec",
