@@ -639,7 +639,10 @@ function CabCinematicUtil.getCabEnterPosition(vehicle, positions)
 
   if CabCinematicUtil.isVehicleTractor(vehicle) then
     if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
-      enter[3] = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
+      local centerEnterZ = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
+      if isNear(enter[3], centerEnterZ, 0.15) then
+        enter[3] = centerEnterZ
+      end
     end
   end
 
@@ -706,7 +709,9 @@ function CabCinematicUtil.getCabEnterWheelPosition(vehicle, positions)
 end
 
 function CabCinematicUtil.getCabStandupPosition(vehicle, positions, flags)
-  local standupX = flags.isEnterLeftSide and positions.center[1] + 0.2 or positions.center[1] - 0.2
+  local leftStandupX = math.min(positions.camera[1] + 0.2, positions.left[1])
+  local rightStandupX = math.max(positions.camera[1] - 0.2, positions.right[1])
+  local standupX = flags.isEnterLeftSide and leftStandupX or rightStandupX
   local standupY = positions.camera[2] + 0.05
   local standupZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
   return { standupX, standupY, standupZ }
@@ -773,6 +778,7 @@ function CabCinematicUtil.getVehicleFeatures(vehicle)
   flags.isEnterCenter = not flags.isEnterFrontSide and not flags.isEnterBackSide
 
   positions.standup = CabCinematicUtil.getCabStandupPosition(vehicle, positions, flags)
+
   local doors = CabCinematicUtil.getCabDoors(vehicle, positions, flags)
   CabCinematicUtil.merge(positions, doors)
 
