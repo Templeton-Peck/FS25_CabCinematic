@@ -63,9 +63,8 @@ function CabCinematic:getIsVehicleSupported(vehicle)
     end
   end
 
-  if self.flags.debug then
-    Log:info("Vehicle category '%s' is not supported for cab cinematic", tostring(vehicleCategory))
-  end
+  Log:info("Vehicle category '%s' is not supported for cab cinematic", tostring(vehicleCategory))
+
   return false
 end
 
@@ -296,7 +295,8 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     return
   end
 
-  if CabCinematic.lastTargetedVehicle == nil then
+  local vehicle = CabCinematic.lastTargetedVehicle
+  if vehicle == nil then
     return
   end
 
@@ -304,7 +304,6 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
     g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_NONE
   end
 
-  local vehicle = CabCinematic.lastTargetedVehicle
   g_currentMission.interactiveVehicleInRange = vehicle
   g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_ENTERABLE
 
@@ -422,8 +421,8 @@ local function init()
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematic.onPlayerVehicleLeave)
   Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch,
     CabCinematic.ignoreWhenActive)
-  Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematic.onEnterOrLeaveCombine)
-  Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematic.onEnterOrLeaveCombine)
+  Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematic.ignoreWhenActive)
+  Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematic.ignoreWhenActive)
   Foldable.actionEventFold = Utils.overwrittenFunction(Foldable.actionEventFold, CabCinematic.ignoreWhenActive)
   Foldable.actionEventFoldMiddle = Utils.overwrittenFunction(Foldable.actionEventFoldMiddle,
     CabCinematic.ignoreWhenActive)
