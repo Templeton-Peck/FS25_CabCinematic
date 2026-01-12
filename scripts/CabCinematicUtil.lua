@@ -1,4 +1,20 @@
-CabCinematicUtil = {}
+CabCinematicUtil = {
+  SUPPORTED_VEHICLE_CATEGORIES = {
+    TRACTORS_S = 'tractorss',
+    TRACTORS_M = 'tractorsm',
+    TRACTORS_L = 'tractorsl',
+    HARVESTERS = 'harvesters',
+    FORAGE_HARVESTERS = 'forageharvesters',
+    BEET_HARVESTERS = 'beetharvesters',
+    SPINACH_HARVESTERS = 'spinachharvesters',
+    POTATO_HARVESTERS = 'potatoharvesting',
+    GREEN_BEAN_HARVESTERS = "greenbeanharvesters",
+    TELELOADERS = 'teleloadervehicles',
+    FRONTLOADERS = 'frontloadervehicles',
+    WHEELLOADERS = 'wheelloadervehicles',
+    FORKLIFTS = 'forklifts',
+  },
+}
 
 local function clamp(value, min, max)
   return math.min(math.max(value, min), max)
@@ -196,9 +212,26 @@ function CabCinematicUtil.raycastVehicleFarthest(vehicle, startX, startY, startZ
   return CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, false)
 end
 
+function CabCinematicUtil.getIsVehicleSupported(vehicle)
+  local vehicleCategory = vehicle:getVehicleCategory()
+
+  for _, category in pairs(CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES) do
+    if vehicleCategory == category then
+      return true
+    end
+  end
+
+  Log:info("Vehicle category '%s' is not supported for cab cinematic", tostring(vehicleCategory))
+
+  return false
+end
+
 function CabCinematicUtil.isVehicleTractor(vehicle)
   local category = vehicle:getVehicleCategory()
-  return category == "tractorss" or category == "tractorsm" or category == "tractorl"
+
+  return category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_S or
+      category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_M or
+      category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_L
 end
 
 function CabCinematicUtil.buildParentsNodes(vehicle)

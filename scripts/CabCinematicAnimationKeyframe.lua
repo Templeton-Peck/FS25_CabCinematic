@@ -239,7 +239,41 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, category
     end
 
     return keyframes
+  elseif vehicleFeatures.flags.isEnterSide then
+    local ladderTop = {
+      doorPosition[1] + 0.2,
+      doorPosition[2],
+      enterPosition[3]
+    };
+
+    local ladderBottom = {
+      math.min(ladderTop[1] + KEYFRAME_OFFSETS.LADDER_SLOPE, enterPosition[1]),
+      enterPosition[2],
+      ladderTop[3]
+    };
+
+    local keyframes = {
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        enterPosition,
+        ladderBottom
+      ),
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        ladderBottom,
+        ladderTop
+      ),
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        ladderTop,
+        doorPosition
+      ),
+    }
+
+    return keyframes
   end
+
+  return {}
 end
 
 local function buildForageHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
@@ -378,15 +412,21 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
   local seatPosition = vehicleFeatures.nodes.seat:getVehicleTranslation()
   local keyframes = {}
 
-  if category == 'tractorss' or category == 'tractorsm' or category == 'tractorsl' then
+  if CabCinematicUtil.isVehicleTractor(vehicle) then
     keyframes = buildTractorKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == 'teleloadervehicles' then
+  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
+      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FRONTLOADERS
+      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WHEELLOADERS
+      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORKLIFTS then
     keyframes = buildTeleloadersKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == 'harvesters' then
+  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.HARVESTERS then
     keyframes = buildHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == 'forageharvesters' then
+  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORAGE_HARVESTERS then
     keyframes = buildForageHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == 'beetharvesters' then
+  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.BEET_HARVESTERS
+      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
+      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
+      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
     keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
   else
     Log:info("No specific keyframe builder found for vehicle category '" .. category .. "', using default keyframes")

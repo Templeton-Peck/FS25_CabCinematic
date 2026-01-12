@@ -9,6 +9,49 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 2. Download the latest **FS25_CabCinematic.zip** file
 3. Place the file in your mods folder
 
+## Supported Vehicles (WIP)
+
+- Tractors
+  - ✅ Small Tractors
+  - ✅ Medium Tractors
+  - ✅ Large Tractors
+  - ✅ Track Tractors
+- Combines
+  - ✅ Harvesters
+  - ✅ Forage Harvesters
+  - ✅ Sugar Beet Harvesters
+  - 🟨 Potato Harvesters
+  - 🟨 Green Bean Harvesters 
+  - 🟨 Spinach Harvesters
+  - ⬜ Pea Harvesters
+  - ⬜ Cotton Harvesters
+  - ⬜ Olive Harvesters
+  - ⬜ Grape Harvesters
+  - ⬜ Rice Harvesters
+  - ⬜ Sugarcane Harvesters
+  - ⬜ Vegetable Harvesters
+  - ⬜ Beet Loaders
+ - Loaders
+  - ✅ Wheel Loaders
+  - ✅ Front Loaders
+  - ✅ Forklifts
+  - ⬜ Skid Steers
+- Telehandlers
+  - ✅ Standards
+  - 🟨 Moving cabs
+- Sprayers
+  - ⬜ Standards
+- Forestry
+  - ⬜ Harvesters
+  - ⬜ Forwarders
+  - ⬜ Excavators
+  - ⬜ Others
+- Road Vehicles
+  - ⬜ Trucks
+  - ⬜ Cars
+  - ⬜ Bikes
+  - ⬜ Others
+
 ## TODO
 
 ### BETA
@@ -42,14 +85,14 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 ### V1.1
 
 - [ ] Testing with other camera-related mods to prevent conflicts
+- [ ] Multiplayer support (requires help and testing)
 - [ ] Track IR support
-- [ ] Sounds
 
 ### V2
 
+- [ ] Sounds
 - [ ] Horse support
 - [ ] Bike support
-- [ ] Multiplayer support (requires help and testing)
 - [ ] Full Interactive Control (IC) support
 
 ## Acknowledgements

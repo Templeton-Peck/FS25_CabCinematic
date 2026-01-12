@@ -76,7 +76,7 @@ function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
     if ladder ~= nil and ladder.animName ~= nil then
       return {
         play = function()
-          self:playAnimation(ladder.animName, ladder.animSpeedScale, self:getAnimationTime(ladder.animName), true)
+          self:playAnimation(ladder.animName, ladder.animSpeedScale, nil, true)
         end,
         isPlaying = function()
           if self:getIsAIActive() then
@@ -98,7 +98,7 @@ function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
     end
   end
 
-  if self:getVehicleCategory() == "teleloadervehicles" then
+  if self:getVehicleCategory() == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS then
     if self.spec_foldable ~= nil and self.spec_foldable.hasFoldingParts then
       return {
         play = function()
@@ -125,7 +125,6 @@ function CabCinematicSpec:getVehicleCabCinematicRequiredAnimation()
 
   return {
     play = function()
-
     end,
     isPlaying = function()
       return false

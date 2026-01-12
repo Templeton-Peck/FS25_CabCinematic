@@ -13,15 +13,6 @@ CabCinematic = Mod:init({
   },
   debugAnimation = nil,
   VEHICLE_INTERACT_DISTANCE = 4.0,
-  SUPPORTED_VEHICLE_CATEGORIES = {
-    'tractorss',
-    'tractorsm',
-    'tractorsl',
-    'harvesters',
-    'forageharvesters',
-    'beetharvesters',
-    'teleloadervehicles'
-  },
 })
 
 function CabCinematic:isPlayerInFirstPerson()
@@ -54,44 +45,8 @@ function CabCinematic:getIsDisabled()
   return self.flags.disabled or self:getIsSkipping() or not self:isPlayerInFirstPerson()
 end
 
-function CabCinematic:getIsVehicleSupported(vehicle)
-  local vehicleCategory = vehicle:getVehicleCategory()
-
-  for _, category in ipairs(self.SUPPORTED_VEHICLE_CATEGORIES) do
-    if vehicleCategory == category then
-      return true
-    end
-  end
-
-  Log:info("Vehicle category '%s' is not supported for cab cinematic", tostring(vehicleCategory))
-
-  return false
-end
-
 function CabCinematic:setSkipAnimationInputState(state)
   self.inputStates.skipAnimation = state
-end
-
-function CabCinematic:startCurrentAnimation()
-  if self.flags.debug then
-    self.debugAnimation = self.cinematicAnimation
-  end
-
-  self.cinematicAnimation:start()
-end
-
-function CabCinematic:stopCurrentAnimation()
-  g_currentMission.isPlayerFrozen = false
-  self.cinematicAnimation.vehicle:setCabCinematicSkipAnimationAllowed(false)
-  self.cinematicAnimation:stop()
-
-  if not self.flags.debug then
-    self.cinematicAnimation:delete()
-  end
-
-  self.cinematicAnimation = nil
-
-  self:setSkipAnimationInputState(false)
 end
 
 function CabCinematic:update(dt)
@@ -105,6 +60,10 @@ function CabCinematic:update(dt)
 
       self.cinematicAnimation:stop()
       self:prepareCamerasForAnimationStop()
+
+      if not self.flags.debug then
+        self.cinematicAnimation:delete()
+      end
 
       self.cinematicAnimation = nil
     elseif self:getIsActive() then
@@ -307,7 +266,7 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
   g_currentMission.interactiveVehicleInRange = vehicle
   g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_ENTERABLE
 
-  if CabCinematic:getIsDisabled() or not CabCinematic:getIsVehicleSupported(vehicle) then
+  if CabCinematic:getIsDisabled() or not CabCinematicUtil.getIsVehicleSupported(vehicle) then
     return superFunc(playerInput, ...)
   end
 
@@ -331,11 +290,19 @@ function CabCinematic.onPlayerEnterVehicle(playerInput, superFunc, ...)
         vehicle.spec_enterable:restoreVehicleCharacter()
 
         if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
-          vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, 1, nil, true, true)
+          vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, -1, nil, true)
         end
       end
     end)
   CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
+
+  if CabCinematic.flags.debug then
+    if CabCinematic.debugAnimation ~= nil then
+      CabCinematic.debugAnimation:delete()
+    end
+
+    CabCinematic.debugAnimation = CabCinematic.cinematicAnimation
+  end
 
   superFunc(playerInput, ...)
 
@@ -358,7 +325,7 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
     return
   end
 
-  if CabCinematic:getIsDisabled() or not CabCinematic:getIsVehicleSupported(vehicle) then
+  if CabCinematic:getIsDisabled() or not CabCinematicUtil.getIsVehicleSupported(vehicle) then
     return superFunc(enterable, ...)
   end
 
@@ -386,6 +353,14 @@ function CabCinematic.onPlayerVehicleLeave(enterable, superFunc, ...)
 
       return superFunc(enterable)
     end)
+
+  if CabCinematic.flags.debug then
+    if CabCinematic.debugAnimation ~= nil then
+      CabCinematic.debugAnimation:delete()
+    end
+
+    CabCinematic.debugAnimation = CabCinematic.cinematicAnimation
+  end
 end
 
 function CabCinematic.onVehicleCameraFovySettingChanged(vehicleCamera)
