@@ -174,6 +174,9 @@ end
 
 function CabCinematicSpec:onDelete()
   local spec = self.spec_cabCinematic
+  if spec == nil then
+    return
+  end
 
   self:clearActionEventsTable(spec.actionEvents)
   CabCinematicUtil.deleteVehicleFeatures(spec.features)
