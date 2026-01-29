@@ -39,6 +39,7 @@
     <sourceFile filename="scripts/lib/TimerHelper.lua" />
     <sourceFile filename="scripts/CabCinematicNode.lua" />
     <sourceFile filename="scripts/CabCinematicUtil.lua" />
+    <sourceFile filename="scripts/CabCinematicVehicleAnalyzer.lua" />
     <sourceFile filename="scripts/CabCinematicCamera.lua" />
     <sourceFile filename="scripts/CabCinematicAnimationKeyframe.lua" />
     <sourceFile filename="scripts/CabCinematicPlayerSnapshot.lua" />

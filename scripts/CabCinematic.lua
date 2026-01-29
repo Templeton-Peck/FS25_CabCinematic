@@ -156,19 +156,24 @@ function CabCinematic:draw()
     if vehicle ~= nil then
       if vehicle.spec_cabCinematic ~= nil then
         local features = vehicle:getCabCinematicFeatures()
-        -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
+        CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.positions)
         -- CabCinematicUtil.drawDebugNodeRelativePositions(vehicle.rootNode, features.debugPositions)
-        -- CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
-        -- CabCinematicUtil.drawDebugBoundingBox(vehicle.rootNode, features.positions)
+        CabCinematicUtil.drawDebugNodeRelativeHitResults(vehicle.rootNode, features.debugHits)
+        CabCinematicUtil.drawDebugBoundingBox(vehicle.rootNode, features.positions)
 
-        local nodesParents = vehicle:getCabCinematicNodesParents()
-        for _, parentNode in pairs(nodesParents) do
-          DebugUtil.drawDebugNode(parentNode, getName(parentNode));
+        local x, y = 0.01, 1.0
+        for text, state in pairs(features.flags) do
+          y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", text, tostring(state)))
         end
 
-        for _, node in pairs(features.nodes) do
-          node:drawDebug()
-        end
+        -- local nodesParents = vehicle:getCabCinematicNodesParents()
+        -- for _, parentNode in pairs(nodesParents) do
+        --   DebugUtil.drawDebugNode(parentNode, getName(parentNode));
+        -- end
+
+        -- for _, node in pairs(features.nodes) do
+        --   node:drawDebug()
+        -- end
       end
     end
   end

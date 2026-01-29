@@ -137,8 +137,17 @@ end
 
 function CabCinematicSpec:getCabCinematicFeatures()
   if self.spec_cabCinematic.features == nil then
-    local features = CabCinematicUtil.getVehicleFeatures(self)
-    self.spec_cabCinematic.features = features
+    local analyzer = CabCinematicVehicleAnalyzer.new(self)
+    local analysis = analyzer:analyze()
+    local nodes = CabCinematicUtil.createNodesFromAnalysis(self, analysis)
+
+    self.spec_cabCinematic.features = {
+      nodes = nodes,
+      flags = analysis.flags,
+      positions = analysis.positions,
+      debugPositions = analysis.debugPositions,
+      debugHits = analysis.debugHits,
+    }
   end
 
   return self.spec_cabCinematic.features;
