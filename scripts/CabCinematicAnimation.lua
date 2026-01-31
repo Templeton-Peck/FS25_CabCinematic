@@ -18,10 +18,6 @@ CabCinematicAnimation.TYPES = {
   LEAVE = "leave",
 }
 
-CabCinematicAnimation.PRE_MOVEMENT_DISTANCE = 0.5
-CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_PLAYER_SPEED = 6.9
-CabCinematicAnimation.PRE_MOVEMENT_RUN_MIN_VEHICLE_SPEED = 8.0
-
 local CabCinematicAnimation_mt = Class(CabCinematicAnimation)
 
 function CabCinematicAnimation.new(type, vehicle, finishCallback)
@@ -67,33 +63,6 @@ function CabCinematicAnimation:getIsPaused()
   return self.isPaused
 end
 
-function CabCinematicAnimation:buildEnterAdjustmentKeyframe(keyframes)
-  if self.playerSnapshot == nil then
-    return nil
-  end
-
-  local playerPosition = self.playerSnapshot:getLocalPosition(self.vehicle.rootNode)
-  local animationPosition = keyframes[1].startPosition;
-
-  local playerDistance = MathUtil.vector3Length(playerPosition[1] - animationPosition[1],
-    playerPosition[2] - animationPosition[2], playerPosition[3] - animationPosition[3])
-
-  if playerDistance > CabCinematicAnimation.PRE_MOVEMENT_DISTANCE then
-    Log:info(
-      "Calculating pre-movement keyframe - Player position (%.2f, %.2f, %.2f), ExitNode position (%.2f, %.2f, %.2f) - Distance: %.2f",
-      playerPosition[1], playerPosition[2], playerPosition[3], animationPosition[1], animationPosition[2],
-      animationPosition[3], playerDistance)
-
-    return CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.WALK,
-      playerPosition,
-      animationPosition
-    )
-  else
-    Log:info("No pre-movement keyframe needed - distance: %.2f", playerDistance)
-  end
-end
-
 function CabCinematicAnimation:getIsEnter()
   return self.type == CabCinematicAnimation.TYPES.ENTER
 end
@@ -106,9 +75,50 @@ function CabCinematicAnimation:buildKeyframes()
   local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, self.vehicle)
 
   if self:getIsEnter() then
-    local enterAdjustmentKeyframe = self:buildEnterAdjustmentKeyframe(keyframes)
-    if enterAdjustmentKeyframe ~= nil then
-      table.insert(keyframes, 1, enterAdjustmentKeyframe)
+    if self.playerSnapshot ~= nil then
+      local playerPosition = self.playerSnapshot:getLocalPosition(self.vehicle.rootNode)
+
+      local shortestDistance = math.huge
+      local shortestDistanceIndex = 1
+
+      for index, keyframe in ipairs(keyframes) do
+        local keyframeDistance = MathUtil.vector3Length(
+          playerPosition[1] - keyframe.startPosition[1],
+          playerPosition[2] - keyframe.startPosition[2],
+          playerPosition[3] - keyframe.startPosition[3]
+        )
+        if keyframeDistance < shortestDistance then
+          shortestDistance = keyframeDistance
+          shortestDistanceIndex = index
+        end
+      end
+
+      if shortestDistanceIndex > 1 then
+        local preMovementKeyframe = CabCinematicAnimationKeyframe.new(
+          keyframes[shortestDistanceIndex - 1].type,
+          playerPosition,
+          keyframes[shortestDistanceIndex].startPosition)
+
+        local updatedKeyframes = { preMovementKeyframe }
+
+        for i = shortestDistanceIndex, #keyframes do
+          table.insert(updatedKeyframes, keyframes[i])
+        end
+
+        return updatedKeyframes
+      end
+
+      local preMovementKeyframe = CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        playerPosition,
+        keyframes[shortestDistanceIndex].startPosition)
+
+      local updatedKeyframes = { preMovementKeyframe }
+      for _, keyframe in ipairs(keyframes) do
+        table.insert(updatedKeyframes, keyframe)
+      end
+
+      return updatedKeyframes
     end
   elseif self:getIsLeave() then
     local reversedKeyframes = {}
