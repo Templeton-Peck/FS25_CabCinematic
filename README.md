@@ -75,7 +75,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Improve old tractors which use narrow doors
 - [x] Fix animation for large tractors which use tracks
 - [x] Cinematic pause keybind (`left shift` by default)
-- [] Improve enter/interact trigger detection (currently too restrictive)
+- [ ] Improve enter/interact trigger detection (currently too restrictive)
 - [ ] Fix camera clipping right after leaving vehicle
 - [ ] Animations accuracy improvements
 - [ ] Other bugs fixing
