@@ -61,7 +61,6 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] FOV standardization across cameras
 - [x] Allow free camera movement during cinematics
 - [x] Fix cinematics with moving vehicles
-- [x] Improve enter/interact trigger detection (currently too restrictive)
 - [x] Cinematic skipping keybind (`left alt` by default)
 - [x] Third-person camera fix
 - [x] Tab-switching fix
@@ -76,8 +75,10 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Improve old tractors which use narrow doors
 - [x] Fix animation for large tractors which use tracks
 - [x] Cinematic pause keybind (`left shift` by default)
-- [ ] Bug fixing
+- [] Improve enter/interact trigger detection (currently too restrictive)
+- [ ] Fix camera clipping right after leaving vehicle
 - [ ] Animations accuracy improvements
+- [ ] Other bugs fixing
 
 ### V1
 
@@ -90,13 +91,13 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [ ] Testing with other camera-related mods to prevent conflicts
 - [ ] Multiplayer support (requires help and testing)
 - [ ] Track IR support
+- [ ] Full Interactive Control (IC) support
 
 ### V2
 
 - [ ] Sounds
 - [ ] Horse support
 - [ ] Bike support
-- [ ] Full Interactive Control (IC) support
 
 ## Acknowledgements
 
