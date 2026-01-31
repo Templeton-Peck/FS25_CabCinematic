@@ -284,9 +284,15 @@ local function buildForageHarvesterKeyframes(enterPosition, doorPosition, catego
       doorPosition[3]
     };
 
+    local ladderStep = {
+      doorCross[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
+      enterPosition[2],
+      enterPosition[3] + 0.12
+    };
+
     local ladderBottom = {
       doorCross[1],
-      enterPosition[2] + 0.15,
+      enterPosition[2] + 0.25,
       enterPosition[3] + 0.25
     };
 
@@ -300,6 +306,11 @@ local function buildForageHarvesterKeyframes(enterPosition, doorPosition, catego
       CabCinematicAnimationKeyframe.new(
         CabCinematicAnimationKeyframe.TYPES.WALK,
         enterPosition,
+        ladderStep
+      ),
+      CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+        ladderStep,
         ladderBottom
       ),
       CabCinematicAnimationKeyframe.new(
