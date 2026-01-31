@@ -7,11 +7,13 @@
   <title>
     <en>Cab Cinematic</en>
     <fr>Cab Cinematic</fr>
+    <de>Cab Cinematic</de>
   </title>
 
   <description>
     <en>TODO</en>
     <fr>TODO</fr>
+    <de>TODO</de>
   </description>
 
   <iconFilename>icon.dds</iconFilename>
@@ -19,10 +21,14 @@
   <l10n filenamePrefix="translations/translation" />
 
   <actions>
+    <action name="CAB_CINEMATIC_PAUSE" />
     <action name="CAB_CINEMATIC_SKIP" />
   </actions>
 
   <inputBinding>
+    <actionBinding action="CAB_CINEMATIC_PAUSE">
+      <binding device="KB_MOUSE_DEFAULT" input="KEY_lshift" />
+    </actionBinding>
     <actionBinding action="CAB_CINEMATIC_SKIP">
       <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt" />
     </actionBinding>

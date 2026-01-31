@@ -17,8 +17,8 @@ function CabCinematicSpec.registerFunctions(vehicleType)
     CabCinematicSpec.getVehicleCabCinematicRequiredAnimation)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures",
     CabCinematicSpec.getCabCinematicFeatures)
-  SpecializationUtil.registerFunction(vehicleType, "setCabCinematicSkipAnimationAllowed",
-    CabCinematicSpec.setCabCinematicSkipAnimationAllowed)
+  SpecializationUtil.registerFunction(vehicleType, "setCabCinematicInputsAllowed",
+    CabCinematicSpec.setCabCinematicInputsAllowed)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -153,11 +153,16 @@ function CabCinematicSpec:getCabCinematicFeatures()
   return self.spec_cabCinematic.features;
 end
 
-function CabCinematicSpec:setCabCinematicSkipAnimationAllowed(allowed)
+function CabCinematicSpec:setCabCinematicInputsAllowed(allowed)
   local actionEvents = self.spec_cabCinematic.actionEvents;
   if actionEvents[InputAction.CAB_CINEMATIC_SKIP] ~= nil then
     g_inputBinding:setActionEventActive(actionEvents[InputAction.CAB_CINEMATIC_SKIP].actionEventId, allowed)
     g_inputBinding:setActionEventTextVisibility(actionEvents[InputAction.CAB_CINEMATIC_SKIP].actionEventId, allowed)
+  end
+
+  if actionEvents[InputAction.CAB_CINEMATIC_PAUSE] ~= nil then
+    g_inputBinding:setActionEventActive(actionEvents[InputAction.CAB_CINEMATIC_PAUSE].actionEventId, allowed)
+    g_inputBinding:setActionEventTextVisibility(actionEvents[InputAction.CAB_CINEMATIC_PAUSE].actionEventId, allowed)
   end
 end
 
@@ -212,10 +217,24 @@ function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForIn
         g_inputBinding:setActionEventActive(eventId, false)
         g_inputBinding:setActionEventTextVisibility(eventId, false)
       end
+
+      _, eventId = self:addActionEvent(spec.actionEvents, InputAction.CAB_CINEMATIC_PAUSE, self,
+        CabCinematicSpec.onCabCinematicPauseAnimationInput, true, true, false, true, nil)
+      if eventId then
+        g_inputBinding:setActionEventTextPriority(eventId, GS_PRIO_HIGH)
+        g_inputBinding:setActionEventText(eventId, g_i18n:getText("input_CAB_CINEMATIC_PAUSE"))
+        g_inputBinding:setActionEventActive(eventId, false)
+        g_inputBinding:setActionEventTextVisibility(eventId, false)
+      end
     end
   end
 end
 
 function CabCinematicSpec.onCabCinematicSkipAnimationInput(self, actionName, state, arg3, arg4, isAnalog)
+  Log:info("Setting cab cinematic skip state to %s", tostring(state))
   CabCinematic:setSkipAnimationInputState(state == 1)
+end
+
+function CabCinematicSpec.onCabCinematicPauseAnimationInput(self, actionName, state, arg3, arg4, isAnalog)
+  CabCinematic:setPauseAnimationInputState(state == 1)
 end

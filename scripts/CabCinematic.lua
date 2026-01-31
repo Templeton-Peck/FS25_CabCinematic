@@ -49,13 +49,23 @@ function CabCinematic:setSkipAnimationInputState(state)
   self.inputStates.skipAnimation = state
 end
 
+function CabCinematic:setPauseAnimationInputState(state)
+  if self.cinematicAnimation ~= nil then
+    if state then
+      self.cinematicAnimation:pause()
+    else
+      self.cinematicAnimation:resume()
+    end
+  end
+end
+
 function CabCinematic:update(dt)
   if self.cinematicAnimation ~= nil then
     local vehicle = self.cinematicAnimation.vehicle
 
     if self:getIsReadyToStop() then
       g_currentMission.isPlayerFrozen = false
-      vehicle:setCabCinematicSkipAnimationAllowed(false)
+      vehicle:setCabCinematicInputsAllowed(false)
       self:setSkipAnimationInputState(false)
 
       self.cinematicAnimation:stop()
@@ -75,7 +85,7 @@ function CabCinematic:update(dt)
 
       if not requiredAnimation.isPlaying() then
         self:setSkipAnimationInputState(false)
-        vehicle:setCabCinematicSkipAnimationAllowed(true)
+        vehicle:setCabCinematicInputsAllowed(true)
         g_currentMission.isPlayerFrozen = true
 
         if not requiredAnimation.isFinished() then

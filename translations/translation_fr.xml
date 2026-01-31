@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<l10n>
+  <texts>
+    <text name="input_CAB_CINEMATIC_SKIP" text="Passer la cinématique" />
+    <text name="input_CAB_CINEMATIC_PAUSE" text="Mettre en pause la cinématique" />
+  </texts>
+</l10n>

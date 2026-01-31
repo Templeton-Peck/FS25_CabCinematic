@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<l10n>
+  <texts>
+    <text name="input_CAB_CINEMATIC_SKIP" text="Überspringe die Kinematik" />
+    <text name="input_CAB_CINEMATIC_PAUSE" text="Pause der Kinematik" />
+  </texts>
+</l10n>

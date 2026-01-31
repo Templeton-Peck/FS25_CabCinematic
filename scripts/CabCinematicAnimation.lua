@@ -156,6 +156,10 @@ function CabCinematicAnimation:pause()
   self.isPaused = true
 end
 
+function CabCinematicAnimation:resume()
+  self.isPaused = false
+end
+
 function CabCinematicAnimation:update(dt)
   if not self.isActive or self.isPaused then
     return
