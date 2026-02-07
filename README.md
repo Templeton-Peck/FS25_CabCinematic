@@ -79,6 +79,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [ ] Multiplayer support (requires help and testing)
 - [ ] Track IR support
 - [ ] Full Interactive Control (IC) support
+- [ ] Passenger mode support
 
 ### V2
 
