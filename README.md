@@ -57,6 +57,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - Modifying a vehicle in the might crash the game
 - Conflict with mod FS25_MoreVisualAnimals (No enter animation)
 - Camera clipping after leaving a vehicle
+- Entering a train/locomotive might crash the game
 
 ## TODO
 
