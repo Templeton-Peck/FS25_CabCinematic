@@ -1,4 +1,5 @@
 CabCinematicUtil = {
+  VEHICLE_INTERACT_DISTANCE = 4.0,
   SUPPORTED_VEHICLE_CATEGORIES = {
     TRACTORS_S = 'tractorss',
     TRACTORS_M = 'tractorsm',
@@ -214,99 +215,12 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   return result;
 end
 
-function CabCinematicUtil.getIsVehicleSupported(vehicle)
-  local vehicleCategory = vehicle:getVehicleCategory()
-
-  for _, category in pairs(CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES) do
-    if vehicleCategory == category then
-      return true
-    end
-  end
-
-  Log:info("Vehicle category '%s' is not supported for cab cinematic", tostring(vehicleCategory))
-
-  return false
-end
-
 function CabCinematicUtil.isVehicleTractor(vehicle)
-  local category = vehicle:getVehicleCategory()
+  local category = vehicle:getStoreCategory()
 
   return category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_S or
       category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_M or
       category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_L
-end
-
-function CabCinematicUtil.buildParentsNodes(vehicle)
-  local frameRoot = createTransformGroup("cc_frameRootNode")
-  link(vehicle.rootNode, frameRoot)
-  setTranslation(frameRoot, 0, 0, 0)
-  setRotation(frameRoot, 0, 0, 0)
-
-  local cabRoot = createTransformGroup("cc_cabRootNode")
-  local indoorCamera = vehicle:getVehicleIndoorCamera()
-  if indoorCamera ~= nil then
-    link(getParent(indoorCamera.cameraPositionNode), cabRoot)
-  else
-    link(vehicle.rootNode, cabRoot)
-  end
-  setTranslation(cabRoot, 0, 0, 0)
-  setRotation(cabRoot, 0, 0, 0)
-
-  return {
-    cabRoot = cabRoot,
-    frameRoot = frameRoot,
-  }
-end
-
-function CabCinematicUtil.deleteParentNodes(nodesParents)
-  if nodesParents ~= nil then
-    for _, node in pairs(nodesParents) do
-      unlink(node)
-      delete(node)
-    end
-  end
-end
-
-function CabCinematicUtil.createNodesFromAnalysis(vehicle, analysis)
-  local positions = analysis.positions
-  local nodes = {}
-
-  -- Frame nodes (attached to vehicle frame)
-  local frameNodeNames = {
-    "root", "exit", "enterWheel", "enter",
-    "wheelLeftFront", "wheelRightFront", "wheelLeftBack", "wheelRightBack",
-    "wheelLeftFrontTread", "wheelRightFrontTread", "wheelLeftBackTread", "wheelRightBackTread",
-    "wheelLeftFrontSidewall", "wheelRightFrontSidewall", "wheelLeftBackSidewall", "wheelRightBackSidewall"
-  }
-
-  for _, name in ipairs(frameNodeNames) do
-    if positions[name] ~= nil then
-      nodes[name] = CabCinematicNode.newFrameNode(name, vehicle):setVehicleTranslation(positions[name])
-    end
-  end
-
-  -- Cab nodes (attached to cab, important if cab can move separately from frame)
-  local cabNodeNames = {
-    "camera", "steeringWheel", "standup", "seat",
-    "leftDoor", "rightDoor",
-    "back", "front", "left", "right", "top", "bottom", "center"
-  }
-
-  for _, name in ipairs(cabNodeNames) do
-    if positions[name] ~= nil then
-      nodes[name] = CabCinematicNode.newCabNode(name, vehicle):setVehicleTranslation(positions[name])
-    end
-  end
-
-  return nodes
-end
-
-function CabCinematicUtil.deleteVehicleFeatures(vehicleFeatures)
-  if vehicleFeatures ~= nil then
-    for _, node in pairs(vehicleFeatures.nodes) do
-      node:delete()
-    end
-  end
 end
 
 function CabCinematicUtil.getPlayerEyesightHeight()
@@ -325,7 +239,7 @@ end
 
 function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   local features = vehicle:getCabCinematicFeatures()
-  local enterPosition = features.nodes.enter:getVehicleTranslation()
+  local enterPosition = features.positions.enter
 
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
   local ex, ey, ez = unpack(enterPosition)
@@ -344,4 +258,18 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
 
   local dist = MathUtil.vector3Length(px - ex, py - ey, pz - ez)
   return dist <= range
+end
+
+function CabCinematicUtil:isPlayerInFirstPerson(player)
+  local currentVehicle = player:getCurrentVehicle()
+  if currentVehicle ~= nil then
+    local camera = currentVehicle:getVehicleIndoorCamera()
+    if camera ~= nil then
+      return g_cameraManager:getActiveCamera() == camera.cameraNode
+    end
+
+    return false
+  end
+
+  return player.camera.isFirstPerson;
 end

@@ -12,10 +12,15 @@ function CabCinematicVehicleAnalyzer.new(vehicle)
   return self
 end
 
+---Deletes the vehicle analyzer instance and clears references
+function CabCinematicVehicleAnalyzer:delete()
+  self.vehicle = nil
+end
+
 ---Gets the indoor camera position relative to vehicle root
 ---@return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
-  local camera = self.vehicle:getVehicleIndoorCamera()
+  local camera = self.vehicle:getIndoorCamera()
   if camera ~= nil then
     local dx, dy, dz = getTranslation(camera.cameraPositionNode)
     return { localToLocal(getParent(camera.cameraPositionNode), self.vehicle.rootNode, dx, dy, dz) }
@@ -249,31 +254,34 @@ function CabCinematicVehicleAnalyzer:getCabBoundingBox(positions)
   local characterFootY = self:getCabCharacterFootY(positions)
   local debugPositions = {}
 
-  local shadowFocusBoxNode = self.vehicle:getVehicleIndoorCamera().shadowFocusBoxNode
-  if shadowFocusBoxNode ~= nil then
-    local wfx, wfy, wfz, radius = getShapeWorldBoundingSphere(shadowFocusBoxNode)
-    local fx, fy, fz            = worldToLocal(self.vehicle.rootNode, wfx, wfy, wfz)
+  local indoorCamera = self.vehicle:getIndoorCamera();
+  if indoorCamera ~= nil then
+    local shadowFocusBoxNode = indoorCamera.shadowFocusBoxNode
+    if shadowFocusBoxNode ~= nil then
+      local wfx, wfy, wfz, radius = getShapeWorldBoundingSphere(shadowFocusBoxNode)
+      local fx, fy, fz            = worldToLocal(self.vehicle.rootNode, wfx, wfy, wfz)
 
-    local focusBackZ            = fz - (radius / 2)
-    local focusFrontZ           = fz + (radius / 2)
-    local focusLeftX            = fx + (radius / 2)
-    local focusRightX           = fx - (radius / 2)
-    local focusTopY             = fy + (radius / 2)
-    local focusBottomY          = fy - (radius / 2)
+      local focusBackZ            = fz - (radius / 2)
+      local focusFrontZ           = fz + (radius / 2)
+      local focusLeftX            = fx + (radius / 2)
+      local focusRightX           = fx - (radius / 2)
+      local focusTopY             = fy + (radius / 2)
+      local focusBottomY          = fy - (radius / 2)
 
-    raycastResult.back[3]       = math.max(raycastResult.back[3], focusBackZ)
-    raycastResult.front[3]      = math.min(raycastResult.front[3], focusFrontZ)
-    raycastResult.left[1]       = math.min(raycastResult.left[1], focusLeftX)
-    raycastResult.right[1]      = math.max(raycastResult.right[1], focusRightX)
-    raycastResult.top[2]        = math.max(raycastResult.top[2], focusTopY)
-    raycastResult.bottom[2]     = math.min(raycastResult.bottom[2], focusBottomY)
+      raycastResult.back[3]       = math.max(raycastResult.back[3], focusBackZ)
+      raycastResult.front[3]      = math.min(raycastResult.front[3], focusFrontZ)
+      raycastResult.left[1]       = math.min(raycastResult.left[1], focusLeftX)
+      raycastResult.right[1]      = math.max(raycastResult.right[1], focusRightX)
+      raycastResult.top[2]        = math.max(raycastResult.top[2], focusTopY)
+      raycastResult.bottom[2]     = math.min(raycastResult.bottom[2], focusBottomY)
 
-    debugPositions.focusBack    = { fx, fy, focusBackZ }
-    debugPositions.focusFront   = { fx, fy, focusFrontZ }
-    debugPositions.focusLeft    = { focusLeftX, fy, fz }
-    debugPositions.focusRight   = { focusRightX, fy, fz }
-    debugPositions.focusTop     = { fx, focusTopY, fz }
-    debugPositions.focusBottom  = { fx, focusBottomY, fz }
+      debugPositions.focusBack    = { fx, fy, focusBackZ }
+      debugPositions.focusFront   = { fx, fy, focusFrontZ }
+      debugPositions.focusLeft    = { focusLeftX, fy, fz }
+      debugPositions.focusRight   = { focusRightX, fy, fz }
+      debugPositions.focusTop     = { fx, focusTopY, fz }
+      debugPositions.focusBottom  = { fx, focusBottomY, fz }
+    end
   end
 
   raycastResult.bottom[2] = math.max(raycastResult.bottom[2], characterFootY)

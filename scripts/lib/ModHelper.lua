@@ -283,6 +283,13 @@ function Mod:trySource(file, silentFail)
     return self; -- Return self to keep the "chain" (fluent)
 end              --function
 
+function Mod:addSpecialization(specName, prerequisiteCallback)
+    table.insert(self.specializations, {
+        name = specName,
+        prerequisiteCallback = prerequisiteCallback
+    })
+end
+
 function Mod:init(properties)
     local newMod = self:new(properties);
 
@@ -361,6 +368,7 @@ function Mod:new(properties)
     newMod.dir = g_currentModDirectory;
     newMod.name = g_currentModName
     newMod.settings = ModSettings:new(newMod);
+    newMod.specializations = {}
 
 
     local modDescXML = loadXMLFile("modDesc", newMod.dir .. "modDesc.xml");
@@ -453,6 +461,19 @@ function Mod:new(properties)
     FSBaseMission.onDayChanged = Utils.appendedFunction(FSBaseMission.onDayChanged, function(baseMission, ...)
         if newMod.onDayChanged ~= nil and type(newMod.onDayChanged) == "function" then
             newMod:onDayChanged(baseMission, ...)
+        end
+    end)
+
+    TypeManager.validateTypes = Utils.prependedFunction(TypeManager.validateTypes, function(typeManager)
+        if typeManager.typeName == "vehicle" then
+            for typeName, typeEntry in pairs(typeManager:getTypes()) do
+                for _, spec in ipairs(newMod.specializations) do
+                    if spec.prerequisiteCallback(typeEntry.specializations, typeName) then
+                        Log:info("Add spec to '%s'", typeName)
+                        typeManager:addSpecialization(typeName, self.name .. "." .. spec.name)
+                    end
+                end
+            end
         end
     end)
 
