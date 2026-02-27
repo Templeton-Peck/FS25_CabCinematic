@@ -5,8 +5,7 @@ CabCinematic:addSpecialization("cabCinematic", function(specializations)
 end)
 
 function CabCinematic:startMission()
-  g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1,
-    CabCinematicUtil.VEHICLE_INTERACT_DISTANCE)
+  g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE)
   g_localPlayer.targeter:addFilterToTargetType(CabCinematic, function(hitNode)
     if hitNode ~= nil and hitNode ~= 0 and CollisionFlag.getHasGroupFlagSet(hitNode, CollisionFlag.VEHICLE) then
       local vehicle = g_currentMission:getNodeObject(hitNode)

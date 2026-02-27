@@ -6,13 +6,17 @@ end
 
 function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getStoreCategory", CabCinematicSpec.getStoreCategory)
-  SpecializationUtil.registerFunction(vehicleType, "isCabCinematicSupported", CabCinematicSpec.isCabCinematicSupported)
+  SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicSupported", CabCinematicSpec.getIsCabCinematicSupported)
   SpecializationUtil.registerFunction(vehicleType, "getIndoorCamera", CabCinematicSpec.getIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures", CabCinematicSpec.getCabCinematicFeatures)
+  SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicAnimationOngoing", CabCinematicSpec.getIsCabCinematicAnimationOngoing)
+  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPrerequisiteAnimation", CabCinematicSpec.getCabCinematicPrerequisiteAnimation)
 end
 
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "interact", CabCinematicSpec.interact)
+  SpecializationUtil.registerOverwrittenFunction(vehicleType, "onPlayerEnterVehicle", CabCinematicSpec.onPlayerEnterVehicle)
+  SpecializationUtil.registerOverwrittenFunction(vehicleType, "doLeaveVehicle", CabCinematicSpec.doLeaveVehicle)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -31,6 +35,7 @@ function CabCinematicSpec:onLoad()
   spec.storeCategory     = nil
   spec.indoorCamera      = nil
   spec.features          = nil
+  spec.animation         = nil
   self.spec_cabCinematic = spec
 end
 
@@ -50,13 +55,47 @@ function CabCinematicSpec:onDelete()
     spec.vehicleAnalyzer:delete()
   end
 
+  if spec.animation ~= nil then
+    spec.animation:delete()
+  end
+
   spec.camera = nil
   spec.storeCategory = nil
   spec.indoorCamera = nil
   spec.features = nil
+  spec.animation = nil
 end
 
-function CabCinematicSpec:onUpdate()
+function CabCinematicSpec:onUpdate(dt)
+  if not self:getIsCabCinematicAnimationOngoing() then
+    return
+  end
+
+  local spec = self.spec_cabCinematic
+
+  if spec.animation:getIsIdle() then
+    local prerequisiteAnimationType = self:getCabCinematicPrerequisiteAnimation()
+    if prerequisiteAnimationType ~= nil then
+      ---Run or wait for prerequisite animation to finish before starting the cab cinematic animation
+    else
+      spec.animation:update(dt)
+    end
+  elseif spec.animation:getIsRunning() then
+    spec.animation:update(dt)
+  elseif spec.animation:getIsFinished() then
+    spec.animation:update(dt)
+  elseif spec.animation:getIsStale() then
+    spec.animation:delete()
+    spec.animation = nil
+    return
+  end
+
+  ---Always update camera to let player look around freely
+  if spec.camera ~= nil then
+    local x, y, z = unpack(spec.animation.currentPosition)
+    spec.camera:setPosition(x, y, z)
+    spec.camera:update(dt)
+  end
 end
 
 function CabCinematicSpec:onDraw()
@@ -66,7 +105,7 @@ function CabCinematicSpec:onDraw()
   CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
   CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
 
-  local x, y = 0.01, 1.0
+  local x, y = 0.01, 2.0
   for text, state in pairs(features.flags) do
     y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", text, tostring(state)))
   end
@@ -93,7 +132,7 @@ end
 
 ---Tells whether the vehicle is supported for cab cinematics
 ---@return boolean
-function CabCinematicSpec:isCabCinematicSupported()
+function CabCinematicSpec:getIsCabCinematicSupported()
   if self:getIndoorCamera() == nil then
     Log:info("Vehicle without an indoor camera is not supported for CabCinematic")
     return false
@@ -133,7 +172,7 @@ end
 ---Overwrite base methods to provide better vehicle interaction
 function CabCinematicSpec:interact(superFunc, player)
   if self.interactionFlag == Vehicle.INTERACTION_FLAG_ENTERABLE then
-    if self:isCabCinematicSupported() then
+    if self:getIsCabCinematicSupported() then
       if CabCinematicUtil.isPlayerInVehicleEnterRange(player, self, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) == false then
         return
       end
@@ -141,6 +180,88 @@ function CabCinematicSpec:interact(superFunc, player)
   end
 
   superFunc(self, player)
+end
+
+---Overwrite base method to provide cinematic animation when entering the vehicle
+function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
+  local args = { ... }
+  local vehicle = self
+
+  if vehicle:getIsCabCinematicAnimationOngoing() then
+    return
+  end
+
+  if not vehicle:getIsCabCinematicSupported() then
+    return superFunc(vehicle, unpack(args))
+  end
+
+  Log:info("onPlayerEnterVehicle called")
+
+  local animation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle)
+  animation:onBeforeStart(function()
+    -- CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
+    superFunc(vehicle, unpack(args))
+
+    if (not vehicle:getIsAIActive()) then
+      vehicle.spec_enterable:deleteVehicleCharacter()
+
+      if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
+        vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, -1, nil, true, false)
+      end
+    end
+  end)
+
+  animation:onEnd(function()
+    if (not vehicle:getIsAIActive()) then
+      vehicle.spec_enterable:restoreVehicleCharacter()
+
+      if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
+        vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, -1, nil, true)
+      end
+    end
+  end)
+
+  vehicle.spec_cabCinematic.animation = animation
+end
+
+---Overwrite base method to provide cinematic animation when leaving the vehicle
+function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
+  local args = { ... }
+  local vehicle = self
+
+  if vehicle:getIsCabCinematicAnimationOngoing() then
+    return
+  end
+
+  if not vehicle:getIsCabCinematicSupported() then
+    return superFunc(vehicle, unpack(args))
+  end
+
+  Log:info("doLeaveVehicle called")
+
+  local animation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, vehicle);
+
+  animation:onBeforeStart(function()
+    if (not vehicle:getIsAIActive()) then
+      vehicle.spec_enterable:deleteVehicleCharacter()
+
+      if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
+        vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, -1, nil, true, true)
+      end
+    end
+  end)
+
+  animation:onEnd(function()
+    if (not vehicle:getIsAIActive()) then
+      vehicle.spec_enterable:restoreVehicleCharacter()
+    end
+
+    g_localPlayer.camera:switchToPerspective(true)
+
+    return superFunc(vehicle, unpack(args))
+  end)
+
+  vehicle.spec_cabCinematic.animation = animation
 end
 
 ---Get analyzed vehicle features, using cached value if available unless force is true
@@ -153,4 +274,16 @@ function CabCinematicSpec:getCabCinematicFeatures(force)
 
   self.spec_cabCinematic.features = self.spec_cabCinematic.vehicleAnalyzer:analyze()
   return self.spec_cabCinematic.features
+end
+
+---Tells whether a cinematic animation is currently ongoing
+---@return boolean
+function CabCinematicSpec:getIsCabCinematicAnimationOngoing()
+  return self.spec_cabCinematic and self.spec_cabCinematic.animation ~= nil
+end
+
+---Get the prerequisite animation type that needs to be completed before starting a new animation, or nil if there are no prerequisites
+---@return table|nil prerequisiteAnimationType
+function CabCinematicSpec:getCabCinematicPrerequisiteAnimation()
+  return nil
 end

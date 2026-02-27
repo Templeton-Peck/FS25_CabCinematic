@@ -310,8 +310,7 @@ end
 ---Gets the count of crawler tracks on the vehicle
 ---@return number Number of crawlers
 function CabCinematicVehicleAnalyzer:getCrawlersCount()
-  return self.vehicle.spec_crawlers ~= nil and self.vehicle.spec_crawlers.crawlers ~= nil and
-      #self.vehicle.spec_crawlers.crawlers or 0
+  return self.vehicle.spec_crawlers ~= nil and self.vehicle.spec_crawlers.crawlers ~= nil and #self.vehicle.spec_crawlers.crawlers or 0
 end
 
 ---Gets the count of pneumatic wheels on the vehicle
