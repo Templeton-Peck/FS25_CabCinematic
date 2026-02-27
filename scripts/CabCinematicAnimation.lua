@@ -165,8 +165,6 @@ function CabCinematicAnimation:prepare()
 
   self:printDebug()
 
-  -- self.duration = 5.0 -- TODO remove, for testing only
-
   return self
 end
 
@@ -175,6 +173,7 @@ end
 ---@return boolean isFinished whether the animation has finished
 function CabCinematicAnimation:tick(dt)
   self.timer = self.timer + (dt / 1000.0)
+  -- return self.timer >= 5.0  -- TODO remove, for testing only
 
   local accumulatedDuration = 0.0
   for i = 1, self.currentKeyFrameIndex - 1 do

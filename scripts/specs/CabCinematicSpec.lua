@@ -11,6 +11,7 @@ function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures", CabCinematicSpec.getCabCinematicFeatures)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicAnimationOngoing", CabCinematicSpec.getIsCabCinematicAnimationOngoing)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPrerequisiteAnimation", CabCinematicSpec.getCabCinematicPrerequisiteAnimation)
+  SpecializationUtil.registerFunction(vehicleType, "drawCabCinematicDebug", CabCinematicSpec.drawCabCinematicDebug)
 end
 
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
@@ -99,16 +100,7 @@ function CabCinematicSpec:onUpdate(dt)
 end
 
 function CabCinematicSpec:onDraw()
-  local features = self:getCabCinematicFeatures()
-  CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-  -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
-  CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
-  CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
-
-  local x, y = 0.01, 2.0
-  for text, state in pairs(features.flags) do
-    y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", text, tostring(state)))
-  end
+  self:drawCabCinematicDebug()
 end
 
 function CabCinematicSpec:onEnterVehicle()
@@ -197,11 +189,11 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   Log:info("onPlayerEnterVehicle called")
 
+  superFunc(vehicle, unpack(args))
+
   local animation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle)
   animation:onBeforeStart(function()
     -- CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
-    superFunc(vehicle, unpack(args))
-
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
 
@@ -286,4 +278,18 @@ end
 ---@return table|nil prerequisiteAnimationType
 function CabCinematicSpec:getCabCinematicPrerequisiteAnimation()
   return nil
+end
+
+---Draws debug information for the cab cinematic spec
+function CabCinematicSpec:drawCabCinematicDebug()
+  local features = self:getCabCinematicFeatures()
+  CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
+  -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
+  CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
+  CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
+
+  local x, y = 0.01, 2.0
+  for text, state in pairs(features.flags) do
+    y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", text, tostring(state)))
+  end
 end

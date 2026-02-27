@@ -25,5 +25,12 @@ function CabCinematic:startMission()
   end)
 end
 
+function CabCinematic:draw()
+  local vehicle = g_currentMission.interactiveVehicleInRange
+  if vehicle ~= nil and vehicle.drawCabCinematicDebug ~= nil then
+    vehicle:drawCabCinematicDebug()
+  end
+end
+
 function CabCinematic:delete()
 end
