@@ -284,12 +284,18 @@ end
 function CabCinematicSpec:drawCabCinematicDebug()
   local features = self:getCabCinematicFeatures()
   CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-  -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
-  CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
   CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
+  -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
+  -- CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
 
-  local x, y = 0.01, 2.0
+  local x, y = 0.01, 0.5
+  local alphaSortedFlags = {}
   for text, state in pairs(features.flags) do
-    y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", text, tostring(state)))
+    table.insert(alphaSortedFlags, { text = text, state = state })
+  end
+  table.sort(alphaSortedFlags, function(a, b) return a.text < b.text end)
+
+  for _, flag in ipairs(alphaSortedFlags) do
+    y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", flag.text, tostring(flag.state)))
   end
 end

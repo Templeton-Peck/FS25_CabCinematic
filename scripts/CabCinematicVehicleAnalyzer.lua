@@ -98,7 +98,7 @@ end
 ---Gets features of a crawler track
 ---@param crawler table The crawler data
 ---@param positions table Current positions for reference
----@return table Crawler features with position, sidewallPosition, treadPosition
+---@return table Features features with position, sidewallPosition, treadPosition
 function CabCinematicVehicleAnalyzer:getCrawlerWheelFeatures(crawler, positions)
   local x, y, z = localToLocal(crawler.linkNode, self.vehicle.rootNode, getTranslation(crawler.linkNode))
 
@@ -331,7 +331,7 @@ end
 
 ---Analyzes all wheel features (pneumatic and crawler)
 ---@param positions table Current positions for reference
----@return table Wheel features with flags and positions
+---@return table Features features with flags and positions
 function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
   local crawlersCount = self:getCrawlersCount()
   local wheelsCount = self:getPneumaticWheelsCount()
@@ -419,26 +419,57 @@ function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
   return result
 end
 
----Calculates the cab enter position (player position outside vehicle)
+---Analyzes the vehicle to determine the enter position and related flags
 ---@param positions table Current positions for reference
----@return table Enter position {x, y, z}
-function CabCinematicVehicleAnalyzer:getCabEnterPosition(positions)
-  local playerEyeHeight = 1.75 -- Player eyesight height
+---@return table Features features with positions and flags
+function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
+  local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight()
   local wex, wey, wez = getWorldTranslation(self.vehicle:getExitNode())
   local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez)
   local _, wpy, _ = worldToLocal(self.vehicle.rootNode, wex, wty, wez)
   local enter = { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
 
-  if CabCinematicUtil.isVehicleTractor(self.vehicle) then
-    if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
-      local centerEnterZ = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
-      if CabCinematicUtil.isNear(enter[3], centerEnterZ, 0.15) then
-        enter[3] = centerEnterZ
+  local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
+  local isEntryFromCabFront = enter[3] >= positions.front[3] and math.abs(positions.enterWheel[1]) > math.abs(enter[1])
+  local isEntryFromCabSide = not isEntryFromCabFront and math.abs(positions.enterWheel[1]) < math.abs(enter[1])
+  local isEntryFromCabRear = not isEntryFromCabFront and not isEntryFromCabSide
+  local isEntryFromCabSideLeft = isEntryFromCabSide and MathUtil.round(enter[1] - positions.center[1], 2) > 0.25
+  local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) >= 0.5
+  local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) <= -0.5
+  local isEntryFromCabSideCenter = isEntryFromCabSide and not isEntryFromCabSideFront and not isEntryFromCabSideRear
+
+  if CabCinematicUtil.isVehicleTractor(self.vehicle) and isEntryFromCabSide then
+    if isEntryFromCabSideLeft then
+      if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
+        local centerEnterZ = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
+        if CabCinematicUtil.isNear(enter[3], centerEnterZ, 0.15) then
+          enter[3] = centerEnterZ
+        end
+      end
+    else
+      if positions.wheelRightBack ~= nil and positions.wheelRightFront ~= nil then
+        local centerEnterZ = (positions.wheelRightFront[3] + positions.wheelRightBack[3]) / 2
+        if CabCinematicUtil.isNear(enter[3], centerEnterZ, 0.15) then
+          enter[3] = centerEnterZ
+        end
       end
     end
   end
 
-  return enter
+  return {
+    positions = {
+      enter = enter,
+    },
+    flags = {
+      isEntryFromCabFront = isEntryFromCabFront,
+      isEntryFromCabSide = isEntryFromCabSide,
+      isEntryFromCabRear = isEntryFromCabRear,
+      isEntryFromCabSideLeft = isEntryFromCabSideLeft,
+      isEntryFromCabSideFront = isEntryFromCabSideFront,
+      isEntryFromCabSideRear = isEntryFromCabSideRear,
+      isEntryFromCabSideCenter = isEntryFromCabSideCenter
+    }
+  }
 end
 
 ---Finds the closest wheel to the enter position based on combined distance to exit and camera
@@ -489,7 +520,7 @@ end
 function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
   local leftStandupX = math.min(positions.camera[1] + 0.2, positions.left[1])
   local rightStandupX = math.max(positions.camera[1] - 0.2, positions.right[1])
-  local standupX = flags.isEnterLeftSide and leftStandupX or rightStandupX
+  local standupX = flags.isEntryFromCabSideLeft and leftStandupX or rightStandupX
   local standupY = positions.camera[2] + 0.05
   local standupZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
   return { standupX, standupY, standupZ }
@@ -503,7 +534,7 @@ function CabCinematicVehicleAnalyzer:getCabDoors(positions, flags)
   local leftDoor = { positions.left[1], positions.camera[2], positions.standup[3] }
   local rightDoor = { positions.right[1], positions.camera[2], positions.standup[3] }
 
-  if flags.isEnterFrontSide then
+  if flags.isEntryFromCabSideFront then
     if not CabCinematicUtil.isNear(positions.front[3], positions.steeringWheel[3], 0.3) then
       leftDoor[3] = positions.steeringWheel[3]
       rightDoor[3] = positions.steeringWheel[3]
@@ -518,7 +549,7 @@ function CabCinematicVehicleAnalyzer:getCabDoors(positions, flags)
       leftDoor[3] = math.max((positions.center[3] + positions.front[3]) / 2, refZ)
       rightDoor[3] = math.max((positions.center[3] + positions.front[3]) / 2, refZ)
     end
-  elseif flags.isEnterBackSide then
+  elseif flags.isEntryFromCabSideRear then
     if CabCinematicUtil.isNear(positions.standup[3], positions.center[3], 0.15) then
       leftDoor[3] = positions.camera[3]
       rightDoor[3] = positions.camera[3]
@@ -557,7 +588,6 @@ function CabCinematicVehicleAnalyzer:analyze()
   -- Seat and enter positions
   positions.seat = { positions.camera[1], positions.camera[2], positions.camera[3] }
   positions.enterWheel = self:getCabEnterWheelPosition(positions)
-  positions.enter = self:getCabEnterPosition(positions)
 
   -- Cab bounding box
   local cabBoundingBox = self:getCabBoundingBox(positions)
@@ -565,12 +595,10 @@ function CabCinematicVehicleAnalyzer:analyze()
   CabCinematicUtil.merge(debugPositions, cabBoundingBox.debugPositions)
   CabCinematicUtil.merge(debugHits, cabBoundingBox.debugHits)
 
-  -- Enter side flags
-  local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
-  flags.isEnterLeftSide = MathUtil.round(positions.enter[1] - cabBoundingBox.positions.center[1], 2) > 0.25
-  flags.isEnterFrontSide = MathUtil.round(positions.enter[3] - middleZ, 2) >= 0.5
-  flags.isEnterBackSide = MathUtil.round(positions.enter[3] - middleZ, 2) <= -0.5
-  flags.isEnterCenter = not flags.isEnterFrontSide and not flags.isEnterBackSide
+  -- Enter features
+  local enterFeatures = self:getVehicleEnterFeatures(positions)
+  CabCinematicUtil.merge(positions, enterFeatures.positions)
+  CabCinematicUtil.merge(flags, enterFeatures.flags)
 
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)

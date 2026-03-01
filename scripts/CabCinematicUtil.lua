@@ -246,7 +246,7 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
 
   -- if player is between vehicle and enter point on X axis
   -- and more than 1.0m away from enter point, then return false
-  if features.flags.isEnterLeftSide then
+  if features.flags.isEntryFromCabSideLeft then
     if px < math.max(ex - 1, 0) then
       return false
     end
