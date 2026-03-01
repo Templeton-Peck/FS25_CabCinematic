@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="98"
-  xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
+<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="98" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
   <author>TempletonPeck</author>
   <version>0.1.6.0</version>
 
@@ -35,8 +34,7 @@
   </inputBinding>
 
   <specializations>
-    <specialization name="cabCinematic" className="CabCinematicSpec"
-      filename="scripts/specs/CabCinematicSpec.lua" />
+    <specialization name="cabCinematic" className="CabCinematicSpec" filename="scripts/specs/CabCinematicSpec.lua" />
   </specializations>
 
   <extraSourceFiles>

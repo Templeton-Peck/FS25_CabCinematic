@@ -2,3 +2,6 @@ root = true
 
 [*.lua]
 max_line_length = 512
+
+[*.xml]
+max_line_length = 512

@@ -75,12 +75,7 @@ function CabCinematicSpec:onUpdate(dt)
   local spec = self.spec_cabCinematic
 
   if spec.animation:getIsIdle() then
-    local prerequisiteAnimationType = self:getCabCinematicPrerequisiteAnimation()
-    if prerequisiteAnimationType ~= nil then
-      ---Run or wait for prerequisite animation to finish before starting the cab cinematic animation
-    else
-      spec.animation:update(dt)
-    end
+    spec.animation:update(dt)
   elseif spec.animation:getIsRunning() then
     spec.animation:update(dt)
   elseif spec.animation:getIsFinished() then
@@ -165,6 +160,15 @@ end
 function CabCinematicSpec:interact(superFunc, player)
   if self.interactionFlag == Vehicle.INTERACTION_FLAG_ENTERABLE then
     if self:getIsCabCinematicSupported() then
+      local prerequisiteAnimation = self:getCabCinematicPrerequisiteAnimation()
+      if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
+        if not prerequisiteAnimation.getIsPlaying() then
+          prerequisiteAnimation.play()
+        end
+
+        return
+      end
+
       if CabCinematicUtil.isPlayerInVehicleEnterRange(player, self, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) == false then
         return
       end
@@ -221,12 +225,21 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   local args = { ... }
   local vehicle = self
 
-  if vehicle:getIsCabCinematicAnimationOngoing() then
+  if not vehicle:getIsCabCinematicSupported() then
+    return superFunc(vehicle, unpack(args))
+  end
+
+  if self:getIsCabCinematicAnimationOngoing() then
     return
   end
 
-  if not vehicle:getIsCabCinematicSupported() then
-    return superFunc(vehicle, unpack(args))
+  local prerequisiteAnimation = self:getCabCinematicPrerequisiteAnimation()
+  if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
+    if not prerequisiteAnimation.getIsPlaying() then
+      prerequisiteAnimation.play()
+    end
+
+    return
   end
 
   Log:info("doLeaveVehicle called")
@@ -277,7 +290,68 @@ end
 ---Get the prerequisite animation type that needs to be completed before starting a new animation, or nil if there are no prerequisites
 ---@return table|nil prerequisiteAnimationType
 function CabCinematicSpec:getCabCinematicPrerequisiteAnimation()
-  return nil
+  if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
+    local ladder = self.spec_combine.ladder
+    if ladder ~= nil and ladder.animName ~= nil then
+      return {
+        play = function()
+          self:playAnimation(ladder.animName, ladder.animSpeedScale, nil, true)
+        end,
+        getIsPlaying = function()
+          if self:getIsAIActive() then
+            return false
+          end
+
+          return self:getIsAnimationPlaying(ladder.animName)
+        end,
+        getIsFinished = function()
+          if self:getIsAIActive() then
+            return true
+          end
+
+          local time = self:getAnimationTime(ladder.animName)
+          local logicalTime = (ladder.foldDirection == 1) and time or (1 - time)
+          return logicalTime >= (1 - 0.001)
+        end
+      }
+    end
+  end
+
+  if self.spec_foldable ~= nil and self.spec_foldable.hasFoldingParts then
+    if self:getStoreCategory() == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS then
+      return {
+        play = function()
+          self:setFoldDirection(-self.spec_foldable.turnOnFoldDirection)
+        end,
+        getIsPlaying = function()
+          if self:getIsAIActive() then
+            return false
+          end
+
+          return self.spec_foldable.foldMoveDirection ~= 0
+              and self.spec_foldable.foldMoveDirection == -self.spec_foldable.turnOnFoldDirection
+        end,
+        getIsFinished = function()
+          if self:getIsAIActive() then
+            return true
+          end
+
+          return self.spec_foldable.foldMoveDirection == 0 and not self:getIsUnfolded()
+        end
+      }
+    end
+  end
+
+  return {
+    play = function()
+    end,
+    getIsPlaying = function()
+      return false
+    end,
+    getIsFinished = function()
+      return true
+    end
+  }
 end
 
 ---Draws debug information for the cab cinematic spec
