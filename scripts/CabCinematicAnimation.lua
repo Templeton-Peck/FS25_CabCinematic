@@ -3,11 +3,6 @@
 CabCinematicAnimation = {}
 local CabCinematicAnimation_mt = Class(CabCinematicAnimation)
 
-CabCinematicAnimation.TYPES = {
-  ENTER = "enter",
-  LEAVE = "leave",
-}
-
 CabCinematicAnimation.STATES = {
   IDLE = "idle",
   BEFORE_START = "beforeStart",
@@ -19,12 +14,11 @@ CabCinematicAnimation.STATES = {
 }
 
 ---Creates a new animation
----@param type string The type of animation (enter or leave)
 ---@param vehicle table The vehicle the animation is associated with
+---@param keyframes table The keyframes defining the animation
 ---@return CabCinematicAnimation
-function CabCinematicAnimation.new(type, vehicle)
+function CabCinematicAnimation.new(vehicle, keyframes)
   local self = setmetatable({}, CabCinematicAnimation_mt)
-  self.type = type
   self.vehicle = vehicle
   self.state = CabCinematicAnimation.STATES.IDLE
   self.callbacks = {
@@ -34,11 +28,16 @@ function CabCinematicAnimation.new(type, vehicle)
     onBeforeEnd = function() end,
     onEnd = function() end,
   }
-  self.keyframes = {}
+  self.keyframes = keyframes or {}
   self.currentKeyFrameIndex = 1
   self.timer = 0.0
-  self.duration = 0.0
   self.currentPosition = { 0, 0, 0 }
+
+  self.duration = 0.0
+  for _, keyframe in ipairs(self.keyframes) do
+    self.duration = self.duration + keyframe:getDuration()
+  end
+
   return self
 end
 
@@ -148,32 +147,11 @@ function CabCinematicAnimation:getIsStale()
   return self.state == CabCinematicAnimation.STATES.STALE
 end
 
----Builds the keyframes for the animation
----@return table keyframes
-function CabCinematicAnimation:buildKeyframes()
-  local keyframes = {}
-  return keyframes
-end
-
----Prepares the animation before starting it
----@return CabCinematicAnimation self for chaining
-function CabCinematicAnimation:prepare()
-  self.keyframes = self:buildKeyframes()
-  for _, keyframe in ipairs(self.keyframes) do
-    self.duration = self.duration + keyframe:getDuration()
-  end
-
-  self:printDebug()
-
-  return self
-end
-
 ---Runs the current animation tick
 ---@param dt number Delta time since last update
 ---@return boolean isFinished whether the animation has finished
 function CabCinematicAnimation:tick(dt)
   self.timer = self.timer + (dt / 1000.0)
-  -- return self.timer >= 5.0  -- TODO remove, for testing only
 
   local accumulatedDuration = 0.0
   for i = 1, self.currentKeyFrameIndex - 1 do
@@ -182,6 +160,7 @@ function CabCinematicAnimation:tick(dt)
 
   local currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
   if currentKeyFrame == nil then
+    Log:info("No current keyframe found at index %d, total keyframes: %d", self.currentKeyFrameIndex, #self.keyframes)
     return true
   end
 
@@ -195,6 +174,9 @@ function CabCinematicAnimation:tick(dt)
   local keyframeTime = self.timer - accumulatedDuration
   self.currentPosition = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
 
+  Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
+    self.timer, self.currentKeyFrameIndex, keyframeTime, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
+
   return self.timer >= self.duration
 end
 
@@ -202,6 +184,8 @@ end
 ---@param dt number Delta time since last update
 function CabCinematicAnimation:update(dt)
   if self.state == CabCinematicAnimation.STATES.IDLE then
+    self:printDebug()
+
     self.callbacks.onBeforeStart(dt, self.vehicle)
     self.state = CabCinematicAnimation.STATES.BEFORE_START
     Log:info("Animation entering BEFORE_START state")
@@ -210,7 +194,6 @@ function CabCinematicAnimation:update(dt)
 
   if self.state == CabCinematicAnimation.STATES.BEFORE_START then
     self.callbacks.onStart(dt, self.vehicle)
-    self:prepare()
     self.state = CabCinematicAnimation.STATES.STARTED
     Log:info("Animation entering STARTED state")
     return
@@ -247,9 +230,18 @@ end
 
 ---Prints debug information about the animation and its keyframes
 function CabCinematicAnimation:printDebug()
-  Log:info(string.format("Animation type: %s, state: %s, duration: %.2f, keyframes: %d", self.type, self.state, self.duration, #self.keyframes))
+  Log:info(string.format("Animation state: %s, duration: %.2f, keyframes: %d", self.state, self.duration, #self.keyframes))
 
   for i, keyframe in ipairs(self.keyframes) do
     keyframe:printDebug()
+  end
+end
+
+---Draw debug
+function CabCinematicAnimation:drawDebug()
+  if self.keyframes ~= nil then
+    for _, keyframe in ipairs(self.keyframes) do
+      keyframe:drawDebug(self.vehicle.rootNode)
+    end
   end
 end

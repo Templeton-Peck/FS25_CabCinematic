@@ -74,16 +74,12 @@ function CabCinematicSpec:onUpdate(dt)
 
   local spec = self.spec_cabCinematic
 
-  if spec.animation:getIsIdle() then
-    spec.animation:update(dt)
-  elseif spec.animation:getIsRunning() then
-    spec.animation:update(dt)
-  elseif spec.animation:getIsFinished() then
-    spec.animation:update(dt)
-  elseif spec.animation:getIsStale() then
+  if spec.animation:getIsStale() then
     spec.animation:delete()
     spec.animation = nil
     return
+  else
+    spec.animation:update(dt)
   end
 
   ---Always update camera to let player look around freely
@@ -193,9 +189,15 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   Log:info("onPlayerEnterVehicle called")
 
+  local p = { getWorldTranslation(getParent(g_localPlayer.camera.firstPersonCamera)) }
+  local s = g_localPlayer:getSpeed()
+  Log:info("Player position on enter: (%.2f, %.2f, %.2f), speed=%.2f", p[1], p[2], p[3], s)
+
   superFunc(vehicle, unpack(args))
 
-  local animation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.ENTER, vehicle)
+  local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, vehicle)
+  local animation = CabCinematicAnimation.new(vehicle, keyframes)
+
   animation:onBeforeStart(function()
     -- CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
     if (not vehicle:getIsAIActive()) then
@@ -244,7 +246,8 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   Log:info("doLeaveVehicle called")
 
-  local animation = CabCinematicAnimation.new(CabCinematicAnimation.TYPES.LEAVE, vehicle);
+  local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, vehicle)
+  local animation = CabCinematicAnimation.new(vehicle, keyframes);
 
   animation:onBeforeStart(function()
     if (not vehicle:getIsAIActive()) then
@@ -287,8 +290,8 @@ function CabCinematicSpec:getIsCabCinematicAnimationOngoing()
   return self.spec_cabCinematic and self.spec_cabCinematic.animation ~= nil
 end
 
----Get the prerequisite animation type that needs to be completed before starting a new animation, or nil if there are no prerequisites
----@return table|nil prerequisiteAnimationType
+---Get the prerequisite animation that needs to be completed before starting a new animation, or nil if there are no prerequisites
+---@return table|nil prerequisiteAnimation
 function CabCinematicSpec:getCabCinematicPrerequisiteAnimation()
   if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
     local ladder = self.spec_combine.ladder
@@ -371,5 +374,13 @@ function CabCinematicSpec:drawCabCinematicDebug()
 
   for _, flag in ipairs(alphaSortedFlags) do
     y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", flag.text, tostring(flag.state)))
+  end
+
+  if self.spec_cabCinematic.animation ~= nil then
+    self.spec_cabCinematic.animation:drawDebug()
+  end
+
+  if self.spec_cabCinematic.camera ~= nil then
+    self.spec_cabCinematic.camera:drawDebug()
   end
 end

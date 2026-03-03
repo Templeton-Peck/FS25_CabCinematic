@@ -5,8 +5,7 @@ CabCinematicCamera = {
   cameraZ = 0,
   cameraPitch = 0,
   cameraYaw = 0,
-  cameraRoll = 0,
-  isActive = false
+  cameraRoll = 0
 }
 
 local CabCinematicCamera_mt = Class(CabCinematicCamera)
@@ -28,10 +27,6 @@ function CabCinematicCamera.new(vehicle)
 end
 
 function CabCinematicCamera:delete()
-  if self.isActive then
-    self:deactivate()
-  end
-
   unlink(self.cameraNode)
 
   g_cameraManager:removeCamera(self.cameraNode)
@@ -41,15 +36,10 @@ end
 
 function CabCinematicCamera:activate()
   g_cameraManager:setActiveCamera(self.cameraNode)
-  self.isActive = true
-end
-
-function CabCinematicCamera:deactivate()
-  self.isActive = false
 end
 
 function CabCinematicCamera:getIsActive()
-  return self.isActive
+  return g_cameraManager:getActiveCamera() == self.cameraNode
 end
 
 function CabCinematicCamera:setPosition(x, y, z)
@@ -78,8 +68,10 @@ function CabCinematicCamera:syncFovY()
 end
 
 function CabCinematicCamera:update()
-  if self.isActive then
-    self:syncRotation()
-    self:syncPosition()
-  end
+  self:syncRotation()
+  self:syncPosition()
+end
+
+function CabCinematicCamera:drawDebug()
+  DebugUtil.drawDebugNode(self.cameraNode, "cameraNode")
 end
