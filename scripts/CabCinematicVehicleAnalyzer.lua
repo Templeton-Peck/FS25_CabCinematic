@@ -36,7 +36,7 @@ function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition()
     return { 0, 0, 0 }
   end
 
-  local steeringWheelNode = self.vehicle.spec_drivable.steeringWheel.node;
+  local steeringWheelNode = self.vehicle.spec_drivable.steeringWheel.node
   return { localToLocal(steeringWheelNode, self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
 end
 
@@ -254,7 +254,7 @@ function CabCinematicVehicleAnalyzer:getCabBoundingBox(positions)
   local characterFootY = self:getCabCharacterFootY(positions)
   local debugPositions = {}
 
-  local indoorCamera = self.vehicle:getIndoorCamera();
+  local indoorCamera = self.vehicle:getIndoorCamera()
   if indoorCamera ~= nil then
     local shadowFocusBoxNode = indoorCamera.shadowFocusBoxNode
     if shadowFocusBoxNode ~= nil then

@@ -189,17 +189,17 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   Log:info("onPlayerEnterVehicle called")
 
-  local p = { getWorldTranslation(getParent(g_localPlayer.camera.firstPersonCamera)) }
-  local s = g_localPlayer:getSpeed()
-  Log:info("Player position on enter: (%.2f, %.2f, %.2f), speed=%.2f", p[1], p[2], p[3], s)
+  -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
+  local playerCameraParent = getParent(g_localPlayer.camera.firstPersonCamera);
+  local localPlayerPosition = { getTranslation(playerCameraParent) }
+  local playerPosition = { localToLocal(playerCameraParent, vehicle.rootNode, unpack(localPlayerPosition)) }
 
   superFunc(vehicle, unpack(args))
 
-  local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, vehicle)
-  local animation = CabCinematicAnimation.new(vehicle, keyframes)
+  local keyframes = CabCinematicAnimationKeyframe.build(vehicle, false)
+  local animation = CabCinematicAnimation.new(vehicle, CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, playerPosition))
 
   animation:onBeforeStart(function()
-    -- CabCinematic.cinematicAnimation.playerSnapshot = CabCinematicPlayerSnapshot.new(g_localPlayer)
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
 
@@ -246,8 +246,8 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   Log:info("doLeaveVehicle called")
 
-  local keyframes = CabCinematicAnimationKeyframe.build(g_localPlayer, vehicle)
-  local animation = CabCinematicAnimation.new(vehicle, keyframes);
+  local keyframes = CabCinematicAnimationKeyframe.build(vehicle, true)
+  local animation = CabCinematicAnimation.new(vehicle, keyframes)
 
   animation:onBeforeStart(function()
     if (not vehicle:getIsAIActive()) then

@@ -43,6 +43,10 @@ end
 
 ---Deletes the animation and its resources
 function CabCinematicAnimation:delete()
+  for _, keyframe in ipairs(self.keyframes) do
+    keyframe:delete()
+  end
+
   self.type = nil
   self.vehicle = nil
   self.state = nil

@@ -202,17 +202,17 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
         end
 
         if closest then
-          return true;
+          return true
         elseif hit[4] < result.best[4] then
           result.best = hit
         end
       end
     end
-  };
+  }
 
   raycastAll(sx, sy, sz, dx, dy, dz, dist, "callback", raycaster, CollisionFlag.VEHICLE)
 
-  return result;
+  return result
 end
 
 function CabCinematicUtil.isVehicleTractor(vehicle)
@@ -271,5 +271,5 @@ function CabCinematicUtil:isPlayerInFirstPerson(player)
     return false
   end
 
-  return player.camera.isFirstPerson;
+  return player.camera.isFirstPerson
 end

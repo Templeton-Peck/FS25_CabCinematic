@@ -1,4 +1,7 @@
+---@class CabCinematicAnimationKeyframe
+---Describes a single animation keyframe
 CabCinematicAnimationKeyframe = {}
+local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)
 
 CabCinematicAnimationKeyframe.TYPES = {
   WALK = "walk",
@@ -44,7 +47,11 @@ local KEYFRAME_OFFSETS = {
   DOOR_SAFE_DISTANCE = 0.35,
 }
 
-local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)
+---Creates a new keyframe with the given type, start and end positions.
+---@param type string The type of the keyframe (ex: walk, climb, etc).
+---@param startPosition table The starting position of the keyframe.
+---@param endPosition table The ending position of the keyframe.
+---@return table CabCinematicAnimationKeyframe The created keyframe instance.
 function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition)
   local self = setmetatable({}, CabCinematicAnimationKeyframe_mt)
   self.type = type
@@ -56,6 +63,7 @@ function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition)
   return self
 end
 
+---Deletes the keyframe and its resources
 function CabCinematicAnimationKeyframe:delete()
   self.type = nil
   self.startPosition = nil
@@ -65,10 +73,17 @@ function CabCinematicAnimationKeyframe:delete()
   self.distance = nil
 end
 
+---Gets the duration of the keyframe based on its distance and speed.
+---@return number duration The duration of the keyframe in seconds.
 function CabCinematicAnimationKeyframe:getDuration()
   return self.distance / self.speed
 end
 
+---Calculates the view bobbing offset for the keyframe at time t.
+---@param t number The time along the keyframe's duration to calculate the offset for.
+---@return number horizontalOffset The horizontal offset to apply to the camera.
+---@return number verticalOffset The vertical offset to apply to the camera.
+---@return number depthOffset The depth offset to apply to the camera.
 function CabCinematicAnimationKeyframe:getViewBobbingOffset(t)
   if self.distance == 0 then
     return 0, 0, 0
@@ -88,6 +103,9 @@ function CabCinematicAnimationKeyframe:getViewBobbingOffset(t)
   return horizontalOffset * fadeFactor, verticalOffset * fadeFactor, 0
 end
 
+---Calculates the interpolated position along the keyframe's path at time t, including view bobbing offsets.
+---@param t number The time along the keyframe's duration to calculate the position for.
+---@return table The interpolated position at time t.
 function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
   if self.distance == 0 then
     return { 0, 0, 0 }
@@ -105,18 +123,23 @@ function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
   return { baseX + bobX, baseY + bobY, baseZ + bobZ }
 end
 
+---Reverses the keyframe's start and end positions, effectively creating a keyframe that goes in the opposite direction.
+---This is useful for generating exit animations from the same keyframes used for entering.
 function CabCinematicAnimationKeyframe:reverse()
   local temp = self.startPosition
   self.startPosition = self.endPosition
   self.endPosition = temp
 end
 
-function CabCinematicAnimationKeyframe:drawDebug(rootNode)
-  local startWorldPos = { localToWorld(rootNode, unpack(self.startPosition)) }
-  local endWorldPos = { localToWorld(rootNode, unpack(self.endPosition)) }
+---Draws a debug line in the world representing the keyframe's path.
+---@param relativeNode number The relative node to convert local positions to world positions.
+function CabCinematicAnimationKeyframe:drawDebug(relativeNode)
+  local startWorldPos = { localToWorld(relativeNode, unpack(self.startPosition)) }
+  local endWorldPos = { localToWorld(relativeNode, unpack(self.endPosition)) }
   DebugUtil.drawDebugLine(startWorldPos[1], startWorldPos[2], startWorldPos[3], endWorldPos[1], endWorldPos[2], endWorldPos[3], 1, 0, 0, 0.5)
 end
 
+---Prints the keyframe's details for debugging purposes.
 function CabCinematicAnimationKeyframe:printDebug()
   Log:info(
     "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
@@ -128,7 +151,13 @@ function CabCinematicAnimationKeyframe:printDebug()
     self:getDuration())
 end
 
-local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCategory, vehicleFeatures)
+---Builds the keyframes for harvesters.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+---@return table keyframes The list of keyframes for the vehicle.
+local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   if vehicleFeatures.flags.isEnterCenter then
     local keyframes = {}
     local enterWheel = vehicleFeatures.positions.enterWheel
@@ -143,7 +172,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
         enterWheel[1] + KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE,
         enterPosition[2],
         enterPosition[3]
-      };
+      }
 
       table.insert(keyframes, CabCinematicAnimationKeyframe.new(
         CabCinematicAnimationKeyframe.TYPES.WALK,
@@ -155,14 +184,14 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
         enterPosition[1],
         enterPosition[2],
         enterPosition[3]
-      };
+      }
     end
 
     local ladderTop = {
       ladderBottom[1] - KEYFRAME_OFFSETS.LADDER_SLOPE,
       leftDoor[2],
       ladderBottom[3]
-    };
+    }
 
     table.insert(keyframes, CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
@@ -182,25 +211,31 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, vehicleCateg
   return {}
 end
 
-local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+---Builds the keyframes for beet harvesters.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+---@return table keyframes The list of keyframes for the vehicle.
+local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   if vehicleFeatures.flags.isEnterBackSide then
     local doorCross = {
       doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       doorPosition[2],
       doorPosition[3]
-    };
+    }
 
     local ladderTop = {
       doorCross[1] + 0.2,
       doorCross[2],
       enterPosition[3]
-    };
+    }
 
     local ladderBottom = {
       math.min(ladderTop[1] + KEYFRAME_OFFSETS.LADDER_SLOPE, enterPosition[1]),
       enterPosition[2],
       ladderTop[3]
-    };
+    }
 
     local keyframes = {
       CabCinematicAnimationKeyframe.new(
@@ -234,13 +269,13 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, category
       doorPosition[1] + 0.2,
       doorPosition[2],
       enterPosition[3]
-    };
+    }
 
     local ladderBottom = {
       math.min(ladderTop[1] + KEYFRAME_OFFSETS.LADDER_SLOPE, enterPosition[1]),
       enterPosition[2],
       ladderTop[3]
-    };
+    }
 
     local keyframes = {
       CabCinematicAnimationKeyframe.new(
@@ -266,31 +301,37 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, category
   return {}
 end
 
-local function buildForageHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+---Builds the keyframes for forage harvesters.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+---@return table keyframes The list of keyframes for the vehicle.
+local function buildForageHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   if vehicleFeatures.flags.isEnterBackSide then
     local doorCross = {
       doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       doorPosition[2],
       doorPosition[3]
-    };
+    }
 
     local ladderStep = {
       doorCross[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       enterPosition[2],
       enterPosition[3] + 0.12
-    };
+    }
 
     local ladderBottom = {
       doorCross[1],
       enterPosition[2] + 0.25,
       enterPosition[3] + 0.25
-    };
+    }
 
     local ladderTop = {
       doorCross[1],
       doorCross[2],
       math.min(ladderBottom[3] + KEYFRAME_OFFSETS.STAIRS_SLOPE, doorCross[3])
-    };
+    }
 
     local keyframes = {
       CabCinematicAnimationKeyframe.new(
@@ -324,16 +365,22 @@ local function buildForageHarvesterKeyframes(enterPosition, doorPosition, catego
   return {}
 end
 
-local function buildTractorKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  -- if category == 'tractorss' then
+---Builds the keyframes for tractors
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+---@return table keyframes The list of keyframes for the vehicle.
+local function buildTractorKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  -- if storeCategory == 'tractorss' then
   --   return {}
   -- end
 
-  -- if category == 'tractorsm' then
+  -- if storeCategory == 'tractorsm' then
   --   return {}
   -- end
 
-  -- if category == 'tractorsl' then
+  -- if storeCategory == 'tractorsl' then
   --   return {}
   -- end
 
@@ -344,19 +391,19 @@ local function buildTractorKeyframes(enterPosition, doorPosition, category, vehi
       wheel[1] or doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       enterPosition[2],
       enterPosition[3]
-    };
+    }
 
     local ladderTop = {
       ladderBottom[1],
       doorPosition[2],
       ladderBottom[3] - KEYFRAME_OFFSETS.LADDER_SLOPE
-    };
+    }
 
     local doorCross = {
       ladderBottom[1],
       doorPosition[2],
       doorPosition[3]
-    };
+    }
 
     return {
       CabCinematicAnimationKeyframe.new(
@@ -391,7 +438,13 @@ local function buildTractorKeyframes(enterPosition, doorPosition, category, vehi
   }
 end
 
-local function buildTeleloadersKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+---Builds the keyframes for teleloaders, frontloaders, wheelloaders and forklifts.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+---@return table keyframes The list of keyframes for the vehicle.
+local function buildTeleloadersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   return {
     CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
@@ -401,11 +454,15 @@ local function buildTeleloadersKeyframes(enterPosition, doorPosition, category, 
   }
 end
 
-function CabCinematicAnimationKeyframe.build(player, vehicle)
+---Builds the keyframes for the given vehicle based on its storeCategory and features.
+---@param vehicle table The vehicle to build the keyframes for.
+---@param reverse boolean Whether to reverse the keyframes (ex: for exiting the vehicle).
+---@return table keyframes The list of keyframes for the vehicle.
+function CabCinematicAnimationKeyframe.build(vehicle, reverse)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
-  local category = vehicle:getStoreCategory()
+  local storeCategory = vehicle:getStoreCategory()
 
-  Log:info("Building keyframes for vehicle '" .. vehicle.typeName .. "' of category '" .. category .. "'")
+  Log:info("Building keyframes for vehicle '" .. vehicle.typeName .. "' of storeCategory '" .. storeCategory .. "'")
 
   local enterPosition = vehicleFeatures.positions.enter
   local doorPosition = vehicleFeatures.positions.leftDoor
@@ -414,23 +471,23 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
   local keyframes = {}
 
   if CabCinematicUtil.isVehicleTractor(vehicle) then
-    keyframes = buildTractorKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
-      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FRONTLOADERS
-      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WHEELLOADERS
-      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORKLIFTS then
-    keyframes = buildTeleloadersKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.HARVESTERS then
-    keyframes = buildHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORAGE_HARVESTERS then
-    keyframes = buildForageHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
-  elseif category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.BEET_HARVESTERS
-      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
-      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
-      or category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
-    keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, category, vehicleFeatures)
+    keyframes = buildTractorKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FRONTLOADERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WHEELLOADERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORKLIFTS then
+    keyframes = buildTeleloadersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.HARVESTERS then
+    keyframes = buildHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORAGE_HARVESTERS then
+    keyframes = buildForageHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.BEET_HARVESTERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
+    keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
-    Log:info("No specific keyframe builder found for vehicle category '" .. category .. "', using default keyframes")
+    Log:info("No specific keyframe builder found for vehicle storeCategory '" .. storeCategory .. "', using default keyframes")
     table.insert(keyframes, CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
       enterPosition,
@@ -450,5 +507,65 @@ function CabCinematicAnimationKeyframe.build(player, vehicle)
     seatPosition
   ))
 
+  if reverse then
+    local reversedKeyframes = {}
+    for _, keyframe in ipairs(keyframes) do
+      keyframe:reverse()
+      table.insert(reversedKeyframes, 1, keyframe)
+    end
+
+    return reversedKeyframes
+  end
+
   return keyframes
+end
+
+---Adapt keyframes to start from the given position and lead to the closest keyframe's start position,
+---then appends the rest of the keyframes after it.
+---@param keyframes table The list of keyframes to generate the shortcut from.
+---@param position table The starting position for the adapted keyframe.
+---@param type string | nil The type of the adapted keyframe.
+---@return table adaptedKeyframes The updated list of keyframes with the adapted keyframe.
+function CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, position, type)
+  local shortestDistance = math.huge
+  local shortestDistanceIndex = 1
+
+  for index, keyframe in ipairs(keyframes) do
+    local keyframeDistance = MathUtil.vector3Length(
+      position[1] - keyframe.startPosition[1],
+      position[2] - keyframe.startPosition[2],
+      position[3] - keyframe.startPosition[3]
+    )
+    if keyframeDistance < shortestDistance then
+      shortestDistance = keyframeDistance
+      shortestDistanceIndex = index
+    end
+  end
+
+  if shortestDistanceIndex > 1 then
+    local shortcutKeyframe = CabCinematicAnimationKeyframe.new(
+      keyframes[shortestDistanceIndex - 1].type,
+      position,
+      keyframes[shortestDistanceIndex].startPosition)
+
+    local adaptedKeyframes = { shortcutKeyframe }
+
+    for i = shortestDistanceIndex, #keyframes do
+      table.insert(adaptedKeyframes, keyframes[i])
+    end
+
+    return adaptedKeyframes
+  end
+
+  local shortcutKeyframe = CabCinematicAnimationKeyframe.new(
+    type or CabCinematicAnimationKeyframe.TYPES.WALK,
+    position,
+    keyframes[shortestDistanceIndex].startPosition)
+
+  local adaptedKeyframes = { shortcutKeyframe }
+  for _, keyframe in ipairs(keyframes) do
+    table.insert(adaptedKeyframes, keyframe)
+  end
+
+  return adaptedKeyframes
 end
