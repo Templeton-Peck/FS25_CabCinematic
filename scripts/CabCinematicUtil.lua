@@ -264,16 +264,21 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   return dist <= range
 end
 
-function CabCinematicUtil:isPlayerInFirstPerson(player)
-  local currentVehicle = player:getCurrentVehicle()
-  if currentVehicle ~= nil then
-    local camera = currentVehicle:getVehicleIndoorCamera()
-    if camera ~= nil then
-      return g_cameraManager:getActiveCamera() == camera.cameraNode
-    end
+---Tells whether the player is currently in first person mode, either in a vehicle or on foot.
+---@param player table The player to check.
+---@return boolean true if the player is in first person mode, false otherwise.
+function CabCinematicUtil.isPlayerInFirstPerson(player)
+  return true
 
-    return false
-  end
+  -- local currentVehicle = player:getCurrentVehicle()
+  -- if currentVehicle ~= nil then
+  --   local camera = currentVehicle:getIndoorCamera()
+  --   if camera ~= nil then
+  --     return g_cameraManager:getActiveCamera() == camera.cameraNode
+  --   end
 
-  return player.camera.isFirstPerson
+  --   return false
+  -- end
+
+  -- return player.camera.isFirstPerson == true
 end
