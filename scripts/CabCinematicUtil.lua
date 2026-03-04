@@ -239,6 +239,10 @@ end
 
 function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   local features = vehicle:getCabCinematicFeatures()
+  if features == nil then
+    return false
+  end
+
   local enterPosition = features.positions.enter
 
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))

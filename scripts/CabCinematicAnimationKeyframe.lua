@@ -460,6 +460,10 @@ end
 ---@return table keyframes The list of keyframes for the vehicle.
 function CabCinematicAnimationKeyframe.build(vehicle, reverse)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
+  if vehicleFeatures == nil then
+    return {}
+  end
+
   local storeCategory = vehicle:getStoreCategory()
 
   Log:info("Building keyframes for vehicle '" .. vehicle.typeName .. "' of storeCategory '" .. storeCategory .. "'")
@@ -536,7 +540,7 @@ function CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, pos
       position[2] - keyframe.startPosition[2],
       position[3] - keyframe.startPosition[3]
     )
-    if keyframeDistance < shortestDistance then
+    if keyframeDistance ~= nil and keyframeDistance < shortestDistance then
       shortestDistance = keyframeDistance
       shortestDistanceIndex = index
     end

@@ -168,16 +168,23 @@ end
 ---@param positions table Current positions for reference
 ---@return number Y position
 function CabCinematicVehicleAnalyzer:getCabCharacterFootY(positions)
-  local leftFoot = self.vehicle.spec_enterable.defaultCharacterTargets.leftFoot
-  if leftFoot ~= nil then
-    local _, bottomY, _ = localToLocal(leftFoot.targetNode, self.vehicle.rootNode, 0, 0, 0)
-    return bottomY
-  end
+  local characterTargets = self.vehicle.spec_enterable.defaultCharacterTargets;
 
-  local rightFoot = self.vehicle.spec_enterable.defaultCharacterTargets.rightFoot
-  if rightFoot ~= nil then
-    local _, bottomY, _ = localToLocal(rightFoot.targetNode, self.vehicle.rootNode, 0, 0, 0)
-    return bottomY
+  if characterTargets ~= nil then
+    local lowestFootY = math.huge
+
+    for _, foot in pairs({ characterTargets.leftFoot, characterTargets.rightFoot }) do
+      if foot ~= nil then
+        local _, footY, _ = localToLocal(foot.targetNode, self.vehicle.rootNode, 0, 0, 0)
+        if footY ~= nil and footY < lowestFootY then
+          lowestFootY = footY
+        end
+      end
+    end
+
+    if lowestFootY ~= math.huge then
+      return lowestFootY
+    end
   end
 
   return positions.camera[2] - 1.5

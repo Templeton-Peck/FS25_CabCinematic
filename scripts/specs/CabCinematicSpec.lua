@@ -274,14 +274,18 @@ end
 
 ---Get analyzed vehicle features, using cached value if available unless force is true
 ---@param force boolean|nil Whether to force re-analyzing or not (default: false)
----@return table features
+---@return table|nil features
 function CabCinematicSpec:getCabCinematicFeatures(force)
   if not force and self.spec_cabCinematic.features ~= nil then
     return self.spec_cabCinematic.features
   end
 
-  self.spec_cabCinematic.features = self.spec_cabCinematic.vehicleAnalyzer:analyze()
-  return self.spec_cabCinematic.features
+  if self:getIsCabCinematicSupported() then
+    self.spec_cabCinematic.features = self.spec_cabCinematic.vehicleAnalyzer:analyze()
+    return self.spec_cabCinematic.features
+  end
+
+  return nil
 end
 
 ---Tells whether a cinematic animation is currently ongoing
@@ -360,20 +364,22 @@ end
 ---Draws debug information for the cab cinematic spec
 function CabCinematicSpec:drawCabCinematicDebug()
   local features = self:getCabCinematicFeatures()
-  CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-  CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
-  -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
-  -- CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
+  if features ~= nil then
+    CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
+    CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
+    -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
+    -- CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
 
-  local x, y = 0.01, 0.5
-  local alphaSortedFlags = {}
-  for text, state in pairs(features.flags) do
-    table.insert(alphaSortedFlags, { text = text, state = state })
-  end
-  table.sort(alphaSortedFlags, function(a, b) return a.text < b.text end)
+    local x, y = 0.01, 0.5
+    local alphaSortedFlags = {}
+    for text, state in pairs(features.flags) do
+      table.insert(alphaSortedFlags, { text = text, state = state })
+    end
+    table.sort(alphaSortedFlags, function(a, b) return a.text < b.text end)
 
-  for _, flag in ipairs(alphaSortedFlags) do
-    y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", flag.text, tostring(flag.state)))
+    for _, flag in ipairs(alphaSortedFlags) do
+      y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", flag.text, tostring(flag.state)))
+    end
   end
 
   if self.spec_cabCinematic.animation ~= nil then
