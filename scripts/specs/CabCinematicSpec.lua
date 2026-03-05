@@ -200,7 +200,8 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   local animation = CabCinematicAnimation.new(vehicle, CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, playerPosition))
 
   animation:onBeforeStart(function()
-    -- self.spec_cabCinematic.camera:activate()
+    self.spec_cabCinematic.camera:activate()
+
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
 
@@ -211,7 +212,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   end)
 
   animation:onEnd(function()
-    -- vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
+    vehicle:setActiveCameraIndex(vehicle.spec_enterable.camIndex)
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:restoreVehicleCharacter()
@@ -253,7 +254,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   local animation = CabCinematicAnimation.new(vehicle, keyframes)
 
   animation:onBeforeStart(function()
-    -- self.spec_cabCinematic.camera:activate()
+    self.spec_cabCinematic.camera:activate()
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
