@@ -178,8 +178,8 @@ function CabCinematicAnimation:tick(dt)
   local keyframeTime = self.timer - accumulatedDuration
   self.currentPosition = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
 
-  Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
-    self.timer, self.currentKeyFrameIndex, keyframeTime, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
+  -- Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
+  --   self.timer, self.currentKeyFrameIndex, keyframeTime, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
 
   return self.timer >= self.duration
 end

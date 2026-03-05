@@ -158,7 +158,7 @@ end
 ---@param vehicleFeatures table The vehicle's features.
 ---@return table keyframes The list of keyframes for the vehicle.
 local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
-  if vehicleFeatures.flags.isEnterCenter then
+  if vehicleFeatures.flags.isEntryFromCabSideCenter then
     local keyframes = {}
     local enterWheel = vehicleFeatures.positions.enterWheel
     local leftDoor = vehicleFeatures.positions.leftDoor
@@ -218,7 +218,7 @@ end
 ---@param vehicleFeatures table The vehicle's features.
 ---@return table keyframes The list of keyframes for the vehicle.
 local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
-  if vehicleFeatures.flags.isEnterBackSide then
+  if vehicleFeatures.flags.isEntryFromCabSideRear then
     local doorCross = {
       doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       doorPosition[2],
@@ -264,7 +264,7 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCat
     end
 
     return keyframes
-  elseif vehicleFeatures.flags.isEnterSide then
+  elseif vehicleFeatures.flags.isEntryFromCabSideCenter then
     local ladderTop = {
       doorPosition[1] + 0.2,
       doorPosition[2],
@@ -308,7 +308,7 @@ end
 ---@param vehicleFeatures table The vehicle's features.
 ---@return table keyframes The list of keyframes for the vehicle.
 local function buildForageHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
-  if vehicleFeatures.flags.isEnterBackSide then
+  if vehicleFeatures.flags.isEntryFromCabSideRear then
     local doorCross = {
       doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
       doorPosition[2],
@@ -466,7 +466,7 @@ function CabCinematicAnimationKeyframe.build(vehicle, reverse)
 
   local storeCategory = vehicle:getStoreCategory()
 
-  Log:info("Building keyframes for vehicle '" .. vehicle.typeName .. "' of storeCategory '" .. storeCategory .. "'")
+  Log:info("Building keyframes for vehicle %s of storeCategory '%s'", vehicle.typeName, storeCategory)
 
   local enterPosition = vehicleFeatures.positions.enter
   local doorPosition = vehicleFeatures.positions.leftDoor
@@ -491,7 +491,7 @@ function CabCinematicAnimationKeyframe.build(vehicle, reverse)
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
     keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
-    Log:info("No specific keyframe builder found for vehicle storeCategory '" .. storeCategory .. "', using default keyframes")
+    Log:info("No specific keyframe builder found for vehicle storeCategory '%s', using default keyframes", storeCategory)
     table.insert(keyframes, CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
       enterPosition,

@@ -16,7 +16,6 @@ end
 
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "interact", CabCinematicSpec.interact)
-  SpecializationUtil.registerOverwrittenFunction(vehicleType, "actionEventLeave", CabCinematicSpec.actionEventLeave)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "onPlayerEnterVehicle", CabCinematicSpec.onPlayerEnterVehicle)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "doLeaveVehicle", CabCinematicSpec.doLeaveVehicle)
 end
@@ -156,7 +155,7 @@ end
 ---Overwrite base methods to provide better vehicle interaction
 function CabCinematicSpec:interact(superFunc, player)
   if self.interactionFlag == Vehicle.INTERACTION_FLAG_ENTERABLE then
-    if self:getIsCabCinematicSupported() and CabCinematicUtil.isPlayerInFirstPerson(player) then
+    if self:getIsCabCinematicSupported() and CabCinematicUtil.isOnFootPlayerInFirstPerson(player) then
       local prerequisiteAnimation = self:getCabCinematicPrerequisiteAnimation()
       if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
         if not prerequisiteAnimation.getIsPlaying() then
@@ -175,21 +174,6 @@ function CabCinematicSpec:interact(superFunc, player)
   superFunc(self, player)
 end
 
-function CabCinematicSpec:actionEventLeave(superFunc, ...)
-  if self:getIsCabCinematicSupported() and CabCinematicUtil.isPlayerInFirstPerson(g_localPlayer) then
-    local prerequisiteAnimation = self:getCabCinematicPrerequisiteAnimation()
-    if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
-      if not prerequisiteAnimation.getIsPlaying() then
-        prerequisiteAnimation.play()
-      end
-
-      return
-    end
-  end
-
-  superFunc(self, ...)
-end
-
 ---Overwrite base method to provide cinematic animation when entering the vehicle
 function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   local args = { ... }
@@ -199,7 +183,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
     return
   end
 
-  if not vehicle:getIsCabCinematicSupported() or not CabCinematicUtil.isPlayerInFirstPerson(g_localPlayer) then
+  if not vehicle:getIsCabCinematicSupported() or not CabCinematicUtil.isOnFootPlayerInFirstPerson(g_localPlayer) then
     return superFunc(vehicle, unpack(args))
   end
 
@@ -246,8 +230,17 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   local args = { ... }
   local vehicle = self
 
-  if not vehicle:getIsCabCinematicSupported() or not CabCinematicUtil.isPlayerInFirstPerson(g_localPlayer) then
+  if not vehicle:getIsCabCinematicSupported() or not CabCinematicUtil.isVehicleInFirstPerson(vehicle) then
     return superFunc(vehicle, unpack(args))
+  end
+
+  local prerequisiteAnimation = self:getCabCinematicPrerequisiteAnimation()
+  if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
+    if not prerequisiteAnimation.getIsPlaying() then
+      prerequisiteAnimation.play()
+    end
+
+    return
   end
 
   if self:getIsCabCinematicAnimationOngoing() then
