@@ -251,7 +251,7 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
   return superFunc(vehicle, ...)
 end
 
----Overwrite base method to provide cinematic animation when entering the vehicle
+---Overwrites base method to provide cinematic animation when entering the vehicle
 ---@param superFunc function The original onPlayerEnterVehicle function
 ---@param ... any additional arguments
 function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
@@ -310,7 +310,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   vehicle.spec_cabCinematic.animation = animation
 end
 
----Overwrite base method to provide cinematic animation when leaving the vehicle
+---Overwrites base method to provide cinematic animation when leaving the vehicle
 ---@param superFunc function The original doLeaveVehicle function
 ---@param ... any additional arguments
 function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
