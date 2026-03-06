@@ -282,3 +282,39 @@ function CabCinematicUtil.isVehicleInFirstPerson(vehicle)
 
   return false
 end
+
+---Applies the player's camera rotation to the vehicle's indoor camera rotation
+---@param player table The player whose camera rotation to apply
+---@param vehicle table The vehicle whose camera rotation to modify
+function CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(player, vehicle)
+  local playerCamera = player.camera
+  local vehicleCamera = vehicle:getIndoorCamera()
+
+  if playerCamera == nil or vehicleCamera == nil then
+    return
+  end
+
+  local dirX, dirY, dirZ = localDirectionToWorld(playerCamera.cameraRootNode, 1, 0, 0)
+  local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
+
+  vehicleCamera.rotX = pitch
+  vehicleCamera.rotY = yaw
+  vehicleCamera.rotZ = 0
+  vehicleCamera:updateRotateNodeRotation()
+end
+
+---Applies the vehicle's indoor camera rotation to the player's camera rotation
+---@param vehicle table The vehicle whose camera rotation to apply
+---@param player table The player whose camera rotation to modify
+function CabCinematicUtil.applyVehicleCameraRotationToPlayerCameraRotation(vehicle, player)
+  local playerCamera = player.camera
+  local vehicleCamera = vehicle:getIndoorCamera()
+
+  if playerCamera == nil or vehicleCamera == nil then
+    return
+  end
+
+  local dirX, dirY, dirZ = localDirectionToWorld(vehicleCamera.rotateNode, 0, 0, -1)
+  local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
+  playerCamera:setRotation(pitch, yaw, 0)
+end

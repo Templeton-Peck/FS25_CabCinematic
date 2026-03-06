@@ -31,7 +31,7 @@ function CabCinematicAnimation.new(vehicle, keyframes)
   self.keyframes = keyframes or {}
   self.currentKeyFrameIndex = 1
   self.timer = 0.0
-  self.currentPosition = { 0, 0, 0 }
+  self.currentPosition = keyframes[1] ~= nil and keyframes[1].startPosition or { 0, 0, 0 }
 
   self.duration = 0.0
   for _, keyframe in ipairs(self.keyframes) do
