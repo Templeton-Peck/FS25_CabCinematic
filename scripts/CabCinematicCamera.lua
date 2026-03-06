@@ -29,6 +29,8 @@ function CabCinematicCamera.new(vehicle)
   self.cameraRoll = 0;
 
   g_cameraManager:addCamera(self.cameraNode, nil, false)
+  g_messageCenter:subscribe(MessageType.SETTING_CHANGED[GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON], CabCinematicCamera.onFovYSettingChanged, self)
+
   return self
 end
 
@@ -37,6 +39,7 @@ function CabCinematicCamera:delete()
   unlink(self.cameraNode)
 
   g_cameraManager:removeCamera(self.cameraNode)
+  g_messageCenter:unsubscribeAll(self)
 
   self.cameraNode = nil
   self.cameraX = 0;
@@ -96,14 +99,6 @@ function CabCinematicCamera:applyPosition()
   return self
 end
 
----Syncs the cinematic camera's FOV Y value with the player's first person FOV Y setting
----@return CabCinematicCamera self for chaining
-function CabCinematicCamera:syncFovY()
-  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
-  setFovY(self.cameraNode, fovY)
-  return self
-end
-
 ---Updates the cinematic camera, applying its position and rotation to the camera node
 ---This should be called in the update loop of the vehicle to ensure the camera's position and rotation are updated every frame.
 ---@param dt number The delta time since the last update call
@@ -115,4 +110,10 @@ end
 ---Draws debug information for the cinematic camera
 function CabCinematicCamera:drawDebug()
   DebugUtil.drawDebugNode(self.cameraNode, "cameraNode")
+end
+
+--- Callback for when the player's FOV Y setting changes, to sync the cinematic camera's FOV Y value
+function CabCinematicCamera.onFovYSettingChanged(camera)
+  local fovY = g_gameSettings:getValue(GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON)
+  setFovY(camera.cameraNode, fovY)
 end

@@ -294,8 +294,9 @@ function CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(playe
     return
   end
 
-  local dirX, dirY, dirZ = localDirectionToWorld(playerCamera.cameraRootNode, 1, 0, 0)
-  local pitch, yaw = MathUtil.directionToPitchYaw(dirX, dirY, dirZ)
+  local dirX, dirY, dirZ = localDirectionToWorld(playerCamera.cameraRootNode, 0, 0, 1)
+  local lX, lY, lZ = worldDirectionToLocal(getParent(vehicleCamera.rotateNode), dirX, dirY, dirZ)
+  local pitch, yaw = MathUtil.directionToPitchYaw(lX, lY, lZ)
 
   vehicleCamera.rotX = pitch
   vehicleCamera.rotY = yaw
