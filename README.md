@@ -76,10 +76,10 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [x] Fix animation for large tractors which use tracks
 - [x] Cinematic pause keybind (`left shift` by default)
 - [x] Improve enter/interact trigger detection (currently too restrictive)
+- [x] Other bugs fixing
 - [ ] Try/Fix vehicle without physical cab
 - [ ] Fix camera clipping right after leaving vehicle
 - [ ] Animations accuracy improvements
-- [ ] Other bugs fixing
 
 ### V1
 
