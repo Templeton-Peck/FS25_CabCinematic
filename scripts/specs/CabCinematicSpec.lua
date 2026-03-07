@@ -24,6 +24,7 @@ function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematicSpec.onPlayerActionInputLeave)
 
   -- Noop overwriting
+  Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch, CabCinematicSpec.ignoreWhenActive)
   Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematicSpec.ignoreWhenActive)
   Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematicSpec.ignoreWhenActive)
 end
@@ -198,7 +199,7 @@ end
 ---@param superFunc function The original onInputEnter function
 ---@param ... any additional arguments
 function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFunc, ...)
-  local vehicle = g_currentMission.interactiveVehicleInRange
+  local vehicle = playerInputComponent.player.targetedVehicle
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(playerInputComponent, ...)

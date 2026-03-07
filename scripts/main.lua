@@ -5,7 +5,7 @@ CabCinematic:addSpecialization("cabCinematic", function(specializations)
 end)
 
 function CabCinematic:startMission()
-  g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE)
+  g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematicUtil.VEHICLE_TARGET_DISTANCE)
   g_localPlayer.targeter:addFilterToTargetType(CabCinematic, function(hitNode)
     if hitNode ~= nil and hitNode ~= 0 and CollisionFlag.getHasGroupFlagSet(hitNode, CollisionFlag.VEHICLE) then
       local vehicle = g_currentMission:getNodeObject(hitNode)
@@ -18,6 +18,7 @@ function CabCinematic:startMission()
 
         g_currentMission.interactiveVehicleInRange = vehicle
         g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_ENTERABLE
+        g_localPlayer.targetedVehicle = vehicle
       end
     end
 
@@ -26,7 +27,7 @@ function CabCinematic:startMission()
 end
 
 function CabCinematic:draw()
-  local vehicle = g_currentMission.interactiveVehicleInRange
+  local vehicle = g_localPlayer.targetedVehicle
   if vehicle ~= nil and vehicle.drawCabCinematicDebug ~= nil then
     vehicle:drawCabCinematicDebug()
   end
@@ -34,3 +35,14 @@ end
 
 function CabCinematic:delete()
 end
+
+function CabCinematic.makeCurrentPlayerCamera(playerCamera, superFunc, ...)
+  local vehicle = playerCamera.player:getCurrentVehicle()
+  if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil and vehicle:getIsCabCinematicAnimationOngoing() then
+    return
+  end
+
+  return superFunc(playerCamera, ...)
+end
+
+PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, CabCinematic.makeCurrentPlayerCamera)
