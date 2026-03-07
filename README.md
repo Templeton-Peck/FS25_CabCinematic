@@ -38,7 +38,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ⬜ Skid Steers
 - Telehandlers
   - ✅ Standards
-  - 🟨 Moving cabs
+  - ✅ Moving cabs
 - Sprayers
   - ⬜ Standards
 - Forestry

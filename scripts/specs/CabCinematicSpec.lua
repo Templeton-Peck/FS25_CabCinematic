@@ -10,6 +10,7 @@ function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getIndoorCamera", CabCinematicSpec.getIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "setIndoorCameraActive", CabCinematicSpec.setIndoorCameraActive)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures", CabCinematicSpec.getCabCinematicFeatures)
+  SpecializationUtil.registerFunction(vehicleType, "invalidateCabCinematicFeaturesCache", CabCinematicSpec.invalidateCabCinematicFeaturesCache)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicAnimationOngoing", CabCinematicSpec.getIsCabCinematicAnimationOngoing)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPrerequisiteAnimation", CabCinematicSpec.getCabCinematicPrerequisiteAnimation)
   SpecializationUtil.registerFunction(vehicleType, "drawCabCinematicDebug", CabCinematicSpec.drawCabCinematicDebug)
@@ -27,6 +28,9 @@ function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   Enterable.actionEventCameraSwitch = Utils.overwrittenFunction(Enterable.actionEventCameraSwitch, CabCinematicSpec.ignoreWhenActive)
   Combine.onEnterVehicle = Utils.overwrittenFunction(Combine.onEnterVehicle, CabCinematicSpec.ignoreWhenActive)
   Combine.onLeaveVehicle = Utils.overwrittenFunction(Combine.onLeaveVehicle, CabCinematicSpec.ignoreWhenActive)
+  Foldable.actionEventFold = Utils.overwrittenFunction(Foldable.actionEventFold, CabCinematicSpec.ignoreWhenActive)
+  Foldable.actionEventFoldMiddle = Utils.overwrittenFunction(Foldable.actionEventFoldMiddle, CabCinematicSpec.ignoreWhenActive)
+  Foldable.actionEventFoldAll = Utils.overwrittenFunction(Foldable.actionEventFoldAll, CabCinematicSpec.ignoreWhenActive)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
@@ -221,12 +225,16 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
     end
 
     local prerequisiteAnimation = vehicle:getCabCinematicPrerequisiteAnimation()
-    if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
-      if not prerequisiteAnimation.getIsPlaying() then
-        prerequisiteAnimation.play()
+    if prerequisiteAnimation ~= nil then
+      if not prerequisiteAnimation.getIsFinished() then
+        if not prerequisiteAnimation.getIsPlaying() then
+          prerequisiteAnimation.play()
+        end
+
+        return
       end
 
-      return
+      vehicle:invalidateCabCinematicFeaturesCache()
     end
 
     spec.allowStartAnimation = true
@@ -257,12 +265,16 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
     end
 
     local prerequisiteAnimation = vehicle:getCabCinematicPrerequisiteAnimation()
-    if prerequisiteAnimation ~= nil and not prerequisiteAnimation.getIsFinished() then
-      if not prerequisiteAnimation.getIsPlaying() then
-        prerequisiteAnimation.play()
+    if prerequisiteAnimation ~= nil then
+      if not prerequisiteAnimation.getIsFinished() then
+        if not prerequisiteAnimation.getIsPlaying() then
+          prerequisiteAnimation.play()
+        end
+
+        return
       end
 
-      return
+      vehicle:invalidateCabCinematicFeaturesCache()
     end
 
     spec.allowStartAnimation = true
@@ -388,10 +400,9 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 end
 
 ---Get analyzed vehicle features, using cached value if available unless force is true
----@param force boolean|nil Whether to force re-analyzing or not (default: false)
 ---@return table|nil features
-function CabCinematicSpec:getCabCinematicFeatures(force)
-  if not force and self.spec_cabCinematic.features ~= nil then
+function CabCinematicSpec:getCabCinematicFeatures()
+  if self.spec_cabCinematic.features ~= nil then
     return self.spec_cabCinematic.features
   end
 
@@ -401,6 +412,11 @@ function CabCinematicSpec:getCabCinematicFeatures(force)
   end
 
   return nil
+end
+
+---Invalidates the cached vehicle features, forcing them to be re-analyzed when next requested
+function CabCinematicSpec:invalidateCabCinematicFeaturesCache()
+  self.spec_cabCinematic.features = nil
 end
 
 ---Tells whether a cinematic animation is currently ongoing
