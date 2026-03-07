@@ -52,31 +52,17 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ⬜ Bikes
   - ⬜ Others
 
+## Known bugs
+
+- Modifying a vehicle in the might crash the game
+- Conflict with mod FS25_MoreVisualAnimals (No enter animation)
+- Camera clipping after leaving a vehicle
+- Entering a train/locomotive might crash the game
+
 ## TODO
 
 ### BETA
 
-- [x] Enter/leave cinematics game hook
-- [x] Cinematic system with keyframes
-- [x] FOV standardization across cameras
-- [x] Allow free camera movement during cinematics
-- [x] Fix cinematics with moving vehicles
-- [x] Cinematic skipping keybind (`left alt` by default)
-- [x] Third-person camera fix
-- [x] Tab-switching fix
-- [x] Handle combine ladder animations properly
-- [x] Add view bobbing to cinematics
-- [x] Improve animation accuracy using vehicle nodes
-- [x] Implement vehicle freezing during cinematics
-- [x] Better seat animations
-- [x] Minor fovY bug fix
-- [x] Fix camera switching
-- [x] Minor bug fix with ladders
-- [x] Improve old tractors which use narrow doors
-- [x] Fix animation for large tractors which use tracks
-- [x] Cinematic pause keybind (`left shift` by default)
-- [x] Improve enter/interact trigger detection (currently too restrictive)
-- [x] Other bugs fixing
 - [ ] Try/Fix vehicle without physical cab
 - [ ] Fix camera clipping right after leaving vehicle
 - [ ] Animations accuracy improvements
@@ -93,6 +79,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 - [ ] Multiplayer support (requires help and testing)
 - [ ] Track IR support
 - [ ] Full Interactive Control (IC) support
+- [ ] Passenger mode support
 
 ### V2
 
