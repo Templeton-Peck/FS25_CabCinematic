@@ -98,6 +98,11 @@ function CabCinematicAnimation:onEnd(callback)
   return self
 end
 
+function CabCinematicAnimation:stop()
+  self.state = CabCinematicAnimation.STATES.BEFORE_END
+  return self
+end
+
 ---Pauses the animation if it's currently started
 ---@return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:pause()
@@ -164,7 +169,6 @@ function CabCinematicAnimation:tick(dt)
 
   local currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
   if currentKeyFrame == nil then
-    Log:info("No current keyframe found at index %d, total keyframes: %d", self.currentKeyFrameIndex, #self.keyframes)
     return true
   end
 
@@ -178,8 +182,10 @@ function CabCinematicAnimation:tick(dt)
   local keyframeTime = self.timer - accumulatedDuration
   self.currentPosition = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
 
-  -- Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
-  --   self.timer, self.currentKeyFrameIndex, keyframeTime, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
+  if CabCinematic.debugLevel > 1 then
+    Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
+      self.timer, self.currentKeyFrameIndex, keyframeTime, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
+  end
 
   return self.timer >= self.duration
 end
@@ -188,18 +194,18 @@ end
 ---@param dt number Delta time since last update
 function CabCinematicAnimation:update(dt)
   if self.state == CabCinematicAnimation.STATES.IDLE then
-    self:printDebug()
+    if CabCinematic.debugLevel > 0 then
+      self:printDebug()
+    end
 
     self.callbacks.onBeforeStart(dt, self.vehicle)
     self.state = CabCinematicAnimation.STATES.BEFORE_START
-    Log:info("Animation entering BEFORE_START state")
     return
   end
 
   if self.state == CabCinematicAnimation.STATES.BEFORE_START then
     self.callbacks.onStart(dt, self.vehicle)
     self.state = CabCinematicAnimation.STATES.STARTED
-    Log:info("Animation entering STARTED state")
     return
   end
 
@@ -207,7 +213,6 @@ function CabCinematicAnimation:update(dt)
     local isFinished = self:tick(dt)
     if isFinished then
       self.state = CabCinematicAnimation.STATES.BEFORE_END
-      Log:info("Animation entering BEFORE_END state")
     end
 
     return
@@ -220,14 +225,12 @@ function CabCinematicAnimation:update(dt)
   if self.state == CabCinematicAnimation.STATES.BEFORE_END then
     self.callbacks.onBeforeEnd(dt, self.vehicle)
     self.state = CabCinematicAnimation.STATES.ENDED
-    Log:info("Animation entering ENDED state")
     return
   end
 
   if self.state == CabCinematicAnimation.STATES.ENDED then
     self.callbacks.onEnd(dt, self.vehicle)
     self.state = CabCinematicAnimation.STATES.STALE
-    Log:info("Animation entering STALE state")
     return
   end
 end

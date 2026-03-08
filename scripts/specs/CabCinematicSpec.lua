@@ -34,24 +34,34 @@ function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
 end
 
 function CabCinematicSpec.registerEventListeners(vehicleType)
+  SpecializationUtil.registerEventListener(vehicleType, "onPreLoad", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onLoad", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onDelete", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onUpdate", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onDraw", CabCinematicSpec)
+  SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", CabCinematicSpec)
 end
 
----Initializes the spec when the vehicle is loaded
-function CabCinematicSpec:onLoad()
+---Initializes the spec when the vehicle is pre loading
+function CabCinematicSpec:onPreLoad()
   local spec               = {}
   spec.actionEvents        = {}
-  spec.camera              = CabCinematicCamera.new(self)
-  spec.vehicleAnalyzer     = CabCinematicVehicleAnalyzer.new(self)
+  spec.camera              = nil
+  spec.vehicleAnalyzer     = nil
   spec.storeCategory       = nil
   spec.indoorCamera        = nil
   spec.features            = nil
   spec.animation           = nil
   spec.allowStartAnimation = false
+  spec.lastInteractionTime = -1
   self.spec_cabCinematic   = spec
+end
+
+---Initializes the spec when the vehicle is loaded
+function CabCinematicSpec:onLoad()
+  local spec           = self.spec_cabCinematic
+  spec.camera          = CabCinematicCamera.new(self)
+  spec.vehicleAnalyzer = CabCinematicVehicleAnalyzer.new(self)
 
   g_messageCenter:subscribe(MessageType.SETTING_CHANGED[GameSettings.SETTING.FOV_Y], CabCinematicSpec.onFovYSettingChanged, self)
   g_messageCenter:subscribe(MessageType.SETTING_CHANGED[GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON], CabCinematicSpec.onFovYSettingChanged, self)
@@ -62,9 +72,6 @@ end
 ---Deletes the spec and its resources when the vehicle is deleted
 function CabCinematicSpec:onDelete()
   local spec = self.spec_cabCinematic
-  if spec == nil then
-    return
-  end
 
   g_messageCenter:unsubscribeAll(self)
   self:clearActionEventsTable(spec.actionEvents)
@@ -86,6 +93,8 @@ function CabCinematicSpec:onDelete()
   spec.indoorCamera = nil
   spec.features = nil
   spec.animation = nil
+  spec.allowStartAnimation = nil
+  spec.lastInteractionTime = nil
 end
 
 ---Updates the cab cinematic animation and camera if an animation is ongoing
@@ -121,6 +130,19 @@ end
 function CabCinematicSpec:onDraw()
   if CabCinematic.debugLevel > 0 then
     self:drawCabCinematicDebug()
+  end
+end
+
+function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
+  if self.isClient then
+    local spec = self.spec_cabCinematic
+    self:clearActionEventsTable(spec.actionEvents)
+
+    if isActiveForInputIgnoreSelection then
+      local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.CAB_CINEMATIC_PAUSE, self, CabCinematicSpec.onPlayerPauseCabCinematic, true, true, false, false, nil)
+      g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_NORMAL)
+      g_inputBinding:setActionEventTextVisibility(actionEventId, false)
+    end
   end
 end
 
@@ -192,6 +214,7 @@ function CabCinematicSpec:setIndoorCameraActive()
   end
 end
 
+---Overrides base method to ignore call when cinematic animation is ongoing
 function CabCinematicSpec.ignoreWhenActive(vehicle, superFunc, ...)
   if vehicle:getIsCabCinematicAnimationOngoing() then
     return
@@ -207,6 +230,8 @@ end
 function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFunc, ...)
   local vehicle = playerInputComponent.player.targetedVehicle
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
+    local spec = vehicle.spec_cabCinematic
+
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(playerInputComponent, ...)
     end
@@ -214,8 +239,6 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
     if vehicle:getIsCabCinematicAnimationOngoing() then
       return
     end
-
-    local spec = vehicle.spec_cabCinematic
 
     if not CabCinematicUtil.isOnFootPlayerInFirstPerson(playerInputComponent.player) then
       spec.allowStartAnimation = false
@@ -239,6 +262,7 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
       vehicle:invalidateCabCinematicFeaturesCache()
     end
 
+    spec.lastInteractionTime = g_time
     spec.allowStartAnimation = true
   end
 
@@ -251,15 +275,18 @@ end
 ---@param ... any additional arguments
 function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
   if vehicle.spec_cabCinematic ~= nil then
+    local spec = vehicle.spec_cabCinematic
+
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(vehicle, ...)
     end
 
     if vehicle:getIsCabCinematicAnimationOngoing() then
+      if g_time - spec.lastInteractionTime > 300 then
+        spec.animation:stop()
+      end
       return
     end
-
-    local spec = vehicle.spec_cabCinematic
 
     if not CabCinematicUtil.isVehicleInFirstPerson(vehicle) then
       spec.allowStartAnimation = false
@@ -279,6 +306,7 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
       vehicle:invalidateCabCinematicFeaturesCache()
     end
 
+    spec.lastInteractionTime = g_time
     spec.allowStartAnimation = true
   end
 
@@ -317,6 +345,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
     vehicle:setIndoorCameraActive()
     vehicle.spec_cabCinematic.camera:activate()
+    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, true)
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
@@ -329,6 +358,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   animation:onEnd(function()
     vehicle:setIndoorCameraActive()
+    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, false)
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:restoreVehicleCharacter()
@@ -372,6 +402,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
     vehicle.spec_cabCinematic.camera:setPosition(unpack(animation.currentPosition))
     vehicle.spec_cabCinematic.camera:activate()
+    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, true)
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
@@ -388,7 +419,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
     end
 
     player.camera:switchToPerspective(true)
-
+    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, false)
 
     superFunc(vehicle, unpack(args))
 
@@ -399,6 +430,19 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
+end
+
+---Callback used to toggle cab cinematic pause state when the corresponding input is triggered
+---@param vehicle table The vehicle instance
+function CabCinematicSpec.onPlayerPauseCabCinematic(vehicle, actionName, inputValue, callbackState, isAnalog)
+  if vehicle:getIsCabCinematicAnimationOngoing() then
+    local animation = vehicle.spec_cabCinematic.animation
+    if inputValue == 0 then
+      animation:resume()
+    else
+      animation:pause()
+    end
+  end
 end
 
 ---Get analyzed vehicle features, using cached value if available unless force is true

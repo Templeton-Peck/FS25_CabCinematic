@@ -7,12 +7,14 @@
     <en>Cab Cinematic</en>
     <fr>Cab Cinematic</fr>
     <de>Cab Cinematic</de>
+    <it>Cinematica Cabina</it>
   </title>
 
   <description>
     <en>TODO</en>
     <fr>TODO</fr>
     <de>TODO</de>
+    <it>TODO</it>
   </description>
 
   <iconFilename>icon.dds</iconFilename>
@@ -21,14 +23,10 @@
 
   <actions>
     <action name="CAB_CINEMATIC_PAUSE" category="VEHICLE" />
-    <action name="CAB_CINEMATIC_SKIP" category="VEHICLE" />
   </actions>
 
   <inputBinding>
     <actionBinding action="CAB_CINEMATIC_PAUSE">
-      <binding device="KB_MOUSE_DEFAULT" input="KEY_lshift" />
-    </actionBinding>
-    <actionBinding action="CAB_CINEMATIC_SKIP">
       <binding device="KB_MOUSE_DEFAULT" input="KEY_lalt" />
     </actionBinding>
   </inputBinding>

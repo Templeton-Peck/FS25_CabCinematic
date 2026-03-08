@@ -54,10 +54,13 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 
 ## Known bugs
 
-- Modifying a vehicle in the might crash the game
 - Conflict with mod FS25_MoreVisualAnimals (No enter animation)
 - Camera clipping after leaving a vehicle
-- Entering a train/locomotive might crash the game
+
+## Key bindings
+
+- `Skip current animation` : Press enter/leave vehicle key to skip the current animation and immediately switch to the vehicle.
+- `Pause/Resume cab cinematic` : Maintain `left alt` to pause/resume the cab cinematic animation when it’s active.
 
 ## TODO
 

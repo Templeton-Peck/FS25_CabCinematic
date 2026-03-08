@@ -466,8 +466,6 @@ function CabCinematicAnimationKeyframe.build(vehicle, reverse)
 
   local storeCategory = vehicle:getStoreCategory()
 
-  Log:info("Building keyframes for vehicle %s of storeCategory '%s'", vehicle.typeName, storeCategory)
-
   local enterPosition = vehicleFeatures.positions.enter
   local doorPosition = vehicleFeatures.positions.leftDoor
   local standupPosition = vehicleFeatures.positions.standup
@@ -491,7 +489,6 @@ function CabCinematicAnimationKeyframe.build(vehicle, reverse)
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
     keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
-    Log:info("No specific keyframe builder found for vehicle storeCategory '%s', using default keyframes", storeCategory)
     table.insert(keyframes, CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
       enterPosition,
