@@ -43,7 +43,8 @@ CabCinematicAnimationKeyframe.VIEW_BOBBING = {
 local KEYFRAME_OFFSETS = {
   LADDER_SLOPE = 0.8,
   STAIRS_SLOPE = 1.0,
-  WHEEL_SAFE_DISTANCE = 1.0,
+  WHEEL_SIDEWALL_SAFE_DISTANCE = 1.0,
+  WHEEL_TREAD_SAFE_DISTANCE = 0.75,
   DOOR_SAFE_DISTANCE = 0.35,
 }
 
@@ -161,15 +162,13 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
   if vehicleFeatures.flags.isEntryFromCabSideCenter then
     local keyframes = {}
     local enterWheel = vehicleFeatures.positions.enterWheel
-    local leftDoor = vehicleFeatures.positions.leftDoor
-    local isEnterFarFromWheel = enterWheel ~= nil and
-        math.abs(enterPosition[1] - enterWheel[1]) > KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE
+    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[1] - enterWheel[1]) > KEYFRAME_OFFSETS.WHEEL_SIDEWALL_SAFE_DISTANCE
 
     local ladderBottom = {}
 
     if isEnterFarFromWheel then
       ladderBottom = {
-        enterWheel[1] + KEYFRAME_OFFSETS.WHEEL_SAFE_DISTANCE,
+        enterWheel[1] + KEYFRAME_OFFSETS.WHEEL_SIDEWALL_SAFE_DISTANCE,
         enterPosition[2],
         enterPosition[3]
       }
@@ -189,7 +188,7 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
 
     local ladderTop = {
       ladderBottom[1] - KEYFRAME_OFFSETS.LADDER_SLOPE,
-      leftDoor[2],
+      doorPosition[2],
       ladderBottom[3]
     }
 
@@ -202,6 +201,64 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
     table.insert(keyframes, CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.WALK,
       ladderTop,
+      doorPosition
+    ))
+
+    return keyframes
+  elseif vehicleFeatures.flags.isEntryFromCabSideRear then
+    local keyframes = {}
+    local enterWheel = vehicleFeatures.positions.enterWheel
+    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[3] - enterWheel[3]) > KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE
+
+    local ladderBottom = {}
+
+    if isEnterFarFromWheel then
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterWheel[3] - KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE,
+      }
+
+      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        enterPosition,
+        ladderBottom
+      ))
+    else
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterPosition[3]
+      }
+    end
+
+    local ladderTop = {
+      ladderBottom[1],
+      doorPosition[2],
+      ladderBottom[3] + KEYFRAME_OFFSETS.LADDER_SLOPE
+    }
+
+    local doorCross = {
+      ladderTop[1],
+      doorPosition[2],
+      doorPosition[3],
+    }
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      ladderBottom,
+      ladderTop
+    ))
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.WALK,
+      ladderTop,
+      doorCross
+    ))
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.WALK,
+      doorCross,
       doorPosition
     ))
 
