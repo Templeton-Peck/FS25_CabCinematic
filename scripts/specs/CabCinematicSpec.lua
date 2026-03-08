@@ -119,7 +119,9 @@ end
 
 ---Draws debug information for the cab cinematic
 function CabCinematicSpec:onDraw()
-  self:drawCabCinematicDebug()
+  if CabCinematic.debugLevel > 0 then
+    self:drawCabCinematicDebug()
+  end
 end
 
 ---Get vehicle store category (in lowercase), or "unknown" if it cannot be determined
@@ -503,8 +505,11 @@ function CabCinematicSpec:drawCabCinematicDebug()
   if features ~= nil then
     CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
     CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
-    -- CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
-    -- CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
+
+    if CabCinematic.debugLevel > 1 then
+      CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
+      CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
+    end
 
     local x, y = 0.01, 0.5
     local alphaSortedFlags = {}

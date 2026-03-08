@@ -95,20 +95,18 @@ A big thank-you to **w33zl** (https://github.com/w33zl) for all the open-source 
 
 Following console commands are for testing and debugging purposes.
 
-- `ccPauseAnimation` : Pause the current cab cinematic animation.
-- `ccSkipAnimation` : Skip animation when entering or exiting a vehicle.
 - `ccDebug` : Draw debug gizmos and lines for animation and vehicle.
 
 ### Frequently asked questions (FAQ)
 
 > **Why are the animations not working for my vehicle?**  
-> *The mod relies on specific vehicle properties to create accurate animations. If a vehicle lacks these properties or has unique configurations, the animations may not function correctly. Please report such vehicles for further investigation.*
+> *The mod relies on specific vehicle properties to create accurate animations. If a vehicle lacks these properties or has unique configurations, the animations may not work correctly. Please report such vehicles for further investigation.*
 
 > **Doors won't open/close during animations. Why?**  
 > *The mod is not designed to provide door animations. To enable door interaction, you’ll need to install the Interactive Control (IC) mod. I’m planning to fully integrate the IC mod for certain vehicles, such as combines, where you’ll need to climb a ladder to access and open the door.*
 
 > **The vehicle camera FOV setting seem to be ignored. Why?**  
-> *The mod enforces a consistent FOV for vehicle cameras to ensure a smooth cinematic experience. If you want to adjust the FOV, change the "First Person FOV" option in the game settings.*
+> *The mod enforces a consistent FOV for vehicle indoor cameras to ensure a smooth cinematic experience. If you want to adjust the FOV, change the "First Person FOV" option in the game settings.*
 
 > **I can't enter vehicle sometimes. Why?**  
 > *The mod assumes the player is positioned near the vehicle’s entry point to maintain realistic behavior. If you are too far away, standing behind the vehicle, or on the opposite side, entering the vehicle won't be possible.*

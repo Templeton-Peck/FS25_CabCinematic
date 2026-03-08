@@ -1,8 +1,14 @@
-CabCinematic = Mod:init({})
+CabCinematic = Mod:init({
+  debugLevel = 0,
+})
 
 CabCinematic:addSpecialization("cabCinematic", function(specializations)
   return SpecializationUtil.hasSpecialization(Enterable, specializations)
 end)
+
+function CabCinematic:beforeLoadMap()
+  addConsoleCommand("ccDebug", "Toggle cab cinematic debug and set level (default: 1)", "onDebugConsoleCommand", self)
+end
 
 function CabCinematic:startMission()
   g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematicUtil.VEHICLE_TARGET_DISTANCE)
@@ -27,22 +33,27 @@ function CabCinematic:startMission()
 end
 
 function CabCinematic:draw()
-  local vehicle = g_localPlayer.targetedVehicle
-  if vehicle ~= nil and vehicle.drawCabCinematicDebug ~= nil then
-    vehicle:drawCabCinematicDebug()
+  if self.debugLevel > 0 then
+    local vehicle = g_localPlayer.targetedVehicle
+    if vehicle ~= nil and vehicle.drawCabCinematicDebug ~= nil then
+      vehicle:drawCabCinematicDebug()
+    end
   end
 end
 
 function CabCinematic:delete()
+  removeConsoleCommand("ccDebug")
 end
 
-function CabCinematic.makeCurrentPlayerCamera(playerCamera, superFunc, ...)
+function CabCinematic:onDebugConsoleCommand(level)
+  self.debugLevel = level and tonumber(level) or 1
+end
+
+PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, function(playerCamera, superFunc, ...)
   local vehicle = playerCamera.player:getCurrentVehicle()
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil and vehicle:getIsCabCinematicAnimationOngoing() then
     return
   end
 
   return superFunc(playerCamera, ...)
-end
-
-PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, CabCinematic.makeCurrentPlayerCamera)
+end)
