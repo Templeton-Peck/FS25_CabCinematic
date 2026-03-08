@@ -52,6 +52,7 @@ function CabCinematicSpec:onPreLoad()
   spec.indoorCamera        = nil
   spec.features            = nil
   spec.animation           = nil
+  spec.debugAnimation      = nil
   spec.allowStartAnimation = false
   spec.lastInteractionTime = -1
   self.spec_cabCinematic   = spec
@@ -88,11 +89,16 @@ function CabCinematicSpec:onDelete()
     spec.animation:delete()
   end
 
+  if spec.debugAnimation ~= nil then
+    spec.debugAnimation:delete()
+  end
+
   spec.camera = nil
   spec.storeCategory = nil
   spec.indoorCamera = nil
   spec.features = nil
   spec.animation = nil
+  spec.debugAnimation = nil
   spec.allowStartAnimation = nil
   spec.lastInteractionTime = nil
 end
@@ -372,6 +378,11 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
+  if CabCinematic.debugLevel > 0 then
+    local debugKeyframes = CabCinematicAnimationKeyframe.build(vehicle, false)
+    debugKeyframes = CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(debugKeyframes, playerPosition)
+    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, debugKeyframes)
+  end
 
   superFunc(vehicle, unpack(args))
 end
@@ -430,6 +441,10 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
+  if CabCinematic.debugLevel > 0 then
+    local debugKeyframes = CabCinematicAnimationKeyframe.build(vehicle, true)
+    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, debugKeyframes)
+  end
 end
 
 ---Callback used to toggle cab cinematic pause state when the corresponding input is triggered
@@ -567,8 +582,9 @@ function CabCinematicSpec:drawCabCinematicDebug()
     end
   end
 
-  if self.spec_cabCinematic.animation ~= nil then
-    self.spec_cabCinematic.animation:drawDebug()
+  local animation = self.spec_cabCinematic.debugAnimation or self.spec_cabCinematic.animation
+  if animation ~= nil then
+    animation:drawDebug()
   end
 
   if self.spec_cabCinematic.camera ~= nil then
