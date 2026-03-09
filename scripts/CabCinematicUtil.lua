@@ -15,6 +15,7 @@ CabCinematicUtil = {
     FRONTLOADERS = 'frontloadervehicles',
     WHEELLOADERS = 'wheelloadervehicles',
     FORKLIFTS = 'forklifts',
+    SPRAYERS = 'sprayers',
   },
 }
 

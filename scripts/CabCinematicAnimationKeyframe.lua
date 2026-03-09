@@ -511,6 +511,130 @@ local function buildTeleloadersKeyframes(enterPosition, doorPosition, storeCateg
   }
 end
 
+local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  local keyframes = {}
+
+  if vehicleFeatures.flags.isEntryFromCabSide then
+    local enterWheel = vehicleFeatures.positions.enterWheel
+    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[1] - enterWheel[1]) > KEYFRAME_OFFSETS.WHEEL_SIDEWALL_SAFE_DISTANCE
+    local ladderBottom = {}
+
+    if isEnterFarFromWheel then
+      ladderBottom = {
+        enterWheel[1] + KEYFRAME_OFFSETS.WHEEL_SIDEWALL_SAFE_DISTANCE,
+        enterPosition[2],
+        enterPosition[3]
+      }
+
+      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        enterPosition,
+        ladderBottom
+      ))
+    else
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterPosition[3]
+      }
+    end
+
+    local ladderTop = {
+      ladderBottom[1] - KEYFRAME_OFFSETS.LADDER_SLOPE,
+      doorPosition[2],
+      ladderBottom[3]
+    }
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      ladderBottom,
+      ladderTop
+    ))
+
+    if vehicleFeatures.flags.isEntryFromCabSideRear then
+      local doorCross = {
+        doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
+        doorPosition[2],
+        doorPosition[3]
+      }
+
+      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        ladderTop,
+        doorCross
+      ))
+
+      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        doorCross,
+        doorPosition
+      ))
+    elseif vehicleFeatures.flags.isEntryFromCabSideCenter then
+      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        ladderTop,
+        doorPosition
+      ))
+    end
+  elseif vehicleFeatures.flags.isEntryFromCabFront then
+    local enterWheel = vehicleFeatures.positions.enterWheel
+    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[3] - enterWheel[3]) > KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE
+    local ladderBottom = {}
+
+    if isEnterFarFromWheel then
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterWheel[3] + KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE,
+      }
+
+      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+        CabCinematicAnimationKeyframe.TYPES.WALK,
+        enterPosition,
+        ladderBottom
+      ))
+    else
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterPosition[3]
+      }
+    end
+
+    local ladderTop = {
+      ladderBottom[1],
+      doorPosition[2],
+      ladderBottom[3] - KEYFRAME_OFFSETS.LADDER_SLOPE
+    }
+
+    local doorCross = {
+      ladderTop[1],
+      doorPosition[2],
+      doorPosition[3],
+    }
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      ladderBottom,
+      ladderTop
+    ))
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.WALK,
+      ladderTop,
+      doorCross
+    ))
+
+    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
+      CabCinematicAnimationKeyframe.TYPES.WALK,
+      doorCross,
+      doorPosition
+    ))
+  end
+
+  return keyframes
+end
+
 ---Builds the keyframes for the given vehicle based on its storeCategory and features.
 ---@param vehicle table The vehicle to build the keyframes for.
 ---@param reverse boolean Whether to reverse the keyframes (ex: for exiting the vehicle).
@@ -545,6 +669,8 @@ function CabCinematicAnimationKeyframe.build(vehicle, reverse)
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
     keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
+    keyframes = buildSprayersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
     table.insert(keyframes, CabCinematicAnimationKeyframe.new(
       CabCinematicAnimationKeyframe.TYPES.CLIMB,
