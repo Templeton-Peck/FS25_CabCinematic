@@ -1,39 +1,39 @@
----@class CabCinematicAnimationKeyframe
+---@class CabCinematicKeyframe
 ---Describes a single animation keyframe
-CabCinematicAnimationKeyframe = {}
-local CabCinematicAnimationKeyframe_mt = Class(CabCinematicAnimationKeyframe)
+CabCinematicKeyframe = {}
+local CabCinematicKeyframe_mt = Class(CabCinematicKeyframe)
 
-CabCinematicAnimationKeyframe.TYPES = {
+CabCinematicKeyframe.TYPES = {
   WALK = "walk",
   RUN = "run",
   CLIMB = "climb",
   SEAT = "seat",
 }
 
-CabCinematicAnimationKeyframe.SPEEDS = {
-  [CabCinematicAnimationKeyframe.TYPES.WALK]  = 1.5,
-  [CabCinematicAnimationKeyframe.TYPES.RUN]   = 2.25,
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = 0.95,
-  [CabCinematicAnimationKeyframe.TYPES.SEAT]  = 0.85,
+CabCinematicKeyframe.SPEEDS = {
+  [CabCinematicKeyframe.TYPES.WALK]  = 1.5,
+  [CabCinematicKeyframe.TYPES.RUN]   = 2.25,
+  [CabCinematicKeyframe.TYPES.CLIMB] = 0.95,
+  [CabCinematicKeyframe.TYPES.SEAT]  = 0.85,
 }
 
-CabCinematicAnimationKeyframe.VIEW_BOBBING = {
-  [CabCinematicAnimationKeyframe.TYPES.WALK] = {
+CabCinematicKeyframe.VIEW_BOBBING = {
+  [CabCinematicKeyframe.TYPES.WALK] = {
     verticalAmplitude = 0.01,
     horizontalAmplitude = 0.01,
     frequency = 1.5,
   },
-  [CabCinematicAnimationKeyframe.TYPES.RUN] = {
+  [CabCinematicKeyframe.TYPES.RUN] = {
     verticalAmplitude = 0.03,
     horizontalAmplitude = 0.03,
     frequency = 2.5,
   },
-  [CabCinematicAnimationKeyframe.TYPES.CLIMB] = {
+  [CabCinematicKeyframe.TYPES.CLIMB] = {
     verticalAmplitude = 0.045,
     horizontalAmplitude = 0.02,
     frequency = 2.25,
   },
-  [CabCinematicAnimationKeyframe.TYPES.SEAT] = {
+  [CabCinematicKeyframe.TYPES.SEAT] = {
     verticalAmplitude = 0.035,
     horizontalAmplitude = 0.015,
     frequency = 2.0,
@@ -52,20 +52,20 @@ local KEYFRAME_OFFSETS = {
 ---@param type string The type of the keyframe (ex: walk, climb, etc).
 ---@param startPosition table The starting position of the keyframe.
 ---@param endPosition table The ending position of the keyframe.
----@return table CabCinematicAnimationKeyframe The created keyframe instance.
-function CabCinematicAnimationKeyframe.new(type, startPosition, endPosition)
-  local self = setmetatable({}, CabCinematicAnimationKeyframe_mt)
+---@return table CabCinematicKeyframe The created keyframe instance.
+function CabCinematicKeyframe.new(type, startPosition, endPosition)
+  local self = setmetatable({}, CabCinematicKeyframe_mt)
   self.type = type
   self.startPosition = startPosition
   self.endPosition = endPosition
-  self.speed = CabCinematicAnimationKeyframe.SPEEDS[type]
-  self.bobbingConfig = CabCinematicAnimationKeyframe.VIEW_BOBBING[type]
+  self.speed = CabCinematicKeyframe.SPEEDS[type]
+  self.bobbingConfig = CabCinematicKeyframe.VIEW_BOBBING[type]
   self.distance = MathUtil.vector3Length(endPosition[1] - startPosition[1], endPosition[2] - startPosition[2], endPosition[3] - startPosition[3])
   return self
 end
 
 ---Deletes the keyframe and its resources
-function CabCinematicAnimationKeyframe:delete()
+function CabCinematicKeyframe:delete()
   self.type = nil
   self.startPosition = nil
   self.endPosition = nil
@@ -76,7 +76,7 @@ end
 
 ---Gets the duration of the keyframe based on its distance and speed.
 ---@return number duration The duration of the keyframe in seconds.
-function CabCinematicAnimationKeyframe:getDuration()
+function CabCinematicKeyframe:getDuration()
   return self.distance / self.speed
 end
 
@@ -85,7 +85,7 @@ end
 ---@return number horizontalOffset The horizontal offset to apply to the camera.
 ---@return number verticalOffset The vertical offset to apply to the camera.
 ---@return number depthOffset The depth offset to apply to the camera.
-function CabCinematicAnimationKeyframe:getViewBobbingOffset(t)
+function CabCinematicKeyframe:getViewBobbingOffset(t)
   if self.distance == 0 then
     return 0, 0, 0
   end
@@ -107,7 +107,7 @@ end
 ---Calculates the interpolated position along the keyframe's path at time t, including view bobbing offsets.
 ---@param t number The time along the keyframe's duration to calculate the position for.
 ---@return table The interpolated position at time t.
-function CabCinematicAnimationKeyframe:getInterpolatedPositionAtTime(t)
+function CabCinematicKeyframe:getInterpolatedPositionAtTime(t)
   if self.distance == 0 then
     return { 0, 0, 0 }
   end
@@ -126,7 +126,7 @@ end
 
 ---Reverses the keyframe's start and end positions, effectively creating a keyframe that goes in the opposite direction.
 ---This is useful for generating exit animations from the same keyframes used for entering.
-function CabCinematicAnimationKeyframe:reverse()
+function CabCinematicKeyframe:reverse()
   local temp = self.startPosition
   self.startPosition = self.endPosition
   self.endPosition = temp
@@ -134,14 +134,14 @@ end
 
 ---Draws a debug line in the world representing the keyframe's path.
 ---@param relativeNode number The relative node to convert local positions to world positions.
-function CabCinematicAnimationKeyframe:drawDebug(relativeNode)
+function CabCinematicKeyframe:drawDebug(relativeNode)
   local startWorldPos = { localToWorld(relativeNode, unpack(self.startPosition)) }
   local endWorldPos = { localToWorld(relativeNode, unpack(self.endPosition)) }
   DebugUtil.drawDebugLine(startWorldPos[1], startWorldPos[2], startWorldPos[3], endWorldPos[1], endWorldPos[2], endWorldPos[3], 1, 0, 0, 0.5)
 end
 
 ---Prints the keyframe's details for debugging purposes.
-function CabCinematicAnimationKeyframe:printDebug()
+function CabCinematicKeyframe:printDebug()
   Log:info(
     "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
     self.type,
@@ -173,8 +173,8 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
         enterPosition[3]
       }
 
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ))
@@ -192,14 +192,14 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
       ladderBottom[3]
     }
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       ladderBottom,
       ladderTop
     ))
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.WALK,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
       ladderTop,
       doorPosition
     ))
@@ -219,8 +219,8 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
         enterWheel[3] - KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE,
       }
 
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ))
@@ -244,20 +244,20 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
       doorPosition[3],
     }
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       ladderBottom,
       ladderTop
     ))
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.WALK,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
       ladderTop,
       doorCross
     ))
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.WALK,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
       doorCross,
       doorPosition
     ))
@@ -295,26 +295,26 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCat
     }
 
     local keyframes = {
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.CLIMB,
         ladderBottom,
         ladderTop
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
         doorCross
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         doorCross,
         doorPosition
       ),
     }
 
     if (math.abs(enterPosition[1] - ladderBottom[1]) > 0) then
-      table.insert(keyframes, 1, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, 1, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ))
@@ -335,18 +335,18 @@ local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCat
     }
 
     local keyframes = {
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.CLIMB,
         ladderBottom,
         ladderTop
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
         doorPosition
       ),
@@ -391,26 +391,26 @@ local function buildForageHarvesterKeyframes(enterPosition, doorPosition, storeC
     }
 
     local keyframes = {
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderStep
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.CLIMB,
         ladderStep,
         ladderBottom
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.CLIMB,
         ladderBottom,
         ladderTop
       ),
     }
 
     if (math.abs(doorCross[3] - ladderTop[3]) > 0) then
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
         doorCross
       ))
@@ -463,23 +463,23 @@ local function buildTractorKeyframes(enterPosition, doorPosition, storeCategory,
     }
 
     return {
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.CLIMB,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.CLIMB,
         ladderBottom,
         ladderTop
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
         doorCross
       ),
-      CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         doorCross,
         doorPosition
       )
@@ -487,8 +487,8 @@ local function buildTractorKeyframes(enterPosition, doorPosition, storeCategory,
   end
 
   return {
-    CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       enterPosition,
       doorPosition
     )
@@ -503,8 +503,8 @@ end
 ---@return table keyframes The list of keyframes for the vehicle.
 local function buildTeleloadersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   return {
-    CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       enterPosition,
       doorPosition
     )
@@ -526,8 +526,8 @@ local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory
         enterPosition[3]
       }
 
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ))
@@ -545,8 +545,8 @@ local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory
       ladderBottom[3]
     }
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       ladderBottom,
       ladderTop
     ))
@@ -558,20 +558,20 @@ local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory
         doorPosition[3]
       }
 
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
         doorCross
       ))
 
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         doorCross,
         doorPosition
       ))
     elseif vehicleFeatures.flags.isEntryFromCabSideCenter then
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
         doorPosition
       ))
@@ -588,8 +588,8 @@ local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory
         enterWheel[3] + KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE,
       }
 
-      table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-        CabCinematicAnimationKeyframe.TYPES.WALK,
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
         enterPosition,
         ladderBottom
       ))
@@ -613,20 +613,20 @@ local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory
       doorPosition[3],
     }
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       ladderBottom,
       ladderTop
     ))
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.WALK,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
       ladderTop,
       doorCross
     ))
 
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.WALK,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
       doorCross,
       doorPosition
     ))
@@ -639,7 +639,7 @@ end
 ---@param vehicle table The vehicle to build the keyframes for.
 ---@param reverse boolean Whether to reverse the keyframes (ex: for exiting the vehicle).
 ---@return table keyframes The list of keyframes for the vehicle.
-function CabCinematicAnimationKeyframe.build(vehicle, reverse)
+function CabCinematicKeyframe.build(vehicle, reverse)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
   if vehicleFeatures == nil then
     return {}
@@ -672,21 +672,21 @@ function CabCinematicAnimationKeyframe.build(vehicle, reverse)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
     keyframes = buildSprayersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
-    table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-      CabCinematicAnimationKeyframe.TYPES.CLIMB,
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
       enterPosition,
       doorPosition
     ))
   end
 
-  table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-    CabCinematicAnimationKeyframe.TYPES.WALK,
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
     doorPosition,
     standupPosition
   ))
 
-  table.insert(keyframes, CabCinematicAnimationKeyframe.new(
-    CabCinematicAnimationKeyframe.TYPES.SEAT,
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.SEAT,
     standupPosition,
     seatPosition
   ))
@@ -710,7 +710,7 @@ end
 ---@param position table The starting position for the adapted keyframe.
 ---@param type string | nil The type of the adapted keyframe.
 ---@return table adaptedKeyframes The updated list of keyframes with the adapted keyframe.
-function CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, position, type)
+function CabCinematicKeyframe.adaptKeyframesFromPosition(keyframes, position, type)
   local shortestDistance = math.huge
   local shortestDistanceIndex = 1
 
@@ -727,7 +727,7 @@ function CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, pos
   end
 
   if shortestDistanceIndex > 1 then
-    local shortcutKeyframe = CabCinematicAnimationKeyframe.new(
+    local shortcutKeyframe = CabCinematicKeyframe.new(
       keyframes[shortestDistanceIndex - 1].type,
       position,
       keyframes[shortestDistanceIndex].startPosition)
@@ -741,8 +741,8 @@ function CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, pos
     return adaptedKeyframes
   end
 
-  local shortcutKeyframe = CabCinematicAnimationKeyframe.new(
-    type or CabCinematicAnimationKeyframe.TYPES.WALK,
+  local shortcutKeyframe = CabCinematicKeyframe.new(
+    type or CabCinematicKeyframe.TYPES.WALK,
     position,
     keyframes[shortestDistanceIndex].startPosition)
 

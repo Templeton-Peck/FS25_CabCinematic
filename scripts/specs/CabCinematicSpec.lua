@@ -339,8 +339,8 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
   local playerPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
-  local keyframes = CabCinematicAnimationKeyframe.build(vehicle, false)
-  local adaptedKeyframes = CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(keyframes, playerPosition)
+  local keyframes = CabCinematicKeyframe.build(vehicle, false)
+  local adaptedKeyframes = CabCinematicKeyframe.adaptKeyframesFromPosition(keyframes, playerPosition)
 
   CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(player, vehicle)
 
@@ -379,8 +379,8 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.animation = animation
   if CabCinematic.debugLevel > 0 then
-    local debugKeyframes = CabCinematicAnimationKeyframe.build(vehicle, false)
-    debugKeyframes = CabCinematicAnimationKeyframe.adaptKeyframesFromPosition(debugKeyframes, playerPosition)
+    local debugKeyframes = CabCinematicKeyframe.build(vehicle, false)
+    debugKeyframes = CabCinematicKeyframe.adaptKeyframesFromPosition(debugKeyframes, playerPosition)
     vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, debugKeyframes)
   end
 
@@ -405,7 +405,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.allowStartAnimation = false
 
-  local keyframes = CabCinematicAnimationKeyframe.build(vehicle, true)
+  local keyframes = CabCinematicKeyframe.build(vehicle, true)
   local animation = CabCinematicAnimation.new(vehicle, keyframes)
 
   animation:onBeforeStart(function()
@@ -442,7 +442,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.animation = animation
   if CabCinematic.debugLevel > 0 then
-    local debugKeyframes = CabCinematicAnimationKeyframe.build(vehicle, true)
+    local debugKeyframes = CabCinematicKeyframe.build(vehicle, true)
     vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, debugKeyframes)
   end
 end
