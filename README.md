@@ -66,7 +66,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 
 ### BETA
 
-- [ ] Try/Fix vehicle without physical cab
+- [x] Try/Fix vehicle without physical cab
 - [ ] Fix camera clipping right after leaving vehicle
 - [ ] Animations accuracy improvements
 
