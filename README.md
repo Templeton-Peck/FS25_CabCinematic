@@ -22,13 +22,13 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ✅ Sugar Beet Harvesters
   - ✅ Olive Harvesters
   - ✅ Grape Harvesters
+  - ✅ Sugarcane Harvesters
   - 🟨 Potato Harvesters
   - 🟨 Green Bean Harvesters 
   - 🟨 Spinach Harvesters
   - ⬜ Pea Harvesters
   - ⬜ Cotton Harvesters
   - ⬜ Rice Harvesters
-  - ⬜ Sugarcane Harvesters
   - ⬜ Vegetable Harvesters
   - ⬜ Beet Loaders
  - Loaders

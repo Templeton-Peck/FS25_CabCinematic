@@ -706,6 +706,68 @@ local function buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorPosition,
   return keyframes
 end
 
+local function buildSugarcaneHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  local keyframes = {}
+
+  if vehicleFeatures.flags.isEntryFromCabSide then
+    local enterWheel = vehicleFeatures.positions.enterWheel
+    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[3] - enterWheel[3]) > KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE
+    local ladderBottom = {}
+
+    if isEnterFarFromWheel then
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterWheel[3] + KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE,
+      }
+
+      table.insert(keyframes, CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.WALK,
+        enterPosition,
+        ladderBottom
+      ))
+    else
+      ladderBottom = {
+        enterPosition[1],
+        enterPosition[2],
+        enterPosition[3]
+      }
+    end
+
+    local ladderTop = {
+      ladderBottom[1] - KEYFRAME_OFFSETS.LADDER_SLOPE,
+      doorPosition[2],
+      ladderBottom[3]
+    }
+
+    local doorCross = {
+      ladderTop[1],
+      doorPosition[2],
+      doorPosition[3],
+    }
+
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
+      ladderBottom,
+      ladderTop
+    ))
+
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
+      ladderTop,
+      doorCross
+    ))
+
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.WALK,
+      doorCross,
+      doorPosition
+    ))
+  end
+
+  return keyframes
+end
+
 ---Builds the keyframes for the given vehicle based on its storeCategory and features.
 ---@param vehicle table The vehicle to build the keyframes for.
 ---@param reverse boolean Whether to reverse the keyframes (ex: for exiting the vehicle).
@@ -745,6 +807,8 @@ function CabCinematicKeyframe.build(vehicle, reverse)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAPE_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.OLIVE_HARVESTERS then
     keyframes = buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SUGARCANE_HARVESTERS then
+    keyframes = buildSugarcaneHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
     table.insert(keyframes, CabCinematicKeyframe.new(
       CabCinematicKeyframe.TYPES.CLIMB,

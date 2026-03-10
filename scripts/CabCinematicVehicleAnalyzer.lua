@@ -30,10 +30,11 @@ function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
 end
 
 ---Gets the steering wheel position relative to vehicle root
+---@param positions table Current positions for reference
 ---@return table Position {x, y, z}
-function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition()
+function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
   if self.vehicle.spec_drivable == nil or self.vehicle.spec_drivable.steeringWheel == nil then
-    return { 0, 0, 0 }
+    return { positions.camera[1], positions.camera[2], positions.camera[3] + 1.0 }
   end
 
   local steeringWheelNode = self.vehicle.spec_drivable.steeringWheel.node
@@ -640,9 +641,10 @@ function CabCinematicVehicleAnalyzer:analyze()
   local positions = {
     root = { localToLocal(getParent(self.vehicle.rootNode), self.vehicle.rootNode, getTranslation(self.vehicle.rootNode)) },
     camera = self:getVehicleIndoorCameraPosition(),
-    steeringWheel = self:getVehicleSteeringWheelPosition(),
     exit = self:getVehicleExitPosition()
   }
+
+  positions.steeringWheel = self:getVehicleSteeringWheelPosition(positions)
 
   -- Wheel features
   local wheelsFeatures = self:getWheelsFeatures(positions)
