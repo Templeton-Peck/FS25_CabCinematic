@@ -40,7 +40,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ✅ Standards
   - ✅ Moving cabs
 - Sprayers
-  - 🟨 Standards
+  - ✅ Standards
 - Forestry
   - ⬜ Harvesters
   - ⬜ Forwarders
