@@ -250,14 +250,24 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
   local ex, ey, ez = unpack(enterPosition)
 
-  -- if player is between vehicle and enter point on X axis
-  -- and more than 1.0m away from enter point, then return false
-  if features.flags.isEntryFromCabSideLeft then
-    if px < math.max(ex - 1, 0) then
+  if features.flags.isEntryFromCabSide then
+    -- if player is between vehicle and enter point on X axis
+    -- and more than 1.0m away from enter point, then return false
+    if features.flags.isEntryFromCabSideLeft then
+      if px < math.max(ex - 1, 0) then
+        return false
+      end
+    else
+      if px > math.min(ex + 1, 0) then
+        return false
+      end
+    end
+  elseif features.flags.isEntryFromCabFront then
+    if pz < math.max(ez - 1, 0) then
       return false
     end
-  else
-    if px > math.min(ex + 1, 0) then
+  elseif features.flags.isEntryFromCabBack then
+    if pz > math.min(ez + 1, 0) then
       return false
     end
   end
