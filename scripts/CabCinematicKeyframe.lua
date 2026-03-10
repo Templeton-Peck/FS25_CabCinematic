@@ -8,13 +8,17 @@ CabCinematicKeyframe.TYPES = {
   RUN = "run",
   CLIMB = "climb",
   SEAT = "seat",
+  SHIFT = "shift",
+  IN_CAB = "inCab",
 }
 
 CabCinematicKeyframe.SPEEDS = {
-  [CabCinematicKeyframe.TYPES.WALK]  = 1.5,
-  [CabCinematicKeyframe.TYPES.RUN]   = 2.25,
-  [CabCinematicKeyframe.TYPES.CLIMB] = 0.95,
-  [CabCinematicKeyframe.TYPES.SEAT]  = 0.85,
+  [CabCinematicKeyframe.TYPES.WALK]   = 1.5,
+  [CabCinematicKeyframe.TYPES.RUN]    = 2.25,
+  [CabCinematicKeyframe.TYPES.CLIMB]  = 0.95,
+  [CabCinematicKeyframe.TYPES.SEAT]   = 0.85,
+  [CabCinematicKeyframe.TYPES.SHIFT]  = 0.75,
+  [CabCinematicKeyframe.TYPES.IN_CAB] = 0.95,
 }
 
 CabCinematicKeyframe.VIEW_BOBBING = {
@@ -37,6 +41,16 @@ CabCinematicKeyframe.VIEW_BOBBING = {
     verticalAmplitude = 0.035,
     horizontalAmplitude = 0.015,
     frequency = 2.0,
+  },
+  [CabCinematicKeyframe.TYPES.SHIFT] = {
+    verticalAmplitude = 0.1,
+    horizontalAmplitude = 0.0,
+    frequency = 0.5,
+  },
+  [CabCinematicKeyframe.TYPES.IN_CAB] = {
+    verticalAmplitude = 0.02,
+    horizontalAmplitude = 0.01,
+    frequency = 1.0,
   },
 }
 
@@ -643,6 +657,55 @@ local function buildSprayersKeyframes(enterPosition, doorPosition, storeCategory
   return keyframes
 end
 
+---Builds the keyframes for grape and olive harvesters.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+local function buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  local keyframes = {}
+
+  if vehicleFeatures.flags.isEntryFromCabSideRear then
+    local ladderBottom = {
+      doorPosition[1] + KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE,
+      enterPosition[2],
+      enterPosition[3]
+    }
+
+    local ladderTop = {
+      ladderBottom[1],
+      doorPosition[2],
+      ladderBottom[3]
+    }
+
+    local doorCross = {
+      ladderTop[1],
+      doorPosition[2],
+      doorPosition[3],
+    }
+
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.CLIMB,
+      ladderBottom,
+      ladderTop
+    ))
+
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.SHIFT,
+      ladderTop,
+      doorCross
+    ))
+
+    table.insert(keyframes, CabCinematicKeyframe.new(
+      CabCinematicKeyframe.TYPES.SHIFT,
+      doorCross,
+      doorPosition
+    ))
+  end
+
+  return keyframes
+end
+
 ---Builds the keyframes for the given vehicle based on its storeCategory and features.
 ---@param vehicle table The vehicle to build the keyframes for.
 ---@param reverse boolean Whether to reverse the keyframes (ex: for exiting the vehicle).
@@ -679,6 +742,9 @@ function CabCinematicKeyframe.build(vehicle, reverse)
     keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
     keyframes = buildSprayersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAPE_HARVESTERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.OLIVE_HARVESTERS then
+    keyframes = buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
     table.insert(keyframes, CabCinematicKeyframe.new(
       CabCinematicKeyframe.TYPES.CLIMB,
@@ -688,7 +754,7 @@ function CabCinematicKeyframe.build(vehicle, reverse)
   end
 
   table.insert(keyframes, CabCinematicKeyframe.new(
-    CabCinematicKeyframe.TYPES.WALK,
+    CabCinematicKeyframe.TYPES.IN_CAB,
     doorPosition,
     standupPosition
   ))

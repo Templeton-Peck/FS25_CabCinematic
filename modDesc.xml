@@ -43,6 +43,7 @@
     <sourceFile filename="scripts/CabCinematicCamera.lua" />
     <sourceFile filename="scripts/CabCinematicVehicleAnalyzer.lua" />
     <sourceFile filename="scripts/CabCinematicKeyframe.lua" />
+    <sourceFile filename="scripts/CabCinematicKeyframeBuilder.lua" />
     <sourceFile filename="scripts/CabCinematicAnimation.lua" />
     <sourceFile filename="scripts/main.lua" />
   </extraSourceFiles>

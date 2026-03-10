@@ -11,6 +11,8 @@ CabCinematicUtil = {
     SPINACH_HARVESTERS = 'spinachharvesters',
     POTATO_HARVESTERS = 'potatoharvesting',
     GREEN_BEAN_HARVESTERS = "greenbeanharvesters",
+    GRAPE_HARVESTERS = "grapeharvesters",
+    OLIVE_HARVESTERS = "oliveharvesters",
     TELELOADERS = 'teleloadervehicles',
     FRONTLOADERS = 'frontloadervehicles',
     WHEELLOADERS = 'wheelloadervehicles',
@@ -189,6 +191,7 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   local result = {
     best = nil,
     hits = {},
+    hasHit = false,
   }
 
   local raycaster = {
@@ -198,6 +201,7 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
         local rx, ry, rz = worldToLocal(vehicle.rootNode, x, y, z)
         local hit = { rx, ry, rz, dist }
         table.insert(result.hits, hit)
+        result.hasHit = true
 
         if result.best == nil then
           result.best = hit
