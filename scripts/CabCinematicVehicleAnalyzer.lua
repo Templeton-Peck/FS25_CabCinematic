@@ -248,6 +248,7 @@ function CabCinematicVehicleAnalyzer:raycastCabBoundingBox(positions)
     right = right,
     top = top,
     bottom = bottom,
+    hasHit = backHitResult.hasHit or frontHitResult.hasHit or leftHitResult.hasHit or rightHitResult.hasHit or topHitResult.hasHit or false,
     debugHits = {
       backHitResult = backHitResult,
       frontHitResult = frontHitResult,
@@ -307,6 +308,9 @@ function CabCinematicVehicleAnalyzer:getCabBoundingBox(positions)
   return {
     debugHits = raycastResult.debugHits,
     debugPositions = debugPositions,
+    flags = {
+      isCabEquipped = raycastResult.hasHit,
+    },
     positions = {
       back = raycastResult.back,
       front = raycastResult.front,
@@ -652,6 +656,7 @@ function CabCinematicVehicleAnalyzer:analyze()
   -- Cab bounding box
   local cabBoundingBox = self:getCabBoundingBox(positions)
   CabCinematicUtil.merge(positions, cabBoundingBox.positions)
+  CabCinematicUtil.merge(flags, cabBoundingBox.flags)
   CabCinematicUtil.merge(debugPositions, cabBoundingBox.debugPositions)
   CabCinematicUtil.merge(debugHits, cabBoundingBox.debugHits)
 

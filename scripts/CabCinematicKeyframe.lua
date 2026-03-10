@@ -441,7 +441,15 @@ local function buildTractorKeyframes(enterPosition, doorPosition, storeCategory,
   --   return {}
   -- end
 
-  if vehicleFeatures.flags.isBiTracks and vehicleFeatures.flags.isTracksOnly then
+  if not vehicleFeatures.flags.isCabEquipped then
+    return {
+      CabCinematicKeyframe.new(
+        CabCinematicKeyframe.TYPES.SHIFT,
+        enterPosition,
+        doorPosition
+      )
+    }
+  elseif vehicleFeatures.flags.isBiTracks and vehicleFeatures.flags.isTracksOnly then
     local wheelNode = vehicleFeatures.positions.wheelLeftBack or vehicleFeatures.positions.wheelRightBack
     local wheel = wheelNode
     local ladderBottom = {
