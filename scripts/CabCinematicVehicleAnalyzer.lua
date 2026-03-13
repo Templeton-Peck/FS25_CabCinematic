@@ -786,6 +786,95 @@ function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
   }
 end
 
+---Calculates the ladder positions if the vehicle has a ladder or returns empty if not
+---@param positions table Current positions for reference
+---@param flags table Current flags for reference
+---@return table Ladder features with positions and flags
+function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
+  local zPositions = {}
+  local xPositions = {}
+
+  if self.vehicle.spec_combine ~= nil and self.vehicle.spec_combine.ladder ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
+    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_combine.ladder.animName]
+
+    if animation ~= nil then
+      if animation.parts ~= nil then
+        for _, part in ipairs(animation.parts) do
+          for _, av in ipairs(part.animationValues) do
+            local x, _, z = localToLocal(av.node, self.vehicle.rootNode, 0, 0, 0)
+            table.insert(zPositions, z)
+            table.insert(xPositions, x)
+          end
+        end
+      end
+    end
+  end
+
+  if self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.enterAnimation ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
+    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_enterable.enterAnimation]
+    if animation ~= nil then
+      if animation.parts ~= nil then
+        for _, part in ipairs(animation.parts) do
+          for _, av in ipairs(part.animationValues) do
+            local nodeName = getName(av.node)
+            if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil then
+              local x, _, z = localToLocal(av.node, self.vehicle.rootNode, 0, 0, 0)
+              table.insert(zPositions, z)
+              table.insert(xPositions, x)
+            end
+          end
+        end
+      end
+    end
+  end
+
+  if #zPositions > 0 and #xPositions > 0 then
+    local ladderX = 0
+    local ladderZ = 0
+
+    local avgZ = CabCinematicUtil.avg(zPositions)
+    local maxZ = math.max(unpack(zPositions))
+    local minZ = math.min(unpack(zPositions))
+    local midZ = (maxZ + minZ) / 2
+    local zCandidates = {}
+    for _, z in ipairs(zPositions) do
+      if (CabCinematicUtil.isNear(z, midZ, 0.15)) then
+        table.insert(zCandidates, z)
+      end
+    end
+
+    if #zCandidates > 0 then
+      ladderZ = CabCinematicUtil.avg(zCandidates)
+    else
+      ladderZ = CabCinematicUtil.avg({ midZ, avgZ })
+    end
+
+    local avgX = CabCinematicUtil.avg(xPositions)
+    if avgX > 0 then
+      ladderX = math.max(positions.platformLeft[1] or 0, positions.left[1])
+    else
+      ladderX = math.min(positions.platformRight[1] or 0, positions.right[1])
+    end
+
+    return {
+      positions = {
+        ladderBottom = { ladderX + 0.8, positions.enter[2], ladderZ },
+        ladderTop = { ladderX, positions.camera[2], ladderZ },
+      },
+      flags = {
+        hasCabLadder = true,
+      }
+    }
+  end
+
+  return {
+    positions = {},
+    flags = {
+      hasCabLadder = false,
+    }
+  }
+end
+
 ---Analyzes the vehicle and returns all positions and flags
 ---@return table Analysis result with positions, flags, and debug information
 function CabCinematicVehicleAnalyzer:analyze()
@@ -827,13 +916,20 @@ function CabCinematicVehicleAnalyzer:analyze()
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)
 
+  --- Platform features
   local platformFeatures = self:getCabPlatformFeatures(positions)
   CabCinematicUtil.merge(positions, platformFeatures.positions)
   CabCinematicUtil.merge(flags, platformFeatures.flags)
 
+  --- Mirror features
   local mirrorsFeatures = self:getCabMirrorsFeatures(positions)
   CabCinematicUtil.merge(positions, mirrorsFeatures.positions)
   CabCinematicUtil.merge(flags, mirrorsFeatures.flags)
+
+  -- Ladder features
+  local ladderFeatures = self:getCabLadderFeatures(positions, flags)
+  CabCinematicUtil.merge(positions, ladderFeatures.positions)
+  CabCinematicUtil.merge(flags, ladderFeatures.flags)
 
   -- Door positions
   local doors = self:getCabDoors(positions, flags)

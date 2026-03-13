@@ -221,6 +221,22 @@ function CabCinematicUtil.concat(t1, ...)
   return t1
 end
 
+---Calculate the average of a list of numbers
+---@param values table List of numbers
+---@return number Average of the numbers
+function CabCinematicUtil.avg(values)
+  if #values == 0 then
+    return 0
+  end
+
+  local sum = 0
+  for _, v in ipairs(values) do
+    sum = sum + v
+  end
+
+  return sum / #values
+end
+
 function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, closest)
   local dist = MathUtil.vector3Length(endX - startX, endY - startY, endZ - startZ)
   local sx, sy, sz = localToWorld(vehicle.rootNode, startX, startY, startZ)

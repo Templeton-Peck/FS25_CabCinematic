@@ -238,6 +238,12 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
     local spec = vehicle.spec_cabCinematic
 
+    -- if vehicle.spec_combine ~= nil and vehicle.spec_combine.ladder ~= nil and vehicle.spec_animatedVehicle ~= nil then
+    --   local animation = vehicle.spec_animatedVehicle.animations[vehicle.spec_combine.ladder.animName]
+    --   CabCinematicUtil.printTableRecursively(animation, " ", 0, 5, { "modifierTargetObject", "i3dMappings" })
+    -- end
+
+
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(playerInputComponent, ...)
     end
@@ -563,16 +569,29 @@ function CabCinematicSpec:drawCabCinematicDebug()
   local features = self:getCabCinematicFeatures()
   if features ~= nil then
     CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-    CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, features.positions)
+    -- CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, features.positions)
 
-    if features.flags.isPlatformEquipped then
-      CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, features.positions)
-    end
+    -- if features.flags.isPlatformEquipped then
+    --   CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, features.positions)
+    -- end
 
     if CabCinematic.debugLevel > 1 then
       CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
       CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
     end
+
+    -- if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil and self.spec_animatedVehicle ~= nil then
+    --   local animation = self.spec_animatedVehicle.animations[self.spec_combine.ladder.animName]
+    --   if animation ~= nil then
+    --     if animation.parts ~= nil then
+    --       for _, part in ipairs(animation.parts) do
+    --         for _, av in ipairs(part.animationValues) do
+    --           DebugUtil.drawDebugNode(av.node, getName(av.node))
+    --         end
+    --       end
+    --     end
+    --   end
+    -- end
 
     local x, y = 0.005, 0.5
     local alphaSortedFlags = {}
