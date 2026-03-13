@@ -563,14 +563,18 @@ function CabCinematicSpec:drawCabCinematicDebug()
   local features = self:getCabCinematicFeatures()
   if features ~= nil then
     CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-    CabCinematicUtil.drawDebugBoundingBox(self.rootNode, features.positions)
+    CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, features.positions)
+
+    if features.flags.isPlatformEquipped then
+      CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, features.positions)
+    end
 
     if CabCinematic.debugLevel > 1 then
       CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
       CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
     end
 
-    local x, y = 0.01, 0.5
+    local x, y = 0.005, 0.5
     local alphaSortedFlags = {}
     for text, state in pairs(features.flags) do
       table.insert(alphaSortedFlags, { text = text, state = state })

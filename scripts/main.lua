@@ -1,5 +1,5 @@
 CabCinematic = Mod:init({
-  debugLevel = 0,
+  debugLevel = 1,
 })
 
 CabCinematic:addSpecialization("cabCinematic", function(specializations)

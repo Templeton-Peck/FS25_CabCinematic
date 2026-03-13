@@ -14,6 +14,7 @@ CabCinematicUtil = {
     GRAPE_HARVESTERS = "grapeharvesters",
     OLIVE_HARVESTERS = "oliveharvesters",
     SUGARCANE_HARVESTERS = "sugarcaneharvesters",
+    RICE_HARVESTERS = "riceharvesters",
     TELELOADERS = 'teleloadervehicles',
     FRONTLOADERS = 'frontloadervehicles',
     WHEELLOADERS = 'wheelloadervehicles',
@@ -90,15 +91,7 @@ function CabCinematicUtil.drawDebugNodeRelativeHitResults(node, hitResults)
   end
 end
 
-function CabCinematicUtil.drawDebugBoundingBox(node, boundingBox)
-  -- Extract min/max coordinates for each axis
-  local minX = boundingBox.left[1]
-  local maxX = boundingBox.right[1]
-  local minY = boundingBox.bottom[2]
-  local maxY = boundingBox.top[2]
-  local minZ = boundingBox.back[3]
-  local maxZ = boundingBox.front[3]
-
+function CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
   -- Convert the 8 corners to world coordinates
   local x1, y1, z1 = localToWorld(node, minX, minY, maxZ) -- left-bottom-front
   local x2, y2, z2 = localToWorld(node, maxX, minY, maxZ) -- right-bottom-front
@@ -128,12 +121,58 @@ function CabCinematicUtil.drawDebugBoundingBox(node, boundingBox)
   DebugUtil.drawDebugLine(x4, y4, z4, x8, y8, z8, 1, 1, 0)
 end
 
+function CabCinematicUtil.drawDebugCabBoundingBox(node, boundingBox)
+  local minX = boundingBox.left[1]
+  local maxX = boundingBox.right[1]
+  local minY = boundingBox.bottom[2]
+  local maxY = boundingBox.top[2]
+  local minZ = boundingBox.back[3]
+  local maxZ = boundingBox.front[3]
+
+  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
+
+  -- Draw 2 pairs of lines which divide the bounding box into 3 sections on the Z axis, to visualize potential door positions
+  local thirdSizeZ = (maxZ - minZ) / 3
+  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ + thirdSizeZ, minZ + thirdSizeZ)
+  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ + 2 * thirdSizeZ, minZ + 2 * thirdSizeZ)
+end
+
+function CabCinematicUtil.drawDebugPlatformBoundingBox(node, boundingBox)
+  local minX = boundingBox.platformRight[1]
+  local maxX = boundingBox.platformLeft[1]
+  local minY = boundingBox.platformBottom[2]
+  local maxY = boundingBox.platformTop[2]
+  local minZ = boundingBox.platformBack[3]
+  local maxZ = boundingBox.platformFront[3]
+
+  return CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
+end
+
 function CabCinematicUtil.clamp(value, min, max)
   return math.min(math.max(value, min), max)
 end
 
 function CabCinematicUtil.isNear(valueA, valueB, threshold)
   return math.abs(valueA - valueB) <= threshold
+end
+
+---Get the closest position from a list to a reference point
+---@param positions table Positions to evaluate {{x, y, z}, ...}
+---@param ref table Reference point {x, y, z}
+---@return table | nil ClosestPosition {x, y, z }
+function CabCinematicUtil.getClosestPositionToRef(positions, ref)
+  local bestPoint = nil
+  local bestDist = math.huge
+
+  for _, p in ipairs(positions) do
+    local dist = MathUtil.vector3Length(p[1] - ref[1], p[2] - ref[2], p[3] - ref[3])
+    if dist ~= nil and dist < bestDist then
+      bestDist = dist
+      bestPoint = p
+    end
+  end
+
+  return bestPoint
 end
 
 ---Get the closest position from a list to two reference points
@@ -222,6 +261,9 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   return result
 end
 
+---Tells whether the given vehicle is a tractor.
+---@param vehicle table The vehicle to check.
+---@return boolean true if the vehicle is a tractor, false otherwise.
 function CabCinematicUtil.isVehicleTractor(vehicle)
   local category = vehicle:getStoreCategory()
 
@@ -230,6 +272,15 @@ function CabCinematicUtil.isVehicleTractor(vehicle)
       category == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TRACTORS_L
 end
 
+--- Tells whether the given vehicle is a telehandler.
+---@param vehicle table The vehicle to check.
+---@return boolean true if the vehicle is a telehandler, false otherwise.
+function CabCinematicUtil.isVehicleTelehandler(vehicle)
+  return vehicle:getStoreCategory() == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
+end
+
+--- Get the player's eyesight height from the ground
+---@return number The player's eyesight height in meters
 function CabCinematicUtil.getPlayerEyesightHeight()
   return 1.75
 end

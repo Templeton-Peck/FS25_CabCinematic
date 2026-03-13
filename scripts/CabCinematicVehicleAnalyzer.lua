@@ -29,18 +29,6 @@ function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
   return { 0, 0, 0 }
 end
 
----Gets the steering wheel position relative to vehicle root
----@param positions table Current positions for reference
----@return table Position {x, y, z}
-function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
-  if self.vehicle.spec_drivable == nil or self.vehicle.spec_drivable.steeringWheel == nil then
-    return { positions.camera[1], positions.camera[2], positions.camera[3] + 1.0 }
-  end
-
-  local steeringWheelNode = self.vehicle.spec_drivable.steeringWheel.node
-  return { localToLocal(steeringWheelNode, self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
-end
-
 ---Gets the vehicle exit position relative to vehicle root
 ---@return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleExitPosition()
@@ -170,30 +158,53 @@ function CabCinematicVehicleAnalyzer:getCrawlerWheelFeatures(crawler, positions)
   return result
 end
 
----Gets the Y position of character's feet when seated
+---Gets the position of character's feet when seated
 ---@param positions table Current positions for reference
----@return number Y position
-function CabCinematicVehicleAnalyzer:getCabCharacterFootY(positions)
+---@return table Position Position of character's feet
+function CabCinematicVehicleAnalyzer:getCabCharacterFootPosition(positions)
   local characterTargets = self.vehicle.spec_enterable.defaultCharacterTargets;
 
   if characterTargets ~= nil then
+    local foots = { characterTargets.leftFoot, characterTargets.rightFoot }
+    local sumFootX = 0
     local lowestFootY = math.huge
+    local largestFootZ = -math.huge
 
-    for _, foot in pairs({ characterTargets.leftFoot, characterTargets.rightFoot }) do
+    for _, foot in pairs(foots) do
       if foot ~= nil then
-        local _, footY, _ = localToLocal(foot.targetNode, self.vehicle.rootNode, 0, 0, 0)
+        local footX, footY, footZ = localToLocal(foot.targetNode, self.vehicle.rootNode, 0, 0, 0)
+        if footX ~= nil then
+          sumFootX = sumFootX + footX
+        end
+
         if footY ~= nil and footY < lowestFootY then
           lowestFootY = footY
+        end
+
+        if footZ ~= nil and footZ > largestFootZ then
+          largestFootZ = footZ
         end
       end
     end
 
-    if lowestFootY ~= math.huge then
-      return lowestFootY
+    if lowestFootY ~= math.huge and largestFootZ ~= -math.huge then
+      return { sumFootX / 2, lowestFootY, largestFootZ }
     end
   end
 
-  return positions.camera[2] - 1.5
+  return { positions.camera[1], positions.camera[2] - 1.5, positions.camera[3] + 0.5 }
+end
+
+---Gets the steering wheel position relative to vehicle root
+---@param positions table Current positions for reference
+---@return table Position {x, y, z}
+function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
+  if self.vehicle.spec_drivable == nil or self.vehicle.spec_drivable.steeringWheel == nil then
+    return { positions.camera[1], (positions.characterFoot[2] + positions.camera[2]) / 2, math.max(positions.characterFoot[3], positions.camera[3] + 0.35) }
+  end
+
+  local steeringWheelNode = self.vehicle.spec_drivable.steeringWheel.node
+  return { localToLocal(steeringWheelNode, self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
 end
 
 ---Performs raycasts to determine cab bounding box
@@ -265,7 +276,6 @@ end
 ---@return table Bounding box with positions and debug information
 function CabCinematicVehicleAnalyzer:getCabBoundingBox(positions)
   local raycastResult = self:raycastCabBoundingBox(positions)
-  local characterFootY = self:getCabCharacterFootY(positions)
   local debugPositions = {}
 
   local indoorCamera = self.vehicle:getIndoorCamera()
@@ -298,7 +308,7 @@ function CabCinematicVehicleAnalyzer:getCabBoundingBox(positions)
     end
   end
 
-  raycastResult.bottom[2] = math.max(raycastResult.bottom[2], characterFootY)
+  raycastResult.bottom[2] = math.max(raycastResult.bottom[2], positions.characterFoot[2])
 
   local center = {
     (raycastResult.left[1] + raycastResult.right[1]) / 2,
@@ -418,18 +428,6 @@ function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
       if wheelFeatures ~= nil then
         if wheelFeatures.position[1] > positions.root[1] then
           if wheelFeatures.position[3] > positions.root[3] then
-            result.positions.wheelRightFront = wheelFeatures.position
-            result.positions.wheelRightFrontTreadFront = wheelFeatures.treadFrontPosition
-            result.positions.wheelRightFrontTreadBack = wheelFeatures.treadBackPosition
-            result.positions.wheelRightFrontSidewall = wheelFeatures.sidewallPosition
-          else
-            result.positions.wheelRightBack = wheelFeatures.position
-            result.positions.wheelRightBackTreadFront = wheelFeatures.treadFrontPosition
-            result.positions.wheelRightBackTreadBack = wheelFeatures.treadBackPosition
-            result.positions.wheelRightBackSidewall = wheelFeatures.sidewallPosition
-          end
-        else
-          if wheelFeatures.position[3] > positions.root[3] then
             result.positions.wheelLeftFront = wheelFeatures.position
             result.positions.wheelLeftFrontTreadFront = wheelFeatures.treadFrontPosition
             result.positions.wheelLeftFrontTreadBack = wheelFeatures.treadBackPosition
@@ -439,6 +437,18 @@ function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
             result.positions.wheelLeftBackTreadFront = wheelFeatures.treadFrontPosition
             result.positions.wheelLeftBackTreadBack = wheelFeatures.treadBackPosition
             result.positions.wheelLeftBackSidewall = wheelFeatures.sidewallPosition
+          end
+        else
+          if wheelFeatures.position[3] > positions.root[3] then
+            result.positions.wheelRightFront = wheelFeatures.position
+            result.positions.wheelRightFrontTreadFront = wheelFeatures.treadFrontPosition
+            result.positions.wheelRightFrontTreadBack = wheelFeatures.treadBackPosition
+            result.positions.wheelRightFrontSidewall = wheelFeatures.sidewallPosition
+          else
+            result.positions.wheelRightBack = wheelFeatures.position
+            result.positions.wheelRightBackTreadFront = wheelFeatures.treadFrontPosition
+            result.positions.wheelRightBackTreadBack = wheelFeatures.treadBackPosition
+            result.positions.wheelRightBackSidewall = wheelFeatures.sidewallPosition
           end
         end
       end
@@ -462,9 +472,9 @@ function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
   local isEntryFromCabFront = enter[3] >= positions.front[3] and math.abs(positions.enterWheel[1]) > math.abs(enter[1])
   local isEntryFromCabSide = not isEntryFromCabFront and math.abs(positions.enterWheel[1]) < math.abs(enter[1])
   local isEntryFromCabRear = not isEntryFromCabFront and not isEntryFromCabSide
-  local isEntryFromCabSideLeft = isEntryFromCabSide and MathUtil.round(enter[1] - positions.center[1], 2) > 0.25
-  local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) >= 0.5
-  local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) <= -0.5
+  local isEntryFromCabSideLeft = isEntryFromCabSide and MathUtil.round(enter[1] - positions.center[1], 2) > 0.01
+  local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) >= 0.35
+  local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) <= -0.35
   local isEntryFromCabSideCenter = isEntryFromCabSide and not isEntryFromCabSideFront and not isEntryFromCabSideRear
 
   if CabCinematicUtil.isVehicleTractor(self.vehicle) and isEntryFromCabSide then
@@ -583,50 +593,196 @@ end
 ---@param flags table Current flags for reference
 ---@return table Standup position {x, y, z}
 function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
-  local leftStandupX = math.min(positions.camera[1] + 0.2, positions.left[1])
-  local rightStandupX = math.max(positions.camera[1] - 0.2, positions.right[1])
+  local leftStandupX = (positions.camera[1] + positions.left[1]) / 2
+  local rightStandupX = (positions.camera[1] + positions.right[1]) / 2
   local standupX = flags.isEntryFromCabSideLeft and leftStandupX or rightStandupX
   local standupY = positions.camera[2] + 0.05
-  local standupZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
+  local standupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05
   return { standupX, standupY, standupZ }
+end
+
+---Builds candidate Z door depths based on entry class and cabin depth
+---@param positions table
+---@param flags table
+---@return table
+function CabCinematicVehicleAnalyzer:getDoorZCandidates(positions, flags)
+  local minDoorZ = positions.back[3] + 0.2
+  local maxDoorZ = positions.front[3] - 0.2
+  local cabDepth = math.max(positions.front[3] - positions.back[3], 0.3)
+
+  local frontZ = CabCinematicUtil.clamp(math.max(positions.steeringWheel[3], positions.front[3] - cabDepth * 0.2), minDoorZ, maxDoorZ)
+  local centerZ = CabCinematicUtil.clamp((positions.steeringWheel[3] + positions.camera[3]) / 2, minDoorZ, maxDoorZ)
+  local rearZ = CabCinematicUtil.clamp(positions.back[3] + cabDepth / 3, minDoorZ, maxDoorZ)
+
+  local preferredZ = centerZ
+  if flags.isEntryFromCabSideFront then
+    preferredZ = frontZ
+  elseif flags.isEntryFromCabSideRear then
+    preferredZ = rearZ
+  elseif flags.isEntryFromCabRear then
+    preferredZ = rearZ
+  elseif flags.isEntryFromCabFront then
+    preferredZ = frontZ
+  end
+
+  return {
+    frontZ = frontZ,
+    centerZ = centerZ,
+    rearZ = rearZ,
+    preferredZ = preferredZ,
+    minDoorZ = minDoorZ,
+    maxDoorZ = maxDoorZ,
+  }
 end
 
 ---Calculates the door positions on left and right sides
 ---@param positions table Current positions for reference
 ---@param flags table Current flags for reference
----@return table Door positions {leftDoor, rightDoor}
+---@return table Door result with positions, flags and debugPositions
 function CabCinematicVehicleAnalyzer:getCabDoors(positions, flags)
-  local leftDoor = { positions.left[1], positions.camera[2], positions.standup[3] }
-  local rightDoor = { positions.right[1], positions.camera[2], positions.standup[3] }
+  local doorZCandidates = self:getDoorZCandidates(positions, flags)
+  local minDoorZ = doorZCandidates.minDoorZ
+  local maxDoorZ = doorZCandidates.maxDoorZ
+  local preferredZ = doorZCandidates.preferredZ
 
-  if flags.isEntryFromCabSideFront then
-    if not CabCinematicUtil.isNear(positions.front[3], positions.steeringWheel[3], 0.3) then
-      leftDoor[3] = positions.steeringWheel[3]
-      rightDoor[3] = positions.steeringWheel[3]
+  local function mirrorDrivenDoorZ(mirrorPosition)
+    if mirrorPosition == nil then
+      return nil
     end
 
-    if CabCinematicUtil.isVehicleTractor(self.vehicle) then
-      local refZ = positions.enterWheel[3]
-      if refZ > positions.front[3] then
-        refZ = positions.steeringWheel[3]
-      end
-
-      leftDoor[3] = math.max((positions.center[3] + positions.front[3]) / 2, refZ)
-      rightDoor[3] = math.max((positions.center[3] + positions.front[3]) / 2, refZ)
-    end
-  elseif flags.isEntryFromCabSideRear then
-    if CabCinematicUtil.isNear(positions.standup[3], positions.center[3], 0.15) then
-      leftDoor[3] = positions.camera[3]
-      rightDoor[3] = positions.camera[3]
-    end
-
-    leftDoor[3] = CabCinematicUtil.clamp(leftDoor[3], positions.back[3] + 0.35, positions.back[3] + 0.55)
-    rightDoor[3] = CabCinematicUtil.clamp(rightDoor[3], positions.back[3] + 0.35, positions.back[3] + 0.55)
+    -- Use mirror depth as an anchor but keep entry-aware preferred depth influence.
+    local mirrorZ = (positions.back[3] + mirrorPosition[3]) / 2
+    local blendedZ = mirrorZ * 0.75 + preferredZ * 0.25
+    return CabCinematicUtil.clamp(blendedZ, minDoorZ, maxDoorZ)
   end
 
+  local leftZ = mirrorDrivenDoorZ(positions.leftMirror)
+  local rightZ = mirrorDrivenDoorZ(positions.rightMirror)
+
+  if leftZ == nil and rightZ ~= nil then
+    leftZ = rightZ
+  elseif rightZ == nil and leftZ ~= nil then
+    rightZ = leftZ
+  elseif leftZ == nil and rightZ == nil then
+    leftZ = preferredZ
+    rightZ = preferredZ
+  end
+
+  if CabCinematicUtil.isVehicleTractor(self.vehicle) and flags.isEntryFromCabSideFront then
+    local frontTargetZ = doorZCandidates.frontZ
+    if positions.enterWheel ~= nil then
+      frontTargetZ = CabCinematicUtil.clamp(math.max(frontTargetZ, positions.enterWheel[3] - 0.1), minDoorZ, maxDoorZ)
+    end
+
+    -- For front-side tractor entries, keep the chosen side more forward to match real ladder/step access.
+    if flags.isEntryFromCabSideLeft then
+      leftZ = CabCinematicUtil.clamp(leftZ * 0.35 + frontTargetZ * 0.65, minDoorZ, maxDoorZ)
+      rightZ = CabCinematicUtil.clamp(rightZ * 0.60 + frontTargetZ * 0.40, minDoorZ, maxDoorZ)
+    else
+      rightZ = CabCinematicUtil.clamp(rightZ * 0.35 + frontTargetZ * 0.65, minDoorZ, maxDoorZ)
+      leftZ = CabCinematicUtil.clamp(leftZ * 0.60 + frontTargetZ * 0.40, minDoorZ, maxDoorZ)
+    end
+  end
+
+  local leftDoor = { positions.left[1], positions.camera[2], leftZ }
+  local rightDoor = { positions.right[1], positions.camera[2], rightZ }
+
   return {
-    leftDoor = leftDoor,
-    rightDoor = rightDoor
+    positions = {
+      leftDoor = leftDoor,
+      rightDoor = rightDoor,
+    },
+    flags = {
+      isDoorZMirrorDriven = positions.leftMirror ~= nil or positions.rightMirror ~= nil,
+      isDoorZTractorFrontSideRefined = CabCinematicUtil.isVehicleTractor(self.vehicle) and flags.isEntryFromCabSideFront,
+    },
+    debugPositions = {
+      doorPreferredZRef = { positions.center[1], positions.camera[2], preferredZ },
+      doorFrontZRef = { positions.center[1], positions.camera[2], doorZCandidates.frontZ },
+    }
+  }
+end
+
+---Calculates the platform positions if the vehicle has a platform or returns empty if not
+---@param positions table Current positions for reference
+---@return table Platform features with positions and flags
+function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
+  if CabCinematicUtil.isVehicleTractor(self.vehicle) or CabCinematicUtil.isVehicleTelehandler(self.vehicle) or positions.bottom[2] <= 1.2 then
+    return {
+      positions = {},
+      flags = {
+        isPlatformEquipped = false
+      }
+    }
+  end
+
+  local leftPositions = { positions.left[1] }
+  if positions.wheelLeftBackSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftBackSidewall[1]) end
+  if positions.wheelLeftFrontSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftFrontSidewall[1]) end
+
+  local rightPositions = { positions.right[1] }
+  if positions.wheelRightBackSidewall ~= nil then table.insert(rightPositions, positions.wheelRightBackSidewall[1]) end
+  if positions.wheelRightFrontSidewall ~= nil then table.insert(rightPositions, positions.wheelRightFrontSidewall[1]) end
+
+  local platformLeftX = math.max(unpack(leftPositions))
+  local platformRightX = math.min(unpack(rightPositions))
+
+  local positions = {
+    platformLeft = { platformLeftX, positions.bottom[2], positions.center[3] },
+    platformRight = { platformRightX, positions.bottom[2], positions.center[3] },
+    platformFront = { positions.center[1], positions.bottom[2], positions.front[3] },
+    platformBack = { positions.center[1], positions.bottom[2], positions.back[3] },
+    platformTop = { positions.center[1], positions.bottom[2], positions.center[3] },
+    platformBottom = { positions.center[1], positions.bottom[2] - 0.25, positions.center[3] },
+  }
+
+  local flags = {
+    isPlatformEquipped = true
+  }
+
+  return {
+    positions = positions,
+    flags = flags
+  }
+end
+
+---Calculates the mirror positions if the vehicle has mirrors or returns empty if not
+---@param positions table Current positions for reference
+---@return table Mirror features with positions and flags
+function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
+  local leftMirrors = {}
+  local rightMirrors = {}
+
+  local mirrors = {}
+  if self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.mirrors ~= nil then
+    mirrors = self.vehicle.spec_enterable.mirrors
+  end
+
+  for _, mirror in ipairs(mirrors) do
+    if mirror ~= nil and mirror.node ~= nil and mirror.node ~= 0 then
+      local mirrorX, mirrorY, mirrorZ = localToLocal(mirror.node, self.vehicle.rootNode, 0, 0, 0)
+      if mirrorX >= positions.center[1] then
+        table.insert(leftMirrors, { mirrorX, mirrorY, mirrorZ })
+      else
+        table.insert(rightMirrors, { mirrorX, mirrorY, mirrorZ })
+      end
+    end
+  end
+
+  local positions = {
+    leftMirror = #leftMirrors > 0 and CabCinematicUtil.getClosestPositionToRef(leftMirrors, positions.center) or nil,
+    rightMirror = #rightMirrors > 0 and CabCinematicUtil.getClosestPositionToRef(rightMirrors, positions.center) or nil,
+  }
+
+  local flags = {
+    hasMirrors = #leftMirrors + #rightMirrors > 0,
+    hasLeftMirror = #leftMirrors > 0,
+    hasRightMirror = #rightMirrors > 0,
+  }
+
+  return {
+    positions = positions,
+    flags = flags
   }
 end
 
@@ -644,6 +800,7 @@ function CabCinematicVehicleAnalyzer:analyze()
     exit = self:getVehicleExitPosition()
   }
 
+  positions.characterFoot = self:getCabCharacterFootPosition(positions)
   positions.steeringWheel = self:getVehicleSteeringWheelPosition(positions)
 
   -- Wheel features
@@ -670,9 +827,19 @@ function CabCinematicVehicleAnalyzer:analyze()
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)
 
+  local platformFeatures = self:getCabPlatformFeatures(positions)
+  CabCinematicUtil.merge(positions, platformFeatures.positions)
+  CabCinematicUtil.merge(flags, platformFeatures.flags)
+
+  local mirrorsFeatures = self:getCabMirrorsFeatures(positions)
+  CabCinematicUtil.merge(positions, mirrorsFeatures.positions)
+  CabCinematicUtil.merge(flags, mirrorsFeatures.flags)
+
   -- Door positions
   local doors = self:getCabDoors(positions, flags)
-  CabCinematicUtil.merge(positions, doors)
+  CabCinematicUtil.merge(positions, doors.positions)
+  CabCinematicUtil.merge(flags, doors.flags)
+  CabCinematicUtil.merge(debugPositions, doors.debugPositions)
 
   return {
     positions = positions,
