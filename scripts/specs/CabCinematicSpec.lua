@@ -569,7 +569,7 @@ function CabCinematicSpec:drawCabCinematicDebug()
   local features = self:getCabCinematicFeatures()
   if features ~= nil then
     CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-    -- CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, features.positions)
+    CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, features.positions)
 
     -- if features.flags.isPlatformEquipped then
     --   CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, features.positions)
@@ -583,13 +583,40 @@ function CabCinematicSpec:drawCabCinematicDebug()
     -- if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil and self.spec_animatedVehicle ~= nil then
     --   local animation = self.spec_animatedVehicle.animations[self.spec_combine.ladder.animName]
     --   if animation ~= nil then
-    --     if animation.parts ~= nil then
+    --     if animation.isKeyframe then
+    --       for node, _ in pairs(animation.curvesByNode) do
+    --         DebugUtil.drawDebugNode(node, getName(node))
+    --       end
+    --     elseif animation.parts ~= nil then
     --       for _, part in ipairs(animation.parts) do
     --         for _, av in ipairs(part.animationValues) do
     --           DebugUtil.drawDebugNode(av.node, getName(av.node))
     --         end
     --       end
     --     end
+    --   end
+    -- end
+
+    -- if self.spec_enterable ~= nil and self.spec_enterable.enterAnimation ~= nil and self.spec_animatedVehicle ~= nil then
+    --   local animation = self.spec_animatedVehicle.animations[self.spec_enterable.enterAnimation]
+    --   if animation ~= nil then
+    --     if animation.isKeyframe then
+    --       for node, _ in pairs(animation.curvesByNode) do
+    --         DebugUtil.drawDebugNode(node, getName(node))
+    --       end
+    --     elseif animation.parts ~= nil then
+    --       for _, part in ipairs(animation.parts) do
+    --         for _, av in ipairs(part.animationValues) do
+    --           DebugUtil.drawDebugNode(av.node, getName(av.node))
+    --         end
+    --       end
+    --     end
+    --   end
+    -- end
+
+    -- if self.spec_enterablePassenger ~= nil then
+    --   for _, passengerSeat in ipairs(self.spec_enterablePassenger.passengerSeats) do
+    --     DebugUtil.drawDebugNode(passengerSeat.node, getName(passengerSeat.node))
     --   end
     -- end
 

@@ -417,3 +417,24 @@ function CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, state)
   g_inputBinding:setActionEventTextVisibility(actionEvent.actionEventId, state)
   g_inputBinding:setActionEventActive(actionEvent.actionEventId, state)
 end
+
+---Gets all nodes involved in an animation
+---@param animation table The animation to extract nodes from
+---@return table List of nodes involved in the animation
+function CabCinematicUtil.getAnimationNodes(animation)
+  local nodes = {}
+
+  if animation.isKeyframe then
+    for node, _ in pairs(animation.curvesByNode) do
+      table.insert(nodes, node)
+    end
+  elseif animation.parts ~= nil then
+    for _, part in ipairs(animation.parts) do
+      for _, av in ipairs(part.animationValues) do
+        table.insert(nodes, av.node)
+      end
+    end
+  end
+
+  return nodes
+end

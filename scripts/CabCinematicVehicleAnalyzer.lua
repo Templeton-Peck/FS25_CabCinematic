@@ -140,18 +140,6 @@ function CabCinematicVehicleAnalyzer:getCrawlerWheelFeatures(crawler, positions)
 
       result.treadBackPosition[3] = smallestZWheel[3] - smallestZWheel.radius
       result.treadFrontPosition[3] = largestZWheel[3] + largestZWheel.radius
-
-      -- local isFront = avgZ > positions.root[3]
-      -- local largestZDist = math.abs(positions.root[3] - largestZWheel[3])
-      -- local smallestZDist = math.abs(positions.root[3] - smallestZWheel[3])
-
-      -- if largestZDist <= smallestZDist then
-      --   result.treadBackPosition[3] = largestZWheel[3] + (isFront and -largestZWheel.radius or largestZWheel.radius)
-      --   result.treadFrontPosition[3] = largestZWheel[3] + (isFront and -largestZWheel.radius or largestZWheel.radius)
-      -- else
-      --   result.treadBackPosition[3] = smallestZWheel[3] + (isFront and -smallestZWheel.radius or smallestZWheel.radius)
-      --   result.treadFrontPosition[3] = smallestZWheel[3] + (isFront and -smallestZWheel.radius or smallestZWheel.radius)
-      -- end
     end
   end
 
@@ -593,9 +581,12 @@ end
 ---@param flags table Current flags for reference
 ---@return table Standup position {x, y, z}
 function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
-  local leftStandupX = (positions.camera[1] + positions.left[1]) / 2
-  local rightStandupX = (positions.camera[1] + positions.right[1]) / 2
-  local standupX = flags.isEntryFromCabSideLeft and leftStandupX or rightStandupX
+  local standupX = (positions.camera[1] + positions.left[1]) / 2
+
+  if flags.isEntryFromCabSide and not flags.isEntryFromCabSideLeft then
+    standupX = (positions.camera[1] + positions.right[1]) / 2
+  end
+
   local standupY = positions.camera[2] + 0.05
   local standupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05
   return { standupX, standupY, standupZ }
@@ -769,21 +760,62 @@ function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
     end
   end
 
-  local positions = {
-    leftMirror = #leftMirrors > 0 and CabCinematicUtil.getClosestPositionToRef(leftMirrors, positions.center) or nil,
-    rightMirror = #rightMirrors > 0 and CabCinematicUtil.getClosestPositionToRef(rightMirrors, positions.center) or nil,
-  }
-
-  local flags = {
-    hasMirrors = #leftMirrors + #rightMirrors > 0,
-    hasLeftMirror = #leftMirrors > 0,
-    hasRightMirror = #rightMirrors > 0,
-  }
-
   return {
-    positions = positions,
-    flags = flags
+    positions = {
+      leftMirror = #leftMirrors > 0 and CabCinematicUtil.getClosestPositionToRef(leftMirrors, positions.center) or nil,
+      rightMirror = #rightMirrors > 0 and CabCinematicUtil.getClosestPositionToRef(rightMirrors, positions.center) or nil,
+    },
+    flags = {
+      hasMirrors = #leftMirrors + #rightMirrors > 0,
+      hasLeftMirror = #leftMirrors > 0,
+      hasRightMirror = #rightMirrors > 0,
+    }
   }
+end
+
+---Calculates the ladder candidate positions based on ladder or enter animations
+---@return table zCandidates, table xCandidates Two lists of candidate Z and X positions for the ladder, can be empty if no candidates found
+function CabCinematicVehicleAnalyzer:getCabLadderCandidates()
+  local zCandidates = {}
+  local xCandidates = {}
+
+  if self.vehicle.spec_combine ~= nil and self.vehicle.spec_combine.ladder ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
+    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_combine.ladder.animName]
+    if animation ~= nil then
+      local nodes = CabCinematicUtil.getAnimationNodes(animation)
+
+      for _, node in ipairs(nodes) do
+        local nodeName = getName(node)
+        if nodeName ~= nil and nodeName:lower():find("joint") == nil then
+          local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
+          table.insert(zCandidates, z)
+          table.insert(xCandidates, x)
+        end
+      end
+
+      return zCandidates, xCandidates
+    end
+  end
+
+  if self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.enterAnimation ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
+    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_enterable.enterAnimation]
+    if animation ~= nil then
+      local nodes = CabCinematicUtil.getAnimationNodes(animation)
+
+      for _, node in ipairs(nodes) do
+        local nodeName = getName(node)
+        if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil then
+          local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
+          table.insert(zCandidates, z)
+          table.insert(xCandidates, x)
+        end
+      end
+
+      return zCandidates, xCandidates
+    end
+  end
+
+  return zCandidates, xCandidates
 end
 
 ---Calculates the ladder positions if the vehicle has a ladder or returns empty if not
@@ -791,86 +823,93 @@ end
 ---@param flags table Current flags for reference
 ---@return table Ladder features with positions and flags
 function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
-  local zPositions = {}
-  local xPositions = {}
+  local zCandidates, xCandidates = self:getCabLadderCandidates()
 
-  if self.vehicle.spec_combine ~= nil and self.vehicle.spec_combine.ladder ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
-    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_combine.ladder.animName]
+  if #zCandidates > 0 and #xCandidates > 0 then
+    if flags.isEntryFromCabSide then
+      local ladderTopZ = 0
+      local avgZ = CabCinematicUtil.avg(zCandidates)
+      local maxZ = math.max(unpack(zCandidates))
+      local minZ = math.min(unpack(zCandidates))
+      local midZ = (maxZ + minZ) / 2
+      local centeredZCandidates = {}
 
-    if animation ~= nil then
-      if animation.parts ~= nil then
-        for _, part in ipairs(animation.parts) do
-          for _, av in ipairs(part.animationValues) do
-            local x, _, z = localToLocal(av.node, self.vehicle.rootNode, 0, 0, 0)
-            table.insert(zPositions, z)
-            table.insert(xPositions, x)
-          end
+      for _, z in ipairs(zCandidates) do
+        if (CabCinematicUtil.isNear(z, midZ, 0.18)) then
+          table.insert(centeredZCandidates, z)
         end
       end
-    end
-  end
 
-  if self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.enterAnimation ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
-    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_enterable.enterAnimation]
-    if animation ~= nil then
-      if animation.parts ~= nil then
-        for _, part in ipairs(animation.parts) do
-          for _, av in ipairs(part.animationValues) do
-            local nodeName = getName(av.node)
-            if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil then
-              local x, _, z = localToLocal(av.node, self.vehicle.rootNode, 0, 0, 0)
-              table.insert(zPositions, z)
-              table.insert(xPositions, x)
-            end
-          end
+      if #centeredZCandidates > 0 then
+        ladderTopZ = CabCinematicUtil.avg(centeredZCandidates)
+      else
+        ladderTopZ = CabCinematicUtil.avg({ midZ, avgZ })
+      end
+
+      if flags.isEntryFromCabSideLeft then
+        local ladderTop = { math.max(positions.platformLeft[1] or 0, positions.left[1]), positions.camera[2], ladderTopZ }
+        local ladderBottom = { math.min(ladderTop[1] + 0.8, positions.enter[1]), positions.enter[2], ladderTop[3] }
+        return {
+          positions = {
+            ladderTop = ladderTop,
+            ladderBottom = ladderBottom
+          },
+          flags = {
+            isLadderEquipped = true,
+          }
+        }
+      else
+        local ladderTop = { math.min(positions.platformRight[1] or 0, positions.right[1]), positions.camera[2], ladderTopZ }
+        local ladderBottom = { math.max(ladderTop[1] - 0.8, positions.enter[1]), positions.enter[2], ladderTop[3] }
+        return {
+          positions = {
+            ladderTop = ladderTop,
+            ladderBottom = ladderBottom
+          },
+          flags = {
+            isLadderEquipped = true,
+          }
+        }
+      end
+    elseif flags.isEntryFromCabFront then
+      local ladderTopX = 0
+      local avgX = CabCinematicUtil.avg(xCandidates)
+      local maxX = math.max(unpack(xCandidates))
+      local minX = math.min(unpack(xCandidates))
+      local midX = (maxX + minX) / 2
+      local centeredXCandidates = {}
+
+      for _, x in ipairs(xCandidates) do
+        if (CabCinematicUtil.isNear(x, midX, 0.18)) then
+          table.insert(centeredXCandidates, x)
         end
       end
-    end
-  end
 
-  if #zPositions > 0 and #xPositions > 0 then
-    local ladderX = 0
-    local ladderZ = 0
-
-    local avgZ = CabCinematicUtil.avg(zPositions)
-    local maxZ = math.max(unpack(zPositions))
-    local minZ = math.min(unpack(zPositions))
-    local midZ = (maxZ + minZ) / 2
-    local zCandidates = {}
-    for _, z in ipairs(zPositions) do
-      if (CabCinematicUtil.isNear(z, midZ, 0.15)) then
-        table.insert(zCandidates, z)
+      if #centeredXCandidates > 0 then
+        ladderTopX = CabCinematicUtil.avg(centeredXCandidates)
+      else
+        ladderTopX = CabCinematicUtil.avg({ midX, avgX })
       end
-    end
 
-    if #zCandidates > 0 then
-      ladderZ = CabCinematicUtil.avg(zCandidates)
-    else
-      ladderZ = CabCinematicUtil.avg({ midZ, avgZ })
-    end
+      local ladderTop = { ladderTopX, positions.camera[2], math.max(positions.platformFront[3], positions.front[3]) }
+      local ladderBottom = { ladderTop[1], positions.enter[2], math.min(ladderTop[3] + 0.8, positions.enter[3]) }
 
-    local avgX = CabCinematicUtil.avg(xPositions)
-    if avgX > 0 then
-      ladderX = math.max(positions.platformLeft[1] or 0, positions.left[1])
-    else
-      ladderX = math.min(positions.platformRight[1] or 0, positions.right[1])
-    end
-
-    return {
-      positions = {
-        ladderBottom = { ladderX + 0.8, positions.enter[2], ladderZ },
-        ladderTop = { ladderX, positions.camera[2], ladderZ },
-      },
-      flags = {
-        hasCabLadder = true,
+      return {
+        positions = {
+          ladderTop = ladderTop,
+          ladderBottom = ladderBottom
+        },
+        flags = {
+          isLadderEquipped = true,
+        }
       }
-    }
+    end
   end
 
   return {
     positions = {},
     flags = {
-      hasCabLadder = false,
+      isLadderEquipped = false,
     }
   }
 end
