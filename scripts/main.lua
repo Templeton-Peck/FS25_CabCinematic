@@ -46,7 +46,11 @@ function CabCinematic:delete()
 end
 
 function CabCinematic:onDebugConsoleCommand(level)
-  self.debugLevel = level and tonumber(level) or 1
+  if level == nil then
+    self.debugLevel = self.debugLevel > 0 and 0 or 1
+  else
+    self.debugLevel = level
+  end
 end
 
 PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, function(playerCamera, superFunc, ...)

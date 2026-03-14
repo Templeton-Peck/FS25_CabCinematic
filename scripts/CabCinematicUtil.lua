@@ -237,6 +237,26 @@ function CabCinematicUtil.avg(values)
   return sum / #values
 end
 
+---Calculate the weighted average of a list of numbers
+---@param values table List of numbers
+---@param weights table List of weights corresponding to the values
+---@return number Weighted average of the numbers
+function CabCinematicUtil.weightedAvg(values, weights)
+  if #values == 0 or #values ~= #weights then
+    return 0
+  end
+
+  local sum = 0
+  local weightSum = 0
+  for i, v in ipairs(values) do
+    local w = weights[i]
+    sum = sum + v * w
+    weightSum = weightSum + w
+  end
+
+  return sum / weightSum
+end
+
 ---Raycast against a vehicle and return all hit positions on the vehicle, as well as the closest hit if specified
 ---@param vehicle table The vehicle to raycast against
 ---@param startX number Ray start position X in local vehicle coordinates
@@ -429,10 +449,20 @@ function CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, state)
 end
 
 ---Gets all nodes involved in an animation
----@param animation table The animation to extract nodes from
+---@param vehicle table The vehicle whose animation to extract nodes from
+---@param animationName string The name of the animation to extract nodes from
 ---@return table List of nodes involved in the animation
-function CabCinematicUtil.getAnimationNodes(animation)
+function CabCinematicUtil.getVehicleAnimationNodes(vehicle, animationName)
   local nodes = {}
+
+  if animationName == nil or vehicle.spec_animatedVehicle == nil then
+    return nodes
+  end
+
+  local animation = vehicle.spec_animatedVehicle.animations[animationName]
+  if animation == nil then
+    return nodes
+  end
 
   if animation.isKeyframe then
     for node, _ in pairs(animation.curvesByNode) do

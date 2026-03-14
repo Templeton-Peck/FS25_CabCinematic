@@ -261,8 +261,8 @@ end
 
 ---Calculates the cab bounding box
 ---@param positions table Current positions for reference
----@return table Bounding box with positions and debug information
-function CabCinematicVehicleAnalyzer:getCabBoundingBox(positions)
+---@return table Features features with bounding box positions, flags and debug hits
+function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
   local raycastResult = self:raycastCabBoundingBox(positions)
   local debugPositions = {}
 
@@ -461,27 +461,10 @@ function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
   local isEntryFromCabSide = not isEntryFromCabFront and math.abs(positions.enterWheel[1]) < math.abs(enter[1])
   local isEntryFromCabRear = not isEntryFromCabFront and not isEntryFromCabSide
   local isEntryFromCabSideLeft = isEntryFromCabSide and MathUtil.round(enter[1] - positions.center[1], 2) > 0.01
+  local isEntryFromCabSideRight = isEntryFromCabSide and MathUtil.round(enter[1] - positions.center[1], 2) < -0.01
   local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) >= 0.35
   local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(enter[3] - middleZ, 2) <= -0.35
   local isEntryFromCabSideCenter = isEntryFromCabSide and not isEntryFromCabSideFront and not isEntryFromCabSideRear
-
-  if CabCinematicUtil.isVehicleTractor(self.vehicle) and isEntryFromCabSide then
-    if isEntryFromCabSideLeft then
-      if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
-        local centerEnterZ = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
-        if CabCinematicUtil.isNear(enter[3], centerEnterZ, 0.15) then
-          enter[3] = centerEnterZ
-        end
-      end
-    else
-      if positions.wheelRightBack ~= nil and positions.wheelRightFront ~= nil then
-        local centerEnterZ = (positions.wheelRightFront[3] + positions.wheelRightBack[3]) / 2
-        if CabCinematicUtil.isNear(enter[3], centerEnterZ, 0.15) then
-          enter[3] = centerEnterZ
-        end
-      end
-    end
-  end
 
   return {
     positions = {
@@ -492,6 +475,7 @@ function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
       isEntryFromCabSide = isEntryFromCabSide,
       isEntryFromCabRear = isEntryFromCabRear,
       isEntryFromCabSideLeft = isEntryFromCabSideLeft,
+      isEntryFromCabSideRight = isEntryFromCabSideRight,
       isEntryFromCabSideFront = isEntryFromCabSideFront,
       isEntryFromCabSideRear = isEntryFromCabSideRear,
       isEntryFromCabSideCenter = isEntryFromCabSideCenter
@@ -629,8 +613,8 @@ end
 ---Calculates the door positions on left and right sides
 ---@param positions table Current positions for reference
 ---@param flags table Current flags for reference
----@return table Door result with positions, flags and debugPositions
-function CabCinematicVehicleAnalyzer:getCabDoors(positions, flags)
+---@return table Doors features with positions and flags
+function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
   local doorZCandidates = self:getDoorZCandidates(positions, flags)
   local minDoorZ = doorZCandidates.minDoorZ
   local maxDoorZ = doorZCandidates.maxDoorZ
@@ -794,81 +778,59 @@ function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
   }
 end
 
----Calculates the ladder candidate positions based on ladder or enter animations
----@return table zCandidates, table xCandidates Two lists of candidate Z and X positions for the ladder, can be empty if no candidates found
-function CabCinematicVehicleAnalyzer:getCabLadderCandidates()
-  local zCandidates = {}
-  local xCandidates = {}
+---Calculates the movable ladder positions based on combine ladder or enter animations
+---@param positions table Current positions for reference
+---@return table | nil ladderTopXZ The top X and Z positions for the ladder, can be nil if no candidates found
+function CabCinematicVehicleAnalyzer:getCabMovableLadderTopXZ(positions)
+  local nodes = {}
 
-  if self.vehicle.spec_combine ~= nil and self.vehicle.spec_combine.ladder ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
-    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_combine.ladder.animName]
-    if animation ~= nil then
-      local nodes = CabCinematicUtil.getAnimationNodes(animation)
-
-      for _, node in ipairs(nodes) do
-        local nodeName = getName(node)
-        if nodeName ~= nil and nodeName:lower():find("joint") == nil then
-          local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
-          table.insert(zCandidates, z)
-          table.insert(xCandidates, x)
-        end
-      end
-
-      return zCandidates, xCandidates
-    end
+  if #nodes == 0 and self.vehicle.spec_combine ~= nil and self.vehicle.spec_combine.ladder ~= nil then
+    nodes = CabCinematicUtil.getVehicleAnimationNodes(self.vehicle, self.vehicle.spec_combine.ladder.animName)
   end
 
-  if self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.enterAnimation ~= nil and self.vehicle.spec_animatedVehicle ~= nil then
-    local animation = self.vehicle.spec_animatedVehicle.animations[self.vehicle.spec_enterable.enterAnimation]
-    if animation ~= nil then
-      local nodes = CabCinematicUtil.getAnimationNodes(animation)
-
-      for _, node in ipairs(nodes) do
-        local nodeName = getName(node)
-        if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil then
-          local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
-          table.insert(zCandidates, z)
-          table.insert(xCandidates, x)
-        end
-      end
-
-      return zCandidates, xCandidates
-    end
+  if #nodes == 0 and self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.enterAnimation ~= nil then
+    nodes = CabCinematicUtil.getVehicleAnimationNodes(self.vehicle, self.vehicle.spec_enterable.enterAnimation)
   end
 
-  return zCandidates, xCandidates
+  if #nodes > 0 then
+    local xCandidates = {}
+    local zCandidates = {}
+    local weights = {}
+
+    for _, node in ipairs(nodes) do
+      local nodeName = getName(node)
+      if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil and nodeName:lower():find("joint") == nil then
+        local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
+        table.insert(xCandidates, x)
+        table.insert(zCandidates, z)
+        table.insert(weights, 1.5)
+      end
+    end
+
+    table.insert(xCandidates, positions.enter[1])
+    table.insert(zCandidates, positions.enter[3])
+    table.insert(weights, 1.0)
+
+    local ladderTopX = CabCinematicUtil.weightedAvg(xCandidates, weights)
+    local ladderTopZ = CabCinematicUtil.weightedAvg(zCandidates, weights)
+
+    return { ladderTopX = ladderTopX, ladderTopZ = ladderTopZ }
+  end
+
+  return nil
 end
 
----Calculates the ladder positions if the vehicle has a ladder or returns empty if not
+---Calculates the ladder positions if the vehicle has a movable ladder or returns empty if not
 ---@param positions table Current positions for reference
 ---@param flags table Current flags for reference
 ---@return table Ladder features with positions and flags
 function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
-  local zCandidates, xCandidates = self:getCabLadderCandidates()
+  local ladderTopXZ = self:getCabMovableLadderTopXZ(positions)
 
-  if #zCandidates > 0 and #xCandidates > 0 then
+  if ladderTopXZ ~= nil then
     if flags.isEntryFromCabSide then
-      local ladderTopZ = 0
-      local avgZ = CabCinematicUtil.avg(zCandidates)
-      local maxZ = math.max(unpack(zCandidates))
-      local minZ = math.min(unpack(zCandidates))
-      local midZ = (maxZ + minZ) / 2
-      local centeredZCandidates = {}
-
-      for _, z in ipairs(zCandidates) do
-        if (CabCinematicUtil.isNear(z, midZ, 0.18)) then
-          table.insert(centeredZCandidates, z)
-        end
-      end
-
-      if #centeredZCandidates > 0 then
-        ladderTopZ = CabCinematicUtil.avg(centeredZCandidates)
-      else
-        ladderTopZ = CabCinematicUtil.avg({ midZ, avgZ })
-      end
-
       if flags.isEntryFromCabSideLeft then
-        local ladderTop = { math.max(positions.platformLeft[1] or 0, positions.left[1]), positions.camera[2], ladderTopZ }
+        local ladderTop = { math.max(positions.platformLeft and positions.platformLeft[1] or 0, positions.left[1], positions.enterWheel[1] + 0.1), positions.camera[2], ladderTopXZ.ladderTopZ }
         local ladderBottom = { math.min(ladderTop[1] + 0.8, positions.enter[1]), positions.enter[2], ladderTop[3] }
         return {
           positions = {
@@ -876,11 +838,11 @@ function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
             ladderBottom = ladderBottom
           },
           flags = {
-            isLadderEquipped = true,
+            isMovableLadderEquipped = true,
           }
         }
       else
-        local ladderTop = { math.min(positions.platformRight[1] or 0, positions.right[1]), positions.camera[2], ladderTopZ }
+        local ladderTop = { math.min(positions.platformRight and positions.platformRight[1] or 0, positions.right[1], positions.enterWheel[1] - 0.1), positions.camera[2], ladderTopXZ.ladderTopZ }
         local ladderBottom = { math.max(ladderTop[1] - 0.8, positions.enter[1]), positions.enter[2], ladderTop[3] }
         return {
           positions = {
@@ -888,31 +850,12 @@ function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
             ladderBottom = ladderBottom
           },
           flags = {
-            isLadderEquipped = true,
+            isMovableLadderEquipped = true,
           }
         }
       end
     elseif flags.isEntryFromCabFront then
-      local ladderTopX = 0
-      local avgX = CabCinematicUtil.avg(xCandidates)
-      local maxX = math.max(unpack(xCandidates))
-      local minX = math.min(unpack(xCandidates))
-      local midX = (maxX + minX) / 2
-      local centeredXCandidates = {}
-
-      for _, x in ipairs(xCandidates) do
-        if (CabCinematicUtil.isNear(x, midX, 0.18)) then
-          table.insert(centeredXCandidates, x)
-        end
-      end
-
-      if #centeredXCandidates > 0 then
-        ladderTopX = CabCinematicUtil.avg(centeredXCandidates)
-      else
-        ladderTopX = CabCinematicUtil.avg({ midX, avgX })
-      end
-
-      local ladderTop = { ladderTopX, positions.camera[2], math.max(positions.platformFront[3], positions.front[3]) }
+      local ladderTop = { ladderTopXZ.ladderTopX, positions.camera[2], math.max(positions.platformFront and positions.platformFront[3] or 0, positions.front[3], positions.enterWheel[3] + 0.1) }
       local ladderBottom = { ladderTop[1], positions.enter[2], math.min(ladderTop[3] + 0.8, positions.enter[3]) }
 
       return {
@@ -921,7 +864,7 @@ function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
           ladderBottom = ladderBottom
         },
         flags = {
-          isLadderEquipped = true,
+          isMovableLadderEquipped = true,
         }
       }
     end
@@ -930,9 +873,65 @@ function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
   return {
     positions = {},
     flags = {
-      isLadderEquipped = false,
+      isMovableLadderEquipped = false,
     }
   }
+end
+
+---Determines the preferred enter position based on the entry point and available features
+---@param positions table Current positions for reference
+---@param flags table Current flags for reference
+---@return table Preferred enter position
+function CabCinematicVehicleAnalyzer:getPreferredEnterPosition(positions, flags)
+  local preferredEnter = { positions.enter[1], positions.enter[2], positions.enter[3] }
+
+  if flags.isEntryFromCabSide then
+    local wheelSideWallSafeDistance = 1.0
+    local isEnterFarFromWheel = math.abs(positions.enter[1] - positions.enterWheel[1]) > wheelSideWallSafeDistance
+
+    if positions.ladderBottom ~= nil then
+      preferredEnter[3] = positions.ladderBottom[3]
+    end
+
+    if flags.isEntryFromCabSideLeft then
+      preferredEnter[1] = isEnterFarFromWheel and (positions.enterWheel[1] + wheelSideWallSafeDistance) or positions.enter[1]
+
+      if CabCinematicUtil.isVehicleTractor(self.vehicle) then
+        if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
+          local centerEnterZ = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
+          if CabCinematicUtil.isNear(positions.enter[3], centerEnterZ, 0.15) then
+            preferredEnter[3] = centerEnterZ
+          end
+        end
+      end
+    elseif flags.isEntryFromCabSideRight then
+      preferredEnter[1] = isEnterFarFromWheel and (positions.enterWheel[1] - wheelSideWallSafeDistance) or positions.enter[1]
+
+      if CabCinematicUtil.isVehicleTractor(self.vehicle) then
+        if positions.wheelRightBack ~= nil and positions.wheelRightFront ~= nil then
+          local centerEnterZ = (positions.wheelRightFront[3] + positions.wheelRightBack[3]) / 2
+          if CabCinematicUtil.isNear(positions.enter[3], centerEnterZ, 0.15) then
+            preferredEnter[3] = centerEnterZ
+          end
+        end
+      end
+    end
+  else
+    local wheelTreadSafeDistance = 0.75
+    local isEnterFarFromWheel = math.abs(positions.enter[3] - positions.enterWheel[3]) > wheelTreadSafeDistance
+
+    if positions.ladderBottom ~= nil then
+      preferredEnter[1] = positions.ladderBottom[1]
+    end
+
+    if flags.isEntryFromCabFront then
+      preferredEnter[3] = isEnterFarFromWheel and (positions.enterWheel[3] + wheelTreadSafeDistance) or positions.enter[3]
+    elseif flags.isEntryFromCabRear then
+      preferredEnter[3] = isEnterFarFromWheel and (positions.enterWheel[3] - wheelTreadSafeDistance) or positions.enter[3]
+    end
+  end
+
+  return preferredEnter
 end
 
 ---Analyzes the vehicle and returns all positions and flags
@@ -949,6 +948,7 @@ function CabCinematicVehicleAnalyzer:analyze()
     exit = self:getVehicleExitPosition()
   }
 
+  positions.seat = { positions.camera[1], positions.camera[2], positions.camera[3] }
   positions.characterFoot = self:getCabCharacterFootPosition(positions)
   positions.steeringWheel = self:getVehicleSteeringWheelPosition(positions)
 
@@ -957,16 +957,21 @@ function CabCinematicVehicleAnalyzer:analyze()
   CabCinematicUtil.merge(positions, wheelsFeatures.positions)
   CabCinematicUtil.merge(flags, wheelsFeatures.flags)
 
-  -- Seat and enter positions
-  positions.seat = { positions.camera[1], positions.camera[2], positions.camera[3] }
+  -- Enter wheel position
   positions.enterWheel = self:getCabEnterWheelPosition(positions)
 
-  -- Cab bounding box
-  local cabBoundingBox = self:getCabBoundingBox(positions)
-  CabCinematicUtil.merge(positions, cabBoundingBox.positions)
-  CabCinematicUtil.merge(flags, cabBoundingBox.flags)
-  CabCinematicUtil.merge(debugPositions, cabBoundingBox.debugPositions)
-  CabCinematicUtil.merge(debugHits, cabBoundingBox.debugHits)
+  -- Cab features
+  local cabFeatures = self:getCabFeatures(positions)
+  CabCinematicUtil.merge(positions, cabFeatures.positions)
+  CabCinematicUtil.merge(flags, cabFeatures.flags)
+  CabCinematicUtil.merge(debugPositions, cabFeatures.debugPositions)
+  CabCinematicUtil.merge(debugHits, cabFeatures.debugHits)
+
+  --- Platform features
+  local platformFeatures = self:getCabPlatformFeatures(positions)
+  CabCinematicUtil.merge(positions, platformFeatures.positions)
+  CabCinematicUtil.merge(flags, platformFeatures.flags)
+  CabCinematicUtil.merge(debugHits, platformFeatures.debugHits)
 
   -- Enter features
   local enterFeatures = self:getVehicleEnterFeatures(positions)
@@ -976,28 +981,24 @@ function CabCinematicVehicleAnalyzer:analyze()
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)
 
-  --- Platform features
-  local platformFeatures = self:getCabPlatformFeatures(positions)
-  CabCinematicUtil.merge(positions, platformFeatures.positions)
-  CabCinematicUtil.merge(flags, platformFeatures.flags)
-  CabCinematicUtil.merge(debugHits, platformFeatures.debugHits)
-
-
   --- Mirror features
   local mirrorsFeatures = self:getCabMirrorsFeatures(positions)
   CabCinematicUtil.merge(positions, mirrorsFeatures.positions)
   CabCinematicUtil.merge(flags, mirrorsFeatures.flags)
+
+  -- Door positions
+  local doors = self:getCabDoorsFeatures(positions, flags)
+  CabCinematicUtil.merge(positions, doors.positions)
+  CabCinematicUtil.merge(flags, doors.flags)
+  CabCinematicUtil.merge(debugPositions, doors.debugPositions)
 
   -- Ladder features
   local ladderFeatures = self:getCabLadderFeatures(positions, flags)
   CabCinematicUtil.merge(positions, ladderFeatures.positions)
   CabCinematicUtil.merge(flags, ladderFeatures.flags)
 
-  -- Door positions
-  local doors = self:getCabDoors(positions, flags)
-  CabCinematicUtil.merge(positions, doors.positions)
-  CabCinematicUtil.merge(flags, doors.flags)
-  CabCinematicUtil.merge(debugPositions, doors.debugPositions)
+  -- Preferred enter position
+  positions.preferredEnter = self:getPreferredEnterPosition(positions, flags)
 
   return {
     positions = positions,

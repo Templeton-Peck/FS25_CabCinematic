@@ -199,113 +199,48 @@ end
 ---@param vehicleFeatures table The vehicle's features.
 ---@return table keyframes The list of keyframes for the vehicle.
 local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
-  if vehicleFeatures.flags.isEntryFromCabSideCenter then
-    local keyframes = {}
-    local enterWheel = vehicleFeatures.positions.enterWheel
-    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[1] - enterWheel[1]) > KEYFRAME_OFFSETS.WHEEL_SIDEWALL_SAFE_DISTANCE
+  local keyframes = {}
+  local ladderBottom = vehicleFeatures.ladderBottom or enterPosition
+  local ladderTop = {}
+  local doorSafe = {
+    addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
+    doorPosition[2],
+    doorPosition[3]
+  }
 
-    local ladderBottom = {}
-
-    if isEnterFarFromWheel then
-      ladderBottom = {
-        addBySide(enterWheel[1], KEYFRAME_OFFSETS.WHEEL_SIDEWALL_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
-        enterPosition[2],
-        enterPosition[3]
-      }
-
-      table.insert(keyframes, CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        enterPosition,
-        ladderBottom
-      ))
-    else
-      ladderBottom = {
-        enterPosition[1],
-        enterPosition[2],
-        enterPosition[3]
-      }
-    end
-
-    local ladderTop = {
+  if vehicleFeatures.flags.isEntryFromCabSide then
+    ladderTop = vehicleFeatures.ladderTop or {
       subBySide(ladderBottom[1], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
       doorPosition[2],
       ladderBottom[3]
     }
-
-    table.insert(keyframes, CabCinematicKeyframe.new(
-      CabCinematicKeyframe.TYPES.CLIMB,
-      ladderBottom,
-      ladderTop
-    ))
-
-    table.insert(keyframes, CabCinematicKeyframe.new(
-      CabCinematicKeyframe.TYPES.WALK,
-      ladderTop,
-      doorPosition
-    ))
-
-    return keyframes
-  elseif vehicleFeatures.flags.isEntryFromCabSideRear then
-    local keyframes = {}
-    local enterWheel = vehicleFeatures.positions.enterWheel
-    local isEnterFarFromWheel = enterWheel ~= nil and math.abs(enterPosition[3] - enterWheel[3]) > KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE
-
-    local ladderBottom = {}
-
-    if isEnterFarFromWheel then
-      ladderBottom = {
-        enterPosition[1],
-        enterPosition[2],
-        enterWheel[3] - KEYFRAME_OFFSETS.WHEEL_TREAD_SAFE_DISTANCE,
-      }
-
-      table.insert(keyframes, CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        enterPosition,
-        ladderBottom
-      ))
-    else
-      ladderBottom = {
-        enterPosition[1],
-        enterPosition[2],
-        enterPosition[3]
-      }
-    end
-
-    local ladderTop = {
+  else
+    ladderTop = vehicleFeatures.ladderTop or {
       ladderBottom[1],
       doorPosition[2],
-      ladderBottom[3] + KEYFRAME_OFFSETS.LADDER_SLOPE
+      subBySide(ladderBottom[3], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
     }
-
-    local doorCross = {
-      ladderTop[1],
-      doorPosition[2],
-      doorPosition[3],
-    }
-
-    table.insert(keyframes, CabCinematicKeyframe.new(
-      CabCinematicKeyframe.TYPES.CLIMB,
-      ladderBottom,
-      ladderTop
-    ))
-
-    table.insert(keyframes, CabCinematicKeyframe.new(
-      CabCinematicKeyframe.TYPES.WALK,
-      ladderTop,
-      doorCross
-    ))
-
-    table.insert(keyframes, CabCinematicKeyframe.new(
-      CabCinematicKeyframe.TYPES.WALK,
-      doorCross,
-      doorPosition
-    ))
-
-    return keyframes
   end
 
-  return {}
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.CLIMB,
+    ladderBottom,
+    ladderTop
+  ))
+
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
+    ladderTop,
+    doorSafe
+  ))
+
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
+    doorSafe,
+    doorPosition
+  ))
+
+  return keyframes
 end
 
 ---Builds the keyframes for beet harvesters.
@@ -857,6 +792,7 @@ function CabCinematicKeyframe.build(vehicle, reverse)
   local storeCategory = vehicle:getStoreCategory()
 
   local enterPosition = vehicleFeatures.positions.enter
+  local preferredEnterPosition = vehicleFeatures.positions.preferredEnter
   local useLeftDoor = vehicleFeatures.flags.isEntryFromCabSideLeft or not vehicleFeatures.flags.isEntryFromCabSide
   local doorPosition = useLeftDoor and vehicleFeatures.positions.leftDoor or vehicleFeatures.positions.rightDoor
 
@@ -865,37 +801,43 @@ function CabCinematicKeyframe.build(vehicle, reverse)
   local keyframes = {}
 
   if CabCinematicUtil.isVehicleTractor(vehicle) then
-    keyframes = buildTractorKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildTractorKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FRONTLOADERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WHEELLOADERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORKLIFTS then
-    keyframes = buildTeleloadersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildTeleloadersKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.HARVESTERS then
-    keyframes = buildHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildHarvesterKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORAGE_HARVESTERS then
-    keyframes = buildForageHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildForageHarvesterKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.BEET_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
-    keyframes = buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildBeetHarvesterKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
-    keyframes = buildSprayersKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildSprayersKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAPE_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.OLIVE_HARVESTERS then
-    keyframes = buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildGrapeAndOliveHarvesterKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SUGARCANE_HARVESTERS then
-    keyframes = buildSugarcaneHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildSugarcaneHarvesterKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.RICE_HARVESTERS then
-    keyframes = buildRiceHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+    keyframes = buildRiceHarvesterKeyframes(preferredEnterPosition, doorPosition, storeCategory, vehicleFeatures)
   else
     table.insert(keyframes, CabCinematicKeyframe.new(
       CabCinematicKeyframe.TYPES.CLIMB,
-      enterPosition,
+      preferredEnterPosition,
       doorPosition
     ))
   end
+
+  table.insert(keyframes, 1, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
+    enterPosition,
+    preferredEnterPosition
+  ))
 
   table.insert(keyframes, CabCinematicKeyframe.new(
     CabCinematicKeyframe.TYPES.IN_CAB,
