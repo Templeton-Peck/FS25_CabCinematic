@@ -707,13 +707,30 @@ function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
     }
   end
 
+  local leftPlatformHitResult = CabCinematicUtil.raycastVehicle(
+    self.vehicle,
+    positions.left[1] + 2.0, positions.bottom[2] - 0.175, positions.left[3],
+    positions.left[1], positions.bottom[2] - 0.175, positions.left[3],
+    true
+  )
+
+  local rightPlatformHitResult = CabCinematicUtil.raycastVehicle(
+    self.vehicle,
+    positions.right[1] - 2.0, positions.bottom[2] - 0.175, positions.right[3],
+    positions.right[1], positions.bottom[2] - 0.175, positions.right[3],
+    true
+  )
+
   local leftPositions = { positions.left[1] }
   if positions.wheelLeftBackSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftBackSidewall[1]) end
   if positions.wheelLeftFrontSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftFrontSidewall[1]) end
+  if leftPlatformHitResult.best ~= nil then table.insert(leftPositions, leftPlatformHitResult.best[1]) end
+
 
   local rightPositions = { positions.right[1] }
   if positions.wheelRightBackSidewall ~= nil then table.insert(rightPositions, positions.wheelRightBackSidewall[1]) end
   if positions.wheelRightFrontSidewall ~= nil then table.insert(rightPositions, positions.wheelRightFrontSidewall[1]) end
+  if rightPlatformHitResult.best ~= nil then table.insert(rightPositions, rightPlatformHitResult.best[1]) end
 
   local platformLeftX = math.max(unpack(leftPositions))
   local platformRightX = math.min(unpack(rightPositions))
@@ -733,7 +750,11 @@ function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
 
   return {
     positions = positions,
-    flags = flags
+    flags = flags,
+    debugHits = {
+      leftPlatformHitResult = leftPlatformHitResult,
+      rightPlatformHitResult = rightPlatformHitResult,
+    }
   }
 end
 
@@ -959,6 +980,8 @@ function CabCinematicVehicleAnalyzer:analyze()
   local platformFeatures = self:getCabPlatformFeatures(positions)
   CabCinematicUtil.merge(positions, platformFeatures.positions)
   CabCinematicUtil.merge(flags, platformFeatures.flags)
+  CabCinematicUtil.merge(debugHits, platformFeatures.debugHits)
+
 
   --- Mirror features
   local mirrorsFeatures = self:getCabMirrorsFeatures(positions)

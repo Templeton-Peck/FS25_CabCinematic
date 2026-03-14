@@ -237,6 +237,16 @@ function CabCinematicUtil.avg(values)
   return sum / #values
 end
 
+---Raycast against a vehicle and return all hit positions on the vehicle, as well as the closest hit if specified
+---@param vehicle table The vehicle to raycast against
+---@param startX number Ray start position X in local vehicle coordinates
+---@param startY number Ray start position Y in local vehicle coordinates
+---@param startZ number Ray start position Z in local vehicle coordinates
+---@param endX number Ray end position X in local vehicle coordinates
+---@param endY number Ray end position Y in local vehicle coordinates
+---@param endZ number Ray end position Z in local vehicle coordinates
+---@param closest boolean Whether to return only the closest hit or all hits
+---@return table Raycast result containing hit positions and distances
 function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, closest)
   local dist = MathUtil.vector3Length(endX - startX, endY - startY, endZ - startZ)
   local sx, sy, sz = localToWorld(vehicle.rootNode, startX, startY, startZ)
