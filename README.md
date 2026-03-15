@@ -24,7 +24,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ✅ Grape Harvesters
   - ✅ Sugarcane Harvesters
   - ✅ Rice Harvesters
-  - 🟨 Potato Harvesters
+  - ✅ Potato Harvesters
   - 🟨 Green Bean Harvesters 
   - 🟨 Spinach Harvesters
   - ⬜ Pea Harvesters

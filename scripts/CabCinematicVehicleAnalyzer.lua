@@ -3,6 +3,8 @@
 CabCinematicVehicleAnalyzer = {}
 local CabCinematicVehicleAnalyzer_mt = Class(CabCinematicVehicleAnalyzer)
 
+local DOOR_SAFE_DISTANCE = 0.35
+
 ---Creates a new vehicle analyzer instance
 ---@param vehicle table The vehicle to analyze
 ---@return CabCinematicVehicleAnalyzer
@@ -457,6 +459,8 @@ function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
   local enter = { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
 
   local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
+  local isEntryLeft = enter[1] >= positions.root[1]
+  local isEntryRight = not isEntryLeft
   local isEntryFromCabFront = enter[3] >= positions.front[3] and math.abs(positions.enterWheel[1]) > math.abs(enter[1])
   local isEntryFromCabSide = not isEntryFromCabFront and math.abs(positions.enterWheel[1]) < math.abs(enter[1])
   local isEntryFromCabRear = not isEntryFromCabFront and not isEntryFromCabSide
@@ -471,6 +475,8 @@ function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
       enter = enter,
     },
     flags = {
+      isEntryLeft = isEntryLeft,
+      isEntryRight = isEntryRight,
       isEntryFromCabFront = isEntryFromCabFront,
       isEntryFromCabSide = isEntryFromCabSide,
       isEntryFromCabRear = isEntryFromCabRear,
@@ -645,11 +651,23 @@ function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
 
   local leftDoor = { positions.left[1], positions.camera[2], leftZ }
   local rightDoor = { positions.right[1], positions.camera[2], rightZ }
+  local leftDoorSafe = { leftDoor[1] + DOOR_SAFE_DISTANCE, leftDoor[2], leftDoor[3] }
+  local rightDoorSafe = { rightDoor[1] - DOOR_SAFE_DISTANCE, rightDoor[2], rightDoor[3] }
+
+  if flags.isEntryFromCabSideFront then
+    leftDoorSafe[3] = leftDoorSafe[3] + 0.15
+    rightDoorSafe[3] = rightDoorSafe[3] + 0.15
+  elseif flags.isEntryFromCabSideRear then
+    leftDoorSafe[3] = leftDoorSafe[3] - 0.15
+    rightDoorSafe[3] = rightDoorSafe[3] - 0.15
+  end
 
   return {
     positions = {
       leftDoor = leftDoor,
       rightDoor = rightDoor,
+      leftDoorSafe = leftDoorSafe,
+      rightDoorSafe = rightDoorSafe,
     },
     flags = {
       isDoorZMirrorDriven = positions.leftMirror ~= nil or positions.rightMirror ~= nil,
@@ -706,14 +724,14 @@ function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
   )
 
   local leftPositions = { positions.left[1] }
-  if positions.wheelLeftBackSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftBackSidewall[1]) end
-  if positions.wheelLeftFrontSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftFrontSidewall[1]) end
+  -- if positions.wheelLeftBackSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftBackSidewall[1]) end
+  -- if positions.wheelLeftFrontSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftFrontSidewall[1]) end
   if leftPlatformHitResult.best ~= nil then table.insert(leftPositions, leftPlatformHitResult.best[1]) end
 
 
   local rightPositions = { positions.right[1] }
-  if positions.wheelRightBackSidewall ~= nil then table.insert(rightPositions, positions.wheelRightBackSidewall[1]) end
-  if positions.wheelRightFrontSidewall ~= nil then table.insert(rightPositions, positions.wheelRightFrontSidewall[1]) end
+  -- if positions.wheelRightBackSidewall ~= nil then table.insert(rightPositions, positions.wheelRightBackSidewall[1]) end
+  -- if positions.wheelRightFrontSidewall ~= nil then table.insert(rightPositions, positions.wheelRightFrontSidewall[1]) end
   if rightPlatformHitResult.best ~= nil then table.insert(rightPositions, rightPlatformHitResult.best[1]) end
 
   local platformLeftX = math.max(unpack(leftPositions))
@@ -888,15 +906,13 @@ function CabCinematicVehicleAnalyzer:getPreferredEnterPosition(positions, flags)
   local preferredEnter = { positions.enter[1], positions.enter[2], positions.enter[3] }
   local bodyworkSafeDistance = 0.5
 
-  if flags.isEntryFromCabSide then
-    if positions.ladderBottom ~= nil then
-      preferredEnter[3] = positions.ladderBottom[3]
-    end
-
+  if positions.ladderBottom ~= nil then
+    preferredEnter[1] = positions.ladderBottom[1]
+    preferredEnter[3] = positions.ladderBottom[3]
+  elseif flags.isEntryFromCabSide then
     if flags.isEntryFromCabSideLeft then
-      local bodyworkX = math.max(positions.enterWheel[1], positions.platformLeft and positions.platformLeft[1] or 0, positions.left[1], positions.ladderBottom and positions.ladderBottom[1] or 0)
-      local isEnterFarFromBodywork = math.abs(positions.enter[1] - bodyworkX) > bodyworkSafeDistance
-      preferredEnter[1] = isEnterFarFromBodywork and (bodyworkX + bodyworkSafeDistance) or positions.enter[1]
+      local bodyworkX = math.max(positions.enterWheel[1], positions.platformLeft and positions.platformLeft[1] or 0, positions.left[1])
+      preferredEnter[1] = math.min(positions.enter[1], bodyworkX + bodyworkSafeDistance)
 
       if CabCinematicUtil.isVehicleTractor(self.vehicle) then
         if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
@@ -907,9 +923,8 @@ function CabCinematicVehicleAnalyzer:getPreferredEnterPosition(positions, flags)
         end
       end
     elseif flags.isEntryFromCabSideRight then
-      local bodyworkX = math.min(positions.enterWheel[1], positions.platformRight and positions.platformRight[1] or 0, positions.right[1], positions.ladderBottom and positions.ladderBottom[1] or 0)
-      local isEnterFarFromBodywork = math.abs(positions.enter[1] - bodyworkX) > bodyworkSafeDistance
-      preferredEnter[1] = isEnterFarFromBodywork and (bodyworkX - bodyworkSafeDistance) or positions.enter[1]
+      local bodyworkX = math.min(positions.enterWheel[1], positions.platformRight and positions.platformRight[1] or 0, positions.right[1])
+      preferredEnter[1] = math.max(positions.enter[1], bodyworkX - bodyworkSafeDistance)
 
       if CabCinematicUtil.isVehicleTractor(self.vehicle) then
         if positions.wheelRightBack ~= nil and positions.wheelRightFront ~= nil then
@@ -921,18 +936,12 @@ function CabCinematicVehicleAnalyzer:getPreferredEnterPosition(positions, flags)
       end
     end
   else
-    if positions.ladderBottom ~= nil then
-      preferredEnter[1] = positions.ladderBottom[1]
-    end
-
     if flags.isEntryFromCabFront then
-      local bodyworkZ = math.max(positions.enterWheel[3], positions.platformFront and positions.platformFront[3] or 0, positions.front[3], positions.ladderBottom and positions.ladderBottom[3] or 0)
-      local isEnterFarFromBodywork = math.abs(positions.enter[3] - bodyworkZ) > bodyworkSafeDistance
-      preferredEnter[3] = isEnterFarFromBodywork and (positions.enterWheel[3] + bodyworkSafeDistance) or positions.enter[3]
+      local bodyworkZ = math.max(positions.enterWheel[3], positions.platformFront and positions.platformFront[3] or 0, positions.front[3])
+      preferredEnter[3] = math.min(positions.enter[3], bodyworkZ + bodyworkSafeDistance)
     elseif flags.isEntryFromCabRear then
-      local bodyworkZ = math.min(positions.enterWheel[3], positions.platformBack and positions.platformBack[3] or 0, positions.back[3], positions.ladderBottom and positions.ladderBottom[3] or 0)
-      local isEnterFarFromBodywork = math.abs(positions.enter[3] - bodyworkZ) > bodyworkSafeDistance
-      preferredEnter[3] = isEnterFarFromBodywork and (positions.enterWheel[3] - bodyworkSafeDistance) or positions.enter[3]
+      local bodyworkZ = math.min(positions.enterWheel[3], positions.platformBack and positions.platformBack[3] or 0, positions.back[3])
+      preferredEnter[3] = math.max(positions.enter[3], bodyworkZ - bodyworkSafeDistance)
     end
   end
 

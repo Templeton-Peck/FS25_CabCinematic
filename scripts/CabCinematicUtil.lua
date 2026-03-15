@@ -5,7 +5,7 @@ CabCinematicUtil = {
     TRACTORS_S = 'tractorss',
     TRACTORS_M = 'tractorsm',
     TRACTORS_L = 'tractorsl',
-    HARVESTERS = 'harvesters',
+    GRAIN_HARVESTERS = 'harvesters',
     FORAGE_HARVESTERS = 'forageharvesters',
     BEET_HARVESTERS = 'beetharvesters',
     SPINACH_HARVESTERS = 'spinachharvesters',
@@ -21,6 +21,10 @@ CabCinematicUtil = {
     FORKLIFTS = 'forklifts',
     SPRAYERS = 'sprayers',
   },
+  KEYFRAME_OFFSETS = {
+    LADDER_SLOPE = 0.8,
+    STAIRS_SLOPE = 1.0,
+  }
 }
 
 function CabCinematicUtil.printParentNodeHierarchy(node, prefix)
@@ -477,4 +481,26 @@ function CabCinematicUtil.getVehicleAnimationNodes(vehicle, animationName)
   end
 
   return nodes
+end
+
+---Adds two x axis values together, taking into account the direction of the keyframe (positive or negative).
+---@param x1 number The first x value.
+---@param x2 number The second x value to add to the first.
+---@param positiveDir boolean Whether to add on a positive direction (true for left/front, false for right/rear).
+---@return number Result The result of the addition, adjusted for the direction.
+function CabCinematicUtil.addByDirection(x1, x2, positiveDir)
+  if positiveDir then
+    return x1 + x2
+  else
+    return x1 - x2
+  end
+end
+
+---Subtracts two x axis values, taking into account the direction of the keyframe (positive or negative).
+---@param x1 number The first x value.
+---@param x2 number The second x value to subtract from the first.
+---@param positiveDir boolean Whether to subtract in a positive direction (true for left/front, false for right/rear).
+---@return number Result The result of the subtraction, adjusted for the direction.
+function CabCinematicUtil.subByDirection(x1, x2, positiveDir)
+  return CabCinematicUtil.addByDirection(x1, -x2, positiveDir)
 end

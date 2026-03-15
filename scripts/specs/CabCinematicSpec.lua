@@ -345,12 +345,16 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
   local playerPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
-  local keyframes = CabCinematicKeyframe.build(vehicle, false)
-  local adaptedKeyframes = CabCinematicKeyframe.adaptKeyframesFromPosition(keyframes, playerPosition)
+  local keyframeBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
+  if keyframeBuilder == nil then
+    return superFunc(vehicle, unpack(args))
+  end
+
+  keyframeBuilder:adaptFromPosition(playerPosition)
 
   CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(player, vehicle)
 
-  local animation = CabCinematicAnimation.new(vehicle, adaptedKeyframes)
+  local animation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
 
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true
@@ -385,9 +389,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.animation = animation
   if CabCinematic.debugLevel > 0 then
-    local debugKeyframes = CabCinematicKeyframe.build(vehicle, false)
-    debugKeyframes = CabCinematicKeyframe.adaptKeyframesFromPosition(debugKeyframes, playerPosition)
-    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, debugKeyframes)
+    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
   end
 
   superFunc(vehicle, unpack(args))
@@ -411,8 +413,14 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.allowStartAnimation = false
 
-  local keyframes = CabCinematicKeyframe.build(vehicle, true)
-  local animation = CabCinematicAnimation.new(vehicle, keyframes)
+  local keyframeBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
+  if keyframeBuilder == nil then
+    return superFunc(vehicle, unpack(args))
+  end
+
+  keyframeBuilder:reverse()
+
+  local animation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
 
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true
@@ -448,8 +456,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.animation = animation
   if CabCinematic.debugLevel > 0 then
-    local debugKeyframes = CabCinematicKeyframe.build(vehicle, true)
-    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, debugKeyframes)
+    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
   end
 end
 
