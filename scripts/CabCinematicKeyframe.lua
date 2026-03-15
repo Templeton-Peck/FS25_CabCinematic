@@ -209,13 +209,13 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
   }
 
   if vehicleFeatures.flags.isEntryFromCabSide then
-    ladderTop = vehicleFeatures.ladderTop or {
+    ladderTop = vehicleFeatures.ladderTop ~= nil and vehicleFeatures.ladderTop or {
       subBySide(ladderBottom[1], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
       doorPosition[2],
       ladderBottom[3]
     }
   else
-    ladderTop = vehicleFeatures.ladderTop or {
+    ladderTop = vehicleFeatures.ladderTop ~= nil and vehicleFeatures.ladderTop or {
       ladderBottom[1],
       doorPosition[2],
       subBySide(ladderBottom[3], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
@@ -243,96 +243,6 @@ local function buildHarvesterKeyframes(enterPosition, doorPosition, storeCategor
   return keyframes
 end
 
----Builds the keyframes for beet harvesters.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorPosition table The position of the vehicle's door.
----@param storeCategory string The vehicle's storeCategory.
----@param vehicleFeatures table The vehicle's features.
----@return table keyframes The list of keyframes for the vehicle.
-local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
-  if vehicleFeatures.flags.isEntryFromCabSideRear then
-    local doorCross = {
-      addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
-      doorPosition[2],
-      doorPosition[3]
-    }
-
-    local ladderTop = {
-      doorCross[1] + 0.2,
-      doorCross[2],
-      enterPosition[3]
-    }
-
-    local ladderBottom = {
-      math.min(addBySide(ladderTop[1], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft), enterPosition[1]),
-      enterPosition[2],
-      ladderTop[3]
-    }
-
-    local keyframes = {
-      CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.CLIMB,
-        ladderBottom,
-        ladderTop
-      ),
-      CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        ladderTop,
-        doorCross
-      ),
-      CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        doorCross,
-        doorPosition
-      ),
-    }
-
-    if (math.abs(enterPosition[1] - ladderBottom[1]) > 0) then
-      table.insert(keyframes, 1, CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        enterPosition,
-        ladderBottom
-      ))
-    end
-
-    return keyframes
-  elseif vehicleFeatures.flags.isEntryFromCabSideCenter then
-    local ladderTop = {
-      addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
-      doorPosition[2],
-      enterPosition[3]
-    }
-
-    local ladderBottom = {
-      math.min(addBySide(ladderTop[1], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft), enterPosition[1]),
-      enterPosition[2],
-      ladderTop[3]
-    }
-
-    local keyframes = {
-      CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        enterPosition,
-        ladderBottom
-      ),
-      CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.CLIMB,
-        ladderBottom,
-        ladderTop
-      ),
-      CabCinematicKeyframe.new(
-        CabCinematicKeyframe.TYPES.WALK,
-        ladderTop,
-        doorPosition
-      ),
-    }
-
-    return keyframes
-  end
-
-  return {}
-end
-
 ---Builds the keyframes for forage harvesters.
 ---@param enterPosition table The position where the player enters the vehicle.
 ---@param doorPosition table The position of the vehicle's door.
@@ -341,22 +251,22 @@ end
 ---@return table keyframes The list of keyframes for the vehicle.
 local function buildForageHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
   if vehicleFeatures.flags.isEntryFromCabSideRear then
-    local doorCross = {
+    local doorSafe = {
       addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
       doorPosition[2],
       doorPosition[3]
     }
 
     local ladderBottom = {
-      doorCross[1],
+      doorSafe[1],
       enterPosition[2] + 0.25,
       enterPosition[3] + 0.25
     }
 
     local ladderTop = {
-      doorCross[1],
-      doorCross[2],
-      math.min(ladderBottom[3] + KEYFRAME_OFFSETS.STAIRS_SLOPE, doorCross[3])
+      doorSafe[1],
+      doorSafe[2],
+      math.min(ladderBottom[3] + KEYFRAME_OFFSETS.STAIRS_SLOPE, doorSafe[3])
     }
 
     local ladderStep = {
@@ -384,17 +294,80 @@ local function buildForageHarvesterKeyframes(enterPosition, doorPosition, storeC
       CabCinematicKeyframe.new(
         CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
-        doorCross
+        doorSafe
       ),
       CabCinematicKeyframe.new(
         CabCinematicKeyframe.TYPES.WALK,
-        doorCross,
+        doorSafe,
         doorPosition
       ),
     }
   end
 
   return {}
+end
+
+---Builds the keyframes for beet harvesters.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorPosition table The position of the vehicle's door.
+---@param storeCategory string The vehicle's storeCategory.
+---@param vehicleFeatures table The vehicle's features.
+---@return table keyframes The list of keyframes for the vehicle.
+local function buildBeetHarvesterKeyframes(enterPosition, doorPosition, storeCategory, vehicleFeatures)
+  local keyframes = {}
+  local ladderBottom = vehicleFeatures.ladderBottom or enterPosition
+  local ladderTop = {}
+  local doorSafe = {
+    addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
+    doorPosition[2],
+    doorPosition[3]
+  }
+
+  if vehicleFeatures.flags.isEntryFromCabSide then
+    ladderTop = vehicleFeatures.ladderTop ~= nil and vehicleFeatures.ladderTop or {
+      subBySide(ladderBottom[1], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
+      doorPosition[2],
+      ladderBottom[3]
+    }
+  else
+    ladderTop = vehicleFeatures.ladderTop ~= nil and vehicleFeatures.ladderTop or {
+      ladderBottom[1],
+      doorPosition[2],
+      subBySide(ladderBottom[3], KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
+    }
+  end
+
+  local ladderSafe = {
+    doorSafe[1],
+    doorPosition[2],
+    ladderTop[3]
+  }
+
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.CLIMB,
+    ladderBottom,
+    ladderTop
+  ))
+
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
+    ladderTop,
+    ladderSafe
+  ))
+
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
+    ladderSafe,
+    doorSafe
+  ))
+
+  table.insert(keyframes, CabCinematicKeyframe.new(
+    CabCinematicKeyframe.TYPES.WALK,
+    doorSafe,
+    doorPosition
+  ))
+
+  return keyframes
 end
 
 ---Builds the keyframes for tractors
@@ -427,20 +400,20 @@ local function buildTractorKeyframes(enterPosition, doorPosition, storeCategory,
   elseif vehicleFeatures.flags.isBiTracks and vehicleFeatures.flags.isTracksOnly then
     local wheelNode = vehicleFeatures.positions.wheelLeftBack or vehicleFeatures.positions.wheelRightBack
     local wheel = wheelNode
-    local ladderBottom = {
+    local ladderBottom = vehicleFeatures.positions.ladderBottom ~= nil and vehicleFeatures.positions.ladderBottom or {
       wheel[1] or addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
       enterPosition[2],
       enterPosition[3]
     }
 
-    local ladderTop = {
+    local ladderTop = vehicleFeatures.positions.ladderTop ~= nil and vehicleFeatures.positions.ladderTop or {
       ladderBottom[1],
       doorPosition[2],
       ladderBottom[3] - KEYFRAME_OFFSETS.LADDER_SLOPE
     }
 
-    local doorCross = {
-      ladderBottom[1],
+    local doorSafe = {
+      addBySide(doorPosition[1], KEYFRAME_OFFSETS.DOOR_SAFE_DISTANCE, vehicleFeatures.flags.isEntryFromCabSideLeft),
       doorPosition[2],
       doorPosition[3]
     }
@@ -459,11 +432,11 @@ local function buildTractorKeyframes(enterPosition, doorPosition, storeCategory,
       CabCinematicKeyframe.new(
         CabCinematicKeyframe.TYPES.WALK,
         ladderTop,
-        doorCross
+        doorSafe
       ),
       CabCinematicKeyframe.new(
         CabCinematicKeyframe.TYPES.WALK,
-        doorCross,
+        doorSafe,
         doorPosition
       )
     }

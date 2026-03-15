@@ -580,39 +580,19 @@ function CabCinematicSpec:drawCabCinematicDebug()
       CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
     end
 
-    if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil and self.spec_animatedVehicle ~= nil then
-      local animation = self.spec_animatedVehicle.animations[self.spec_combine.ladder.animName]
-      if animation ~= nil then
-        if animation.isKeyframe then
-          for node, _ in pairs(animation.curvesByNode) do
-            DebugUtil.drawDebugNode(node, getName(node))
-          end
-        elseif animation.parts ~= nil then
-          for _, part in ipairs(animation.parts) do
-            for _, av in ipairs(part.animationValues) do
-              DebugUtil.drawDebugNode(av.node, getName(av.node))
-            end
-          end
-        end
-      end
-    end
+    -- if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
+    --   local nodes = CabCinematicUtil.getVehicleAnimationNodes(self, self.spec_combine.ladder.animName)
+    --   for _, node in pairs(nodes) do
+    --     DebugUtil.drawDebugNode(node, getName(node))
+    --   end
+    -- end
 
-    if self.spec_enterable ~= nil and self.spec_enterable.enterAnimation ~= nil and self.spec_animatedVehicle ~= nil then
-      local animation = self.spec_animatedVehicle.animations[self.spec_enterable.enterAnimation]
-      if animation ~= nil then
-        if animation.isKeyframe then
-          for node, _ in pairs(animation.curvesByNode) do
-            DebugUtil.drawDebugNode(node, getName(node))
-          end
-        elseif animation.parts ~= nil then
-          for _, part in ipairs(animation.parts) do
-            for _, av in ipairs(part.animationValues) do
-              DebugUtil.drawDebugNode(av.node, getName(av.node))
-            end
-          end
-        end
-      end
-    end
+    -- if self.spec_enterable ~= nil and self.spec_enterable.enterAnimation ~= nil then
+    --   local nodes = CabCinematicUtil.getVehicleAnimationNodes(self, self.spec_enterable.enterAnimation)
+    --   for _, node in pairs(nodes) do
+    --     DebugUtil.drawDebugNode(node, getName(node))
+    --   end
+    -- end
 
     local x, y = 0.005, 0.5
     local alphaSortedFlags = {}
