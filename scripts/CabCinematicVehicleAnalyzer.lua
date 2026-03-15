@@ -649,10 +649,13 @@ function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
     end
   end
 
+  local platformLeft = positions.platformLeft ~= nil and (positions.platformLeft[1] - 0.25) or math.huge
+  local platformRight = positions.platformRight ~= nil and (positions.platformRight[1] + 0.25) or -math.huge
+
   local leftDoor = { positions.left[1], positions.camera[2], leftZ }
   local rightDoor = { positions.right[1], positions.camera[2], rightZ }
-  local leftDoorSafe = { leftDoor[1] + DOOR_SAFE_DISTANCE, leftDoor[2], leftDoor[3] }
-  local rightDoorSafe = { rightDoor[1] - DOOR_SAFE_DISTANCE, rightDoor[2], rightDoor[3] }
+  local leftDoorSafe = { math.min(leftDoor[1] + DOOR_SAFE_DISTANCE, platformLeft), leftDoor[2], leftDoor[3] }
+  local rightDoorSafe = { math.max(rightDoor[1] - DOOR_SAFE_DISTANCE, platformRight), rightDoor[2], rightDoor[3] }
 
   if flags.isEntryFromCabSideFront then
     leftDoorSafe[3] = leftDoorSafe[3] + 0.15

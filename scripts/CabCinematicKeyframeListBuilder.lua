@@ -350,6 +350,50 @@ function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(enterPositi
   return self
 end
 
+---Builds a keyframe sequence for sprayers based on its features and entry configuration.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorSafePosition table The position in front of the door considered safe for the player.
+---@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+---@return CabCinematicKeyframeListBuilder self for method chaining
+function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
+  if vehicleFeatures.flags.isEntryFromCabSide then
+    local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
+    local ladderTop = vehicleFeatures.positions.ladderTop or {
+      CabCinematicUtil.subByDirection(ladderBottom[1], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabSideLeft),
+      doorSafePosition[2],
+      ladderBottom[3]
+    }
+
+    return self
+        :walkTo(ladderBottom)
+        :climbTo(ladderTop)
+        :walkTo(doorSafePosition)
+  elseif vehicleFeatures.flags.isEntryFromCabFront then
+    local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
+    local ladderTop = vehicleFeatures.positions.ladderTop or {
+      ladderBottom[1],
+      doorSafePosition[2],
+      CabCinematicUtil.subByDirection(ladderBottom[3], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleFeatures.flags.isEntryFromCabFront),
+    }
+
+    return self
+        :walkTo(ladderBottom)
+        :climbTo(ladderTop)
+        :walkTo(doorSafePosition)
+  end
+
+  return self
+end
+
+--- Builds a keyframe sequence for skidsteers which don't have a cab and require the player to shift to the door safe position before entering.
+---@param enterPosition table The position where the player enters the vehicle.
+---@param doorSafePosition table The position in front of the door considered safe for the player.
+---@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+---@return CabCinematicKeyframeListBuilder self for method chaining
+function CabCinematicKeyframeListBuilder:buildSkidsteersKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
+  return self:shiftTo(doorSafePosition)
+end
+
 ---Prepares a keyframe list builder for the given vehicle by analyzing its features and generating appropriate keyframes.
 ---@param vehicle table The vehicle for which to prepare the keyframe builder
 ---@return CabCinematicKeyframeListBuilder | nil builder The prepared keyframe list builder
@@ -391,6 +435,8 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
     builder:buildSugarcaneHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.RICE_HARVESTERS then
     builder:buildRiceHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
+    builder:buildSprayersKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   end
 
   return builder
