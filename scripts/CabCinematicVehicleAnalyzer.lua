@@ -201,17 +201,19 @@ end
 --- @param positions table Current positions for reference
 --- @return table Raycast results with positions and debug hits
 function CabCinematicVehicleAnalyzer:raycastCabBoundingBox(positions)
-  local backHitResult = CabCinematicUtil.raycastVehicle(
+  local backHitResult = CabCinematicUtil.raycastVehicleMultipleHeights(
     self.vehicle,
     positions.camera[1], positions.camera[2], positions.camera[3] - 2.0,
     positions.camera[1], positions.camera[2], positions.camera[3],
+    true,
     false
   )
 
-  local frontHitResult = CabCinematicUtil.raycastVehicle(
+  local frontHitResult = CabCinematicUtil.raycastVehicleMultipleHeights(
     self.vehicle,
     positions.camera[1], positions.camera[2], positions.steeringWheel[3] + 2.0,
     positions.camera[1], positions.camera[2], positions.steeringWheel[3],
+    false,
     true
   )
 
