@@ -600,7 +600,7 @@ function CabCinematicSpec:drawCabCinematicDebug()
     --   end
     -- end
 
-    local x, y = 0.005, 0.5
+    local x, y = 0.005, 0.75
     local alphaSortedFlags = {}
     for text, state in pairs(features.flags) do
       table.insert(alphaSortedFlags, { text = text, state = state })

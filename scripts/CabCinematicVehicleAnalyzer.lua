@@ -54,30 +54,43 @@ function CabCinematicVehicleAnalyzer:getPneumaticWheelFeatures(wheel, positions)
     treadFrontPosition = { wheel.isLeft and -math.huge or math.huge, 0, 0 },
   }
 
-  local function getHalfWidth(vw)
-    local w = (vw.width) or (wheel.physics and (wheel.physics.width or wheel.physics.wheelShapeWidth)) or 0
-    return 0.5 * w
+  local function getVisualWheelWidth(vw)
+    return (vw.width) or (wheel.physics and (wheel.physics.width or wheel.physics.wheelShapeWidth)) or 0
   end
 
-  for _, vw in ipairs(wheel.visualWheels) do
-    if vw.node ~= nil and vw.node ~= 0 then
-      local halfWidth = getHalfWidth(vw)
-      local x, y, z = localToLocal(getParent(vw.node), self.vehicle.rootNode, getTranslation(vw.node))
-      local swx1, swy1, swz1 = localToLocal(getParent(vw.node), self.vehicle.rootNode, halfWidth, 0, 0)
-      local swx2, swy2, swz2 = localToLocal(getParent(vw.node), self.vehicle.rootNode, -halfWidth, 0, 0)
-
-      if wheel.isLeft then
-        if x > result.position[1] then result.position = { x, y, z } end
-        if swx1 > result.sidewallPosition[1] then result.sidewallPosition = { swx1, swy1, swz1 } end
-        if swx2 > result.sidewallPosition[1] then result.sidewallPosition = { swx2, swy2, swz2 } end
-      else
-        if x < result.position[1] then result.position = { x, y, z } end
-        if swx1 < result.sidewallPosition[1] then result.sidewallPosition = { swx1, swy1, swz1 } end
-        if swx2 < result.sidewallPosition[1] then result.sidewallPosition = { swx2, swy2, swz2 } end
+  if wheel.isLeft then
+    local leftestVisualWheel = nil
+    for _, vw in ipairs(wheel.visualWheels) do
+      if vw.node ~= nil and vw.node ~= 0 then
+        local x, y, z = localToLocal(getParent(vw.node), self.vehicle.rootNode, getTranslation(vw.node))
+        if x > result.position[1] then
+          result.position = { x, y, z }
+          leftestVisualWheel = vw
+        end
       end
+    end
 
-      result.treadBackPosition = { x, y, z - vw.radius }
-      result.treadFrontPosition = { x, y, z + vw.radius }
+    if leftestVisualWheel ~= nil then
+      result.treadBackPosition = { result.position[1], result.position[2], result.position[3] - leftestVisualWheel.radius }
+      result.treadFrontPosition = { result.position[1], result.position[2], result.position[3] + leftestVisualWheel.radius }
+      result.sidewallPosition = { result.position[1] + getVisualWheelWidth(leftestVisualWheel) * 0.5, result.position[2], result.position[3] }
+    end
+  else
+    local rightestVisualWheel = nil
+    for _, vw in ipairs(wheel.visualWheels) do
+      if vw.node ~= nil and vw.node ~= 0 then
+        local x, y, z = localToLocal(getParent(vw.node), self.vehicle.rootNode, getTranslation(vw.node))
+        if x < result.position[1] then
+          result.position = { x, y, z }
+          rightestVisualWheel = vw
+        end
+      end
+    end
+
+    if rightestVisualWheel ~= nil then
+      result.treadBackPosition = { result.position[1], result.position[2], result.position[3] - rightestVisualWheel.radius }
+      result.treadFrontPosition = { result.position[1], result.position[2], result.position[3] + rightestVisualWheel.radius }
+      result.sidewallPosition = { result.position[1] - getVisualWheelWidth(rightestVisualWheel) * 0.5, result.position[2], result.position[3] }
     end
   end
 
@@ -673,14 +686,6 @@ function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
       rightDoor = rightDoor,
       leftDoorSafe = leftDoorSafe,
       rightDoorSafe = rightDoorSafe,
-    },
-    flags = {
-      isDoorZMirrorDriven = positions.leftMirror ~= nil or positions.rightMirror ~= nil,
-      isDoorZTractorFrontSideRefined = CabCinematicUtil.isVehicleTractor(self.vehicle) and flags.isEntryFromCabSideFront,
-    },
-    debugPositions = {
-      doorPreferredZRef = { positions.center[1], positions.camera[2], preferredZ },
-      doorFrontZRef = { positions.center[1], positions.camera[2], doorZCandidates.frontZ },
     }
   }
 end
