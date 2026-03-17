@@ -9,8 +9,8 @@ function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicSupported", CabCinematicSpec.getIsCabCinematicSupported)
   SpecializationUtil.registerFunction(vehicleType, "getIndoorCamera", CabCinematicSpec.getIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "setIndoorCameraActive", CabCinematicSpec.setIndoorCameraActive)
-  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicFeatures", CabCinematicSpec.getCabCinematicFeatures)
-  SpecializationUtil.registerFunction(vehicleType, "invalidateCabCinematicFeaturesCache", CabCinematicSpec.invalidateCabCinematicFeaturesCache)
+  SpecializationUtil.registerFunction(vehicleType, "getCabCinematicAnalysis", CabCinematicSpec.getCabCinematicAnalysis)
+  SpecializationUtil.registerFunction(vehicleType, "invalidateCabCinematicAnalysisCache", CabCinematicSpec.invalidateCabCinematicAnalysisCache)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicAnimationOngoing", CabCinematicSpec.getIsCabCinematicAnimationOngoing)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicPrerequisiteAnimation", CabCinematicSpec.getCabCinematicPrerequisiteAnimation)
   SpecializationUtil.registerFunction(vehicleType, "drawCabCinematicDebug", CabCinematicSpec.drawCabCinematicDebug)
@@ -19,6 +19,7 @@ end
 function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "onPlayerEnterVehicle", CabCinematicSpec.onPlayerEnterVehicle)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "doLeaveVehicle", CabCinematicSpec.doLeaveVehicle)
+  SpecializationUtil.registerOverwrittenFunction(vehicleType, "getExitNode", CabCinematicSpec.getExitNode)
 
   -- Entering/leaving overwriting
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter, CabCinematicSpec.onPlayerActionInputEnter)
@@ -50,7 +51,7 @@ function CabCinematicSpec:onPreLoad()
   spec.vehicleAnalyzer     = nil
   spec.storeCategory       = nil
   spec.indoorCamera        = nil
-  spec.features            = nil
+  spec.analysis            = nil
   spec.animation           = nil
   spec.debugAnimation      = nil
   spec.allowStartAnimation = false
@@ -96,7 +97,7 @@ function CabCinematicSpec:onDelete()
   spec.camera = nil
   spec.storeCategory = nil
   spec.indoorCamera = nil
-  spec.features = nil
+  spec.analysis = nil
   spec.animation = nil
   spec.debugAnimation = nil
   spec.allowStartAnimation = nil
@@ -265,7 +266,7 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
         return
       end
 
-      vehicle:invalidateCabCinematicFeaturesCache()
+      vehicle:invalidateCabCinematicAnalysisCache()
     end
 
     spec.lastInteractionTime = g_time
@@ -309,7 +310,7 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
         return
       end
 
-      vehicle:invalidateCabCinematicFeaturesCache()
+      vehicle:invalidateCabCinematicAnalysisCache()
     end
 
     spec.lastInteractionTime = g_time
@@ -454,6 +455,16 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   end
 end
 
+function CabCinematicSpec:getExitNode(superFunc, ...)
+  -- if self:getIsCabCinematicAnimationOngoing() then
+  --   -- Log:info("getExitNode called for vehicle during cinematic, returning mirror node as exit node")
+  --   return self.spec_enterable.mirrors[1].node
+  -- end
+  -- Log:info("getExitNode called for vehicle not in cinematic, calling original function")
+
+  return superFunc(self, ...)
+end
+
 --- Callback used to toggle cab cinematic pause state when the corresponding input is triggered
 --- @param vehicle table The vehicle instance
 function CabCinematicSpec.onPlayerPauseCabCinematic(vehicle, actionName, inputValue, callbackState, isAnalog)
@@ -467,24 +478,24 @@ function CabCinematicSpec.onPlayerPauseCabCinematic(vehicle, actionName, inputVa
   end
 end
 
---- Get analyzed vehicle features, using cached value if available unless force is true
---- @return table|nil features
-function CabCinematicSpec:getCabCinematicFeatures()
-  if self.spec_cabCinematic.features ~= nil then
-    return self.spec_cabCinematic.features
+--- Get analyzed vehicle positions and flags, using cached value if available unless force is true
+--- @return table|nil analysis
+function CabCinematicSpec:getCabCinematicAnalysis()
+  if self.spec_cabCinematic.analysis ~= nil then
+    return self.spec_cabCinematic.analysis
   end
 
   if self:getIsCabCinematicSupported() then
-    self.spec_cabCinematic.features = self.spec_cabCinematic.vehicleAnalyzer:analyze()
-    return self.spec_cabCinematic.features
+    self.spec_cabCinematic.analysis = self.spec_cabCinematic.vehicleAnalyzer:analyze()
+    return self.spec_cabCinematic.analysis
   end
 
   return nil
 end
 
---- Invalidates the cached vehicle features, forcing them to be re-analyzed when next requested
-function CabCinematicSpec:invalidateCabCinematicFeaturesCache()
-  self.spec_cabCinematic.features = nil
+--- Invalidates the cached vehicle analysis, forcing them to be re-analyzed when next requested
+function CabCinematicSpec:invalidateCabCinematicAnalysisCache()
+  self.spec_cabCinematic.analysis = nil
 end
 
 --- Tells whether a cinematic animation is currently ongoing
@@ -567,22 +578,22 @@ end
 
 --- Draws debug information for the cab cinematic spec
 function CabCinematicSpec:drawCabCinematicDebug()
-  local features = self:getCabCinematicFeatures()
-  if features ~= nil then
-    CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.positions)
-    CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, features.positions)
+  local analysis = self:getCabCinematicAnalysis()
+  if analysis ~= nil then
+    CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, analysis.positions)
+    CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, analysis.positions)
 
-    if features.flags.isPlatformEquipped then
-      CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, features.positions)
+    if analysis.flags.isPlatformEquipped then
+      CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, analysis.positions)
     end
 
 
     if CabCinematic.debugLevel > 1 then
-      CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
-      CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
+      CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, analysis.debugPositions)
+      CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, analysis.debugHits)
 
-      if features.debugPositions.focusRight then
-        CabCinematicUtil.drawDebugShadowFocusBoxNode(self.rootNode, features.debugPositions)
+      if analysis.debugPositions.focusRight then
+        CabCinematicUtil.drawDebugShadowFocusBoxNode(self.rootNode, analysis.debugPositions)
       end
     end
 
@@ -602,7 +613,7 @@ function CabCinematicSpec:drawCabCinematicDebug()
 
     local x, y = 0.005, 0.75
     local alphaSortedFlags = {}
-    for text, state in pairs(features.flags) do
+    for text, state in pairs(analysis.flags) do
       table.insert(alphaSortedFlags, { text = text, state = state })
     end
     table.sort(alphaSortedFlags, function(a, b) return a.text < b.text end)

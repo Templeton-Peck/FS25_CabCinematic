@@ -21,12 +21,12 @@ end
 function CabCinematicCamera.new(vehicle)
   local self = setmetatable({}, CabCinematicCamera_mt)
   self.cameraNode = createCameraNode(vehicle)
-  self.cameraX = 0;
-  self.cameraY = 0;
-  self.cameraZ = 0;
-  self.cameraPitch = 0;
-  self.cameraYaw = 0;
-  self.cameraRoll = 0;
+  self.cameraX = 0
+  self.cameraY = 0
+  self.cameraZ = 0
+  self.cameraPitch = 0
+  self.cameraYaw = 0
+  self.cameraRoll = 0
 
   g_cameraManager:addCamera(self.cameraNode, nil, false)
   g_messageCenter:subscribe(MessageType.SETTING_CHANGED[GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON], CabCinematicCamera.onFovYSettingChanged, self)
@@ -42,12 +42,12 @@ function CabCinematicCamera:delete()
   g_messageCenter:unsubscribeAll(self)
 
   self.cameraNode = nil
-  self.cameraX = 0;
-  self.cameraY = 0;
-  self.cameraZ = 0;
-  self.cameraPitch = 0;
-  self.cameraYaw = 0;
-  self.cameraRoll = 0;
+  self.cameraX = 0
+  self.cameraY = 0
+  self.cameraZ = 0
+  self.cameraPitch = 0
+  self.cameraYaw = 0
+  self.cameraRoll = 0
 end
 
 --- Activates the cinematic camera, making it the active camera in the gameplay

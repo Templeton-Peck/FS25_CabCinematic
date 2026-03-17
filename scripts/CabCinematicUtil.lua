@@ -355,20 +355,20 @@ function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
 end
 
 function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
-  local features = vehicle:getCabCinematicFeatures()
-  if features == nil then
+  local analysis = vehicle:getCabCinematicAnalysis()
+  if analysis == nil then
     return false
   end
 
-  local enterPosition = features.positions.enter
+  local enterPosition = analysis.positions.enter
 
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
   local ex, ey, ez = unpack(enterPosition)
 
-  if features.flags.isEntryFromCabSide then
+  if analysis.flags.isEntryFromCabSide then
     -- if player is between vehicle and enter point on X axis
     -- and more than 1.0m away from enter point, then return false
-    if features.flags.isEntryFromCabSideLeft then
+    if analysis.flags.isEntryFromCabSideLeft then
       if px < math.max(ex - 1, 0) then
         return false
       end
@@ -377,11 +377,11 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
         return false
       end
     end
-  elseif features.flags.isEntryFromCabFront then
+  elseif analysis.flags.isEntryFromCabFront then
     if pz < math.max(ez - 1, 0) then
       return false
     end
-  elseif features.flags.isEntryFromCabBack then
+  elseif analysis.flags.isEntryFromCabBack then
     if pz > math.min(ez + 1, 0) then
       return false
     end

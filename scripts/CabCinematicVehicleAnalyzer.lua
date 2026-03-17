@@ -165,7 +165,7 @@ end
 --- @param positions table Current positions for reference
 --- @return table Position Position of character's feet
 function CabCinematicVehicleAnalyzer:getCabCharacterFootPosition(positions)
-  local characterTargets = self.vehicle.spec_enterable.defaultCharacterTargets;
+  local characterTargets = self.vehicle.spec_enterable.defaultCharacterTargets
 
   if characterTargets ~= nil then
     local foots = { characterTargets.leftFoot, characterTargets.rightFoot }
@@ -702,7 +702,7 @@ function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
   end
 
   local standupY = positions.camera[2] + 0.05
-  local preferredStandupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05;
+  local preferredStandupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05
   local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.leftDoor[3], positions.front[3] - 0.15)
   return { standupX, standupY, standupZ }
 end
