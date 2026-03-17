@@ -695,7 +695,8 @@ function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
   end
 
   local standupY = positions.camera[2] + 0.05
-  local standupZ = math.min(((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05, positions.front[3] - 0.15)
+  local preferredStandupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05;
+  local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.leftDoor[3], positions.front[3] - 0.15)
   return { standupX, standupY, standupZ }
 end
 
@@ -995,9 +996,6 @@ function CabCinematicVehicleAnalyzer:analyze()
   CabCinematicUtil.merge(positions, enterFeatures.positions)
   CabCinematicUtil.merge(flags, enterFeatures.flags)
 
-  -- Standup position
-  positions.standup = self:getCabStandupPosition(positions, flags)
-
   --- Mirror features
   local mirrorsFeatures = self:getCabMirrorsFeatures(positions)
   CabCinematicUtil.merge(positions, mirrorsFeatures.positions)
@@ -1013,6 +1011,9 @@ function CabCinematicVehicleAnalyzer:analyze()
   local ladderFeatures = self:getCabLadderFeatures(positions, flags)
   CabCinematicUtil.merge(positions, ladderFeatures.positions)
   CabCinematicUtil.merge(flags, ladderFeatures.flags)
+
+  -- Standup position
+  positions.standup = self:getCabStandupPosition(positions, flags)
 
   -- Preferred enter position
   positions.preferredEnter = self:getPreferredEnterPosition(positions, flags)

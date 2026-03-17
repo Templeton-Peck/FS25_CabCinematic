@@ -31,7 +31,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ⬜ Cotton Harvesters
   - ⬜ Vegetable Harvesters
   - ⬜ Beet Loaders
- - Loaders
+- Loaders
   - ✅ Wheel Loaders
   - ✅ Front Loaders
   - ✅ Forklifts

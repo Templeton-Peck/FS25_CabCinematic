@@ -152,10 +152,20 @@ function CabCinematicUtil.drawDebugPlatformBoundingBox(node, boundingBox)
   return CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
 end
 
+---Clamps a value between a minimum and maximum range
+---@param value number The value to clamp
+---@param min number The minimum value
+---@param max number The maximum value
+---@return number The clamped value
 function CabCinematicUtil.clamp(value, min, max)
   return math.min(math.max(value, min), max)
 end
 
+---Checks if two values are within a certain threshold of each other
+---@param valueA number The first value
+---@param valueB number The second value
+---@param threshold number The maximum allowed difference between the values
+---@return boolean True if the values are within the threshold, false otherwise
 function CabCinematicUtil.isNear(valueA, valueB, threshold)
   return math.abs(valueA - valueB) <= threshold
 end
