@@ -238,12 +238,6 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
     local spec = vehicle.spec_cabCinematic
 
-    -- if vehicle.spec_combine ~= nil and vehicle.spec_combine.ladder ~= nil and vehicle.spec_animatedVehicle ~= nil then
-    --   local animation = vehicle.spec_animatedVehicle.animations[vehicle.spec_combine.ladder.animName]
-    --   CabCinematicUtil.printTableRecursively(animation, " ", 0, 5, { "modifierTargetObject", "i3dMappings" })
-    -- end
-
-
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(playerInputComponent, ...)
     end

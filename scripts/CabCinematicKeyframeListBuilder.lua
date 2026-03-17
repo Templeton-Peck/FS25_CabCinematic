@@ -23,7 +23,11 @@ function CabCinematicKeyframeListBuilder:add(type, position)
   if #self.waypoints > 0 then
     local lastPosition = self.waypoints[#self.waypoints]
     local distance = MathUtil.vector3Length(position[1] - lastPosition[1], position[2] - lastPosition[2], position[3] - lastPosition[3])
-    if distance <= 0.01 then
+    if distance <= 0.15 then
+      lastPosition[1] = (lastPosition[1] + position[1]) / 2
+      lastPosition[2] = (lastPosition[2] + position[2]) / 2
+      lastPosition[3] = (lastPosition[3] + position[3]) / 2
+
       return self
     end
   end
@@ -179,8 +183,6 @@ end
 ---@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
 ---@return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildGrainHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
-  CabCinematicUtil.printTableRecursively(vehicleFeatures)
-
   local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
   local ladderTop = {}
 

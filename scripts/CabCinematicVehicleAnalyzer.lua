@@ -62,9 +62,9 @@ function CabCinematicVehicleAnalyzer:getPneumaticWheelFeatures(wheel, positions)
   for _, vw in ipairs(wheel.visualWheels) do
     if vw.node ~= nil and vw.node ~= 0 then
       local halfWidth = getHalfWidth(vw)
-      local x, y, z = localToLocal(vw.node, self.vehicle.rootNode, getTranslation(vw.node))
-      local swx1, swy1, swz1 = localToLocal(vw.node, self.vehicle.rootNode, halfWidth, 0, 0)
-      local swx2, swy2, swz2 = localToLocal(vw.node, self.vehicle.rootNode, -halfWidth, 0, 0)
+      local x, y, z = localToLocal(getParent(vw.node), self.vehicle.rootNode, getTranslation(vw.node))
+      local swx1, swy1, swz1 = localToLocal(getParent(vw.node), self.vehicle.rootNode, halfWidth, 0, 0)
+      local swx2, swy2, swz2 = localToLocal(getParent(vw.node), self.vehicle.rootNode, -halfWidth, 0, 0)
 
       if wheel.isLeft then
         if x > result.position[1] then result.position = { x, y, z } end
@@ -728,14 +728,14 @@ function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
   )
 
   local leftPositions = { positions.left[1] }
-  -- if positions.wheelLeftBackSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftBackSidewall[1]) end
-  -- if positions.wheelLeftFrontSidewall ~= nil then table.insert(leftPositions, positions.wheelLeftFrontSidewall[1]) end
+  if positions.wheelLeftBack ~= nil then table.insert(leftPositions, positions.wheelLeftBack[1]) end
+  if positions.wheelLeftFront ~= nil then table.insert(leftPositions, positions.wheelLeftFront[1]) end
   if leftPlatformHitResult.best ~= nil then table.insert(leftPositions, leftPlatformHitResult.best[1]) end
 
 
   local rightPositions = { positions.right[1] }
-  -- if positions.wheelRightBackSidewall ~= nil then table.insert(rightPositions, positions.wheelRightBackSidewall[1]) end
-  -- if positions.wheelRightFrontSidewall ~= nil then table.insert(rightPositions, positions.wheelRightFrontSidewall[1]) end
+  if positions.wheelRightBack ~= nil then table.insert(rightPositions, positions.wheelRightBack[1]) end
+  if positions.wheelRightFront ~= nil then table.insert(rightPositions, positions.wheelRightFront[1]) end
   if rightPlatformHitResult.best ~= nil then table.insert(rightPositions, rightPlatformHitResult.best[1]) end
 
   local platformLeftX = math.max(unpack(leftPositions))
