@@ -49,7 +49,7 @@ function CabCinematic:onDebugConsoleCommand(level)
   if level == nil then
     self.debugLevel = self.debugLevel > 0 and 0 or 1
   else
-    self.debugLevel = level
+    self.debugLevel = tonumber(level) or 0
   end
 end
 

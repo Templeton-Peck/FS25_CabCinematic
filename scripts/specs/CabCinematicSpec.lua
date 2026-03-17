@@ -576,9 +576,14 @@ function CabCinematicSpec:drawCabCinematicDebug()
       CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, features.positions)
     end
 
+
     if CabCinematic.debugLevel > 1 then
       CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, features.debugPositions)
       CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, features.debugHits)
+
+      if features.debugPositions.focusRight then
+        CabCinematicUtil.drawDebugShadowFocusBoxNode(self.rootNode, features.debugPositions)
+      end
     end
 
     -- if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then

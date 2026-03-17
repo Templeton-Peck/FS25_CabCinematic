@@ -83,19 +83,18 @@ function CabCinematicUtil.drawDebugNodeRelativeHitResults(node, hitResults)
     for index, hit in ipairs(hitResult.hits) do
       if (hit[1] == hitResult.best[1] and hit[2] == hitResult.best[2] and hit[3] == hitResult.best[3]) then
         local px, py, pz = localToWorld(node, unpack(hitResult.best))
-        local text = string.format("%s best (%.2f, %.2f, %.2f) Dist: %.2f", name, hitResult.best[1], hitResult.best[2],
-          hitResult.best[3], hitResult.best[4])
+        local text = string.format("%s best (%.2f, %.2f, %.2f)", name, hitResult.best[1], hitResult.best[2], hitResult.best[3])
         DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
       else
         local px, py, pz = localToWorld(node, unpack(hit))
-        local text = string.format("%s %d (%.2f, %.2f, %.2f) Dist: %.2f", name, index, hit[1], hit[2], hit[3], hit[4])
+        local text = string.format("%s %d (%.2f, %.2f, %.2f)", name, index, hit[1], hit[2], hit[3])
         DebugUtil.drawDebugGizmoAtWorldPos(px, py + 0.1, pz, 1, 0, 0, 0, 0, 1, text)
       end
     end
   end
 end
 
-function CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
+function CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ, r, g, b)
   -- Convert the 8 corners to world coordinates
   local x1, y1, z1 = localToWorld(node, minX, minY, maxZ) -- left-bottom-front
   local x2, y2, z2 = localToWorld(node, maxX, minY, maxZ) -- right-bottom-front
@@ -107,22 +106,22 @@ function CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, min
   local x8, y8, z8 = localToWorld(node, minX, maxY, minZ) -- left-top-back
 
   -- Bottom rectangle
-  DebugUtil.drawDebugLine(x1, y1, z1, x2, y2, z2, 1, 1, 0)
-  DebugUtil.drawDebugLine(x2, y2, z2, x3, y3, z3, 1, 1, 0)
-  DebugUtil.drawDebugLine(x3, y3, z3, x4, y4, z4, 1, 1, 0)
-  DebugUtil.drawDebugLine(x4, y4, z4, x1, y1, z1, 1, 1, 0)
+  DebugUtil.drawDebugLine(x1, y1, z1, x2, y2, z2, r, g, b)
+  DebugUtil.drawDebugLine(x2, y2, z2, x3, y3, z3, r, g, b)
+  DebugUtil.drawDebugLine(x3, y3, z3, x4, y4, z4, r, g, b)
+  DebugUtil.drawDebugLine(x4, y4, z4, x1, y1, z1, r, g, b)
 
   -- Top rectangle
-  DebugUtil.drawDebugLine(x5, y5, z5, x6, y6, z6, 1, 1, 0)
-  DebugUtil.drawDebugLine(x6, y6, z6, x7, y7, z7, 1, 1, 0)
-  DebugUtil.drawDebugLine(x7, y7, z7, x8, y8, z8, 1, 1, 0)
-  DebugUtil.drawDebugLine(x8, y8, z8, x5, y5, z5, 1, 1, 0)
+  DebugUtil.drawDebugLine(x5, y5, z5, x6, y6, z6, r, g, b)
+  DebugUtil.drawDebugLine(x6, y6, z6, x7, y7, z7, r, g, b)
+  DebugUtil.drawDebugLine(x7, y7, z7, x8, y8, z8, r, g, b)
+  DebugUtil.drawDebugLine(x8, y8, z8, x5, y5, z5, r, g, b)
 
   -- Vertical lines
-  DebugUtil.drawDebugLine(x1, y1, z1, x5, y5, z5, 1, 1, 0)
-  DebugUtil.drawDebugLine(x2, y2, z2, x6, y6, z6, 1, 1, 0)
-  DebugUtil.drawDebugLine(x3, y3, z3, x7, y7, z7, 1, 1, 0)
-  DebugUtil.drawDebugLine(x4, y4, z4, x8, y8, z8, 1, 1, 0)
+  DebugUtil.drawDebugLine(x1, y1, z1, x5, y5, z5, r, g, b)
+  DebugUtil.drawDebugLine(x2, y2, z2, x6, y6, z6, r, g, b)
+  DebugUtil.drawDebugLine(x3, y3, z3, x7, y7, z7, r, g, b)
+  DebugUtil.drawDebugLine(x4, y4, z4, x8, y8, z8, r, g, b)
 end
 
 function CabCinematicUtil.drawDebugCabBoundingBox(node, boundingBox)
@@ -133,12 +132,12 @@ function CabCinematicUtil.drawDebugCabBoundingBox(node, boundingBox)
   local minZ = boundingBox.back[3]
   local maxZ = boundingBox.front[3]
 
-  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
+  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ, 1, 1, 0)
 
   -- Draw 2 pairs of lines which divide the bounding box into 3 sections on the Z axis, to visualize potential door positions
   local thirdSizeZ = (maxZ - minZ) / 3
-  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ + thirdSizeZ, minZ + thirdSizeZ)
-  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ + 2 * thirdSizeZ, minZ + 2 * thirdSizeZ)
+  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ + thirdSizeZ, minZ + thirdSizeZ, 1, 1, 0)
+  CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ + 2 * thirdSizeZ, minZ + 2 * thirdSizeZ, 1, 1, 0)
 end
 
 function CabCinematicUtil.drawDebugPlatformBoundingBox(node, boundingBox)
@@ -149,7 +148,18 @@ function CabCinematicUtil.drawDebugPlatformBoundingBox(node, boundingBox)
   local minZ = boundingBox.platformBack[3]
   local maxZ = boundingBox.platformFront[3]
 
-  return CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
+  return CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ, 1, 0.5, 0)
+end
+
+function CabCinematicUtil.drawDebugShadowFocusBoxNode(node, boundingBox)
+  local minX = boundingBox.focusRight[1]
+  local maxX = boundingBox.focusLeft[1]
+  local minY = boundingBox.focusBottom[2]
+  local maxY = boundingBox.focusTop[2]
+  local minZ = boundingBox.focusBack[3]
+  local maxZ = boundingBox.focusFront[3]
+
+  return CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ, 0, 0, 1)
 end
 
 --- Clamps a value between a minimum and maximum range
@@ -273,18 +283,14 @@ end
 
 --- Raycast against a vehicle and return all hit positions on the vehicle, as well as the closest hit if specified
 --- @param vehicle table The vehicle to raycast against
---- @param startX number Ray start position X in local vehicle coordinates
---- @param startY number Ray start position Y in local vehicle coordinates
---- @param startZ number Ray start position Z in local vehicle coordinates
---- @param endX number Ray end position X in local vehicle coordinates
---- @param endY number Ray end position Y in local vehicle coordinates
---- @param endZ number Ray end position Z in local vehicle coordinates
---- @param stopAtFirstHit boolean Whether to return only the closest hit or all hits
+--- @param from table The start position of the raycast {x, y, z} in local vehicle coordinates
+--- @param to table The end position of the raycast {x, y, z} in local vehicle coordinates
+--- @param bestComparer function(hitA, hitB) Function to compare two hits and determine which is better. Should return true if hitA is better than hitB.
 --- @return table Raycast result containing hit positions and distances
-function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, stopAtFirstHit)
-  local dist = MathUtil.vector3Length(endX - startX, endY - startY, endZ - startZ)
-  local sx, sy, sz = localToWorld(vehicle.rootNode, startX, startY, startZ)
-  local ex, ey, ez = localToWorld(vehicle.rootNode, endX, endY, endZ)
+function CabCinematicUtil.raycastVehicle(vehicle, from, to, bestComparer)
+  local dist = MathUtil.vector3Length(to[1] - from[1], to[2] - from[2], to[3] - from[3])
+  local sx, sy, sz = localToWorld(vehicle.rootNode, from[1], from[2], from[3])
+  local ex, ey, ez = localToWorld(vehicle.rootNode, to[1], to[2], to[3])
 
   local dx, dy, dz = MathUtil.vector3Normalize(ex - sx, ey - sy, ez - sz)
 
@@ -297,20 +303,13 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   local raycaster = {
     callback = function(self, hitObjectId, x, y, z)
       if hitObjectId == vehicle.rootNode then
-        local dist = MathUtil.vector3Length(x - ex, y - ey, z - ez)
         local rx, ry, rz = worldToLocal(vehicle.rootNode, x, y, z)
-        local hit = { rx, ry, rz, dist }
+        local hit = { rx, ry, rz }
         table.insert(result.hits, hit)
         result.hasHit = true
 
-        if result.best == nil then
-          result.best = hit
-        end
-
-        if stopAtFirstHit then
-          return true
-        elseif hit[4] < result.best[4] then
-          result.best = hit
+        if result.best == nil or bestComparer(hit, result.best) then
+          result.best = { unpack(hit) }
         end
       end
     end
@@ -319,52 +318,6 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   raycastAll(sx, sy, sz, dx, dy, dz, dist, "callback", raycaster, CollisionFlag.VEHICLE)
 
   return result
-end
-
----Performs multiple raycasts at different Y offsets (+1, 0, -1) and returns the most extreme result
----@param vehicle table The vehicle to raycast
----@param startX number Start X position
----@param startYCenter number Center Y position
----@param startZ number Start Z position
----@param endX number End X position
----@param endYCenter number Center Y position (will be offset by +1, 0, -1)
----@param endZ number End Z position
----@param keepMaxZ boolean True to keep the max Z hit, false to keep the min Z hit
----@param stopAtFirstHit boolean|nil Whether each individual raycast stops at the first hit
----@return table Raycast result with best hit and debug data
-function CabCinematicUtil.raycastVehicleMultipleHeights(vehicle, startX, startYCenter, startZ, endX, endYCenter, endZ, keepMaxZ, stopAtFirstHit)
-  local yOffsets = { 1, 0, -1 }
-  local allHits = {}
-  local bestHit = nil
-
-  for _, yOffset in ipairs(yOffsets) do
-    local result = CabCinematicUtil.raycastVehicle(
-      vehicle,
-      startX, startYCenter + yOffset, startZ,
-      endX, endYCenter + yOffset, endZ,
-      stopAtFirstHit or false
-    )
-
-    for _, hit in ipairs(result.hits) do
-      table.insert(allHits, hit)
-    end
-
-    if result.best ~= nil then
-      if bestHit == nil then
-        bestHit = result.best
-      elseif keepMaxZ and result.best[3] > bestHit[3] then
-        bestHit = result.best
-      elseif not keepMaxZ and result.best[3] < bestHit[3] then
-        bestHit = result.best
-      end
-    end
-  end
-
-  return {
-    best = bestHit,
-    hits = allHits,
-    hasHit = bestHit ~= nil,
-  }
 end
 
 --- Tells whether the given vehicle is a tractor.

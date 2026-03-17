@@ -201,49 +201,52 @@ end
 --- @param positions table Current positions for reference
 --- @return table Raycast results with positions and debug hits
 function CabCinematicVehicleAnalyzer:raycastCabBoundingBox(positions)
-  local backHitResult = CabCinematicUtil.raycastVehicleMultipleHeights(
+  local backHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.camera[1], positions.camera[2], positions.camera[3] - 2.0,
-    positions.camera[1], positions.camera[2], positions.camera[3],
-    true,
-    false
+    { positions.camera[1], positions.camera[2], positions.camera[3] - 2.0 },
+    { positions.camera[1], positions.camera[2], positions.camera[3] },
+    function(hitA, hitB) return hitA[3] < hitB[3] end
   )
 
-  local frontHitResult = CabCinematicUtil.raycastVehicleMultipleHeights(
+  local frontHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.camera[1], positions.camera[2], positions.steeringWheel[3] + 2.0,
-    positions.camera[1], positions.camera[2], positions.steeringWheel[3],
-    false,
-    true
+    { positions.camera[1], positions.camera[2], positions.steeringWheel[3] + 2.0 },
+    { positions.camera[1], positions.camera[2], positions.steeringWheel[3] },
+    function(hitA, hitB) return hitA[3] > hitB[3] end
   )
 
   local leftHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.camera[1] + 2.0, positions.camera[2], positions.camera[3],
-    positions.camera[1], positions.camera[2], positions.camera[3],
-    false
+    { positions.camera[1] + 2.0, positions.camera[2], positions.camera[3] },
+    { positions.camera[1], positions.camera[2], positions.camera[3] },
+    function(hitA, hitB) return hitA[1] < hitB[1] end
   )
 
   local rightHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.camera[1] - 2.0, positions.camera[2], positions.steeringWheel[3],
-    positions.camera[1], positions.camera[2], positions.steeringWheel[3],
-    false
+    { positions.camera[1] - 2.0, positions.camera[2], positions.steeringWheel[3] },
+    { positions.camera[1], positions.camera[2], positions.steeringWheel[3] },
+    function(hitA, hitB) return hitA[1] > hitB[1] end
   )
 
   local topHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.camera[1], positions.camera[2] + 2.0, positions.camera[3],
-    positions.camera[1], positions.camera[2], positions.camera[3],
-    false
+    { positions.camera[1], positions.camera[2] + 2.0, positions.camera[3] },
+    { positions.camera[1], positions.camera[2], positions.camera[3] },
+    function(hitA, hitB) return hitA[2] > hitB[2] end
   )
 
-  local back = backHitResult.best or { positions.camera[1], positions.camera[2], positions.camera[3] - 0.5 }
-  local front = frontHitResult.best or { positions.camera[1], positions.camera[2], positions.steeringWheel[3] + 0.5 }
-  local left = leftHitResult.best or { positions.camera[1] + 0.5, positions.camera[2], positions.camera[3] }
-  local right = rightHitResult.best or { positions.camera[1] - 0.5, positions.camera[2], positions.camera[3] }
   local top = topHitResult.best or { positions.camera[1], positions.camera[2] + 0.5, positions.camera[3] }
-  local bottom = { positions.camera[1], positions.camera[2] - 1.5, positions.camera[3] }
+  local bottom = { positions.camera[1], math.max(positions.camera[2] - 1.5, positions.characterFoot[2]), positions.camera[3] }
+  local centerY = (top[2] + bottom[2]) / 2
+
+  local left = leftHitResult.best or { positions.camera[1] + 0.5, centerY, positions.camera[3] }
+  local right = rightHitResult.best or { positions.camera[1] - 0.5, centerY, positions.camera[3] }
+  local centerX = (left[1] + right[1]) / 2
+
+  local back = backHitResult.best or { positions.camera[1], centerY, positions.camera[3] - 0.5 }
+  local front = frontHitResult.best or { positions.camera[1], centerY, positions.steeringWheel[3] + 0.5 }
+  local center = { centerX, centerY, (front[3] + back[3]) / 2 }
 
   return {
     back = back,
@@ -252,6 +255,7 @@ function CabCinematicVehicleAnalyzer:raycastCabBoundingBox(positions)
     right = right,
     top = top,
     bottom = bottom,
+    center = center,
     hasHit = backHitResult.hasHit or frontHitResult.hasHit or leftHitResult.hasHit or rightHitResult.hasHit or topHitResult.hasHit or false,
     debugHits = {
       backHitResult = backHitResult,
@@ -291,6 +295,10 @@ function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
       raycastResult.top[2]        = math.max(raycastResult.top[2], focusTopY)
       raycastResult.bottom[2]     = math.min(raycastResult.bottom[2], focusBottomY)
 
+      raycastResult.center[1]     = (raycastResult.left[1] + raycastResult.right[1]) / 2
+      raycastResult.center[2]     = (raycastResult.top[2] + raycastResult.bottom[2]) / 2
+      raycastResult.center[3]     = (raycastResult.front[3] + raycastResult.back[3]) / 2
+
       debugPositions.focusBack    = { fx, fy, focusBackZ }
       debugPositions.focusFront   = { fx, fy, focusFrontZ }
       debugPositions.focusLeft    = { focusLeftX, fy, fz }
@@ -299,14 +307,6 @@ function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
       debugPositions.focusBottom  = { fx, focusBottomY, fz }
     end
   end
-
-  raycastResult.bottom[2] = math.max(raycastResult.bottom[2], positions.characterFoot[2])
-
-  local center = {
-    (raycastResult.left[1] + raycastResult.right[1]) / 2,
-    (raycastResult.bottom[2] + raycastResult.top[2]) / 2,
-    (raycastResult.back[3] + raycastResult.front[3]) / 2,
-  }
 
   return {
     debugHits = raycastResult.debugHits,
@@ -321,7 +321,7 @@ function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
       right = raycastResult.right,
       top = raycastResult.top,
       bottom = raycastResult.bottom,
-      center = center,
+      center = raycastResult.center,
     },
   }
 end
@@ -717,16 +717,16 @@ function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
 
   local leftPlatformHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.left[1] + 2.0, positions.bottom[2] - 0.175, positions.left[3],
-    positions.left[1], positions.bottom[2] - 0.175, positions.left[3],
-    true
+    { positions.left[1] + 1.5, positions.bottom[2] - 0.175, positions.left[3] },
+    { positions.left[1], positions.bottom[2] - 0.175, positions.left[3] },
+    function(hitA, hitB) return hitA[1] > hitB[1] end
   )
 
   local rightPlatformHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    positions.right[1] - 2.0, positions.bottom[2] - 0.175, positions.right[3],
-    positions.right[1], positions.bottom[2] - 0.175, positions.right[3],
-    true
+    { positions.right[1] - 1.5, positions.bottom[2] - 0.175, positions.right[3] },
+    { positions.right[1], positions.bottom[2] - 0.175, positions.right[3] },
+    function(hitA, hitB) return hitA[1] < hitB[1] end
   )
 
   local leftPositions = { positions.left[1] }
