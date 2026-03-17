@@ -279,9 +279,9 @@ end
 --- @param endX number Ray end position X in local vehicle coordinates
 --- @param endY number Ray end position Y in local vehicle coordinates
 --- @param endZ number Ray end position Z in local vehicle coordinates
---- @param closest boolean Whether to return only the closest hit or all hits
+--- @param stopAtFirstHit boolean Whether to return only the closest hit or all hits
 --- @return table Raycast result containing hit positions and distances
-function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, closest)
+function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, stopAtFirstHit)
   local dist = MathUtil.vector3Length(endX - startX, endY - startY, endZ - startZ)
   local sx, sy, sz = localToWorld(vehicle.rootNode, startX, startY, startZ)
   local ex, ey, ez = localToWorld(vehicle.rootNode, endX, endY, endZ)
@@ -307,7 +307,7 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
           result.best = hit
         end
 
-        if closest then
+        if stopAtFirstHit then
           return true
         elseif hit[4] < result.best[4] then
           result.best = hit
@@ -319,6 +319,52 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   raycastAll(sx, sy, sz, dx, dy, dz, dist, "callback", raycaster, CollisionFlag.VEHICLE)
 
   return result
+end
+
+---Performs multiple raycasts at different Y offsets (+1, 0, -1) and returns the most extreme result
+---@param vehicle table The vehicle to raycast
+---@param startX number Start X position
+---@param startYCenter number Center Y position
+---@param startZ number Start Z position
+---@param endX number End X position
+---@param endYCenter number Center Y position (will be offset by +1, 0, -1)
+---@param endZ number End Z position
+---@param keepMaxZ boolean True to keep the max Z hit, false to keep the min Z hit
+---@param stopAtFirstHit boolean|nil Whether each individual raycast stops at the first hit
+---@return table Raycast result with best hit and debug data
+function CabCinematicUtil.raycastVehicleMultipleHeights(vehicle, startX, startYCenter, startZ, endX, endYCenter, endZ, keepMaxZ, stopAtFirstHit)
+  local yOffsets = { 1, 0, -1 }
+  local allHits = {}
+  local bestHit = nil
+
+  for _, yOffset in ipairs(yOffsets) do
+    local result = CabCinematicUtil.raycastVehicle(
+      vehicle,
+      startX, startYCenter + yOffset, startZ,
+      endX, endYCenter + yOffset, endZ,
+      stopAtFirstHit or false
+    )
+
+    for _, hit in ipairs(result.hits) do
+      table.insert(allHits, hit)
+    end
+
+    if result.best ~= nil then
+      if bestHit == nil then
+        bestHit = result.best
+      elseif keepMaxZ and result.best[3] > bestHit[3] then
+        bestHit = result.best
+      elseif not keepMaxZ and result.best[3] < bestHit[3] then
+        bestHit = result.best
+      end
+    end
+  end
+
+  return {
+    best = bestHit,
+    hits = allHits,
+    hasHit = bestHit ~= nil,
+  }
 end
 
 --- Tells whether the given vehicle is a tractor.
