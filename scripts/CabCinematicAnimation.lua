@@ -1,5 +1,5 @@
----@class CabCinematicAnimation
----Handle cinematic camera travel, keyframes and animation
+--- @class CabCinematicAnimation
+--- Handle cinematic camera travel, keyframes and animation
 CabCinematicAnimation = {}
 local CabCinematicAnimation_mt = Class(CabCinematicAnimation)
 
@@ -13,10 +13,10 @@ CabCinematicAnimation.STATES = {
   STALE = "stale",
 }
 
----Creates a new animation
----@param vehicle table The vehicle the animation is associated with
----@param keyframes table The keyframes defining the animation
----@return CabCinematicAnimation
+--- Creates a new animation
+--- @param vehicle table The vehicle the animation is associated with
+--- @param keyframes table The keyframes defining the animation
+--- @return CabCinematicAnimation
 function CabCinematicAnimation.new(vehicle, keyframes)
   local self = setmetatable({}, CabCinematicAnimation_mt)
   self.vehicle = vehicle
@@ -41,7 +41,7 @@ function CabCinematicAnimation.new(vehicle, keyframes)
   return self
 end
 
----Deletes the animation and its resources
+--- Deletes the animation and its resources
 function CabCinematicAnimation:delete()
   for _, keyframe in ipairs(self.keyframes) do
     keyframe:delete()
@@ -58,41 +58,41 @@ function CabCinematicAnimation:delete()
   self.currentPosition = nil
 end
 
----Sets "onBeforeStart" callback executed during the animation lifecycle
----@param callback function The callback function
----@return CabCinematicAnimation self for chaining
+--- Sets "onBeforeStart" callback executed during the animation lifecycle
+--- @param callback function The callback function
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:onBeforeStart(callback)
   self.callbacks.onBeforeStart = callback
   return self
 end
 
----Sets "onStart" callback executed during the animation lifecycle
----@param callback function The callback function
----@return CabCinematicAnimation self for chaining
+--- Sets "onStart" callback executed during the animation lifecycle
+--- @param callback function The callback function
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:onStart(callback)
   self.callbacks.onStart = callback
   return self
 end
 
----Sets "onPause" callback executed during the animation lifecycle
----@param callback function The callback function
----@return CabCinematicAnimation self for chaining
+--- Sets "onPause" callback executed during the animation lifecycle
+--- @param callback function The callback function
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:onPause(callback)
   self.callbacks.onPause = callback
   return self
 end
 
----Sets "onBeforeEnd" callback executed during the animation lifecycle
----@param callback function The callback function
----@return CabCinematicAnimation self for chaining
+--- Sets "onBeforeEnd" callback executed during the animation lifecycle
+--- @param callback function The callback function
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:onBeforeEnd(callback)
   self.callbacks.onBeforeEnd = callback
   return self
 end
 
----Sets "onEnd" callback executed during the animation lifecycle
----@param callback function The callback function
----@return CabCinematicAnimation self for chaining
+--- Sets "onEnd" callback executed during the animation lifecycle
+--- @param callback function The callback function
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:onEnd(callback)
   self.callbacks.onEnd = callback
   return self
@@ -103,8 +103,8 @@ function CabCinematicAnimation:stop()
   return self
 end
 
----Pauses the animation if it's currently started
----@return CabCinematicAnimation self for chaining
+--- Pauses the animation if it's currently started
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:pause()
   if self.state == CabCinematicAnimation.STATES.STARTED then
     self.state = CabCinematicAnimation.STATES.PAUSED
@@ -114,8 +114,8 @@ function CabCinematicAnimation:pause()
   return self
 end
 
----Resumes the animation if it's currently paused
----@return CabCinematicAnimation self for chaining
+--- Resumes the animation if it's currently paused
+--- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:resume()
   if self.state == CabCinematicAnimation.STATES.PAUSED then
     self.state = CabCinematicAnimation.STATES.STARTED
@@ -124,41 +124,41 @@ function CabCinematicAnimation:resume()
   return self
 end
 
----Tells whether the animation is currently idle (not started yet)
----@return boolean
+--- Tells whether the animation is currently idle (not started yet)
+--- @return boolean
 function CabCinematicAnimation:getIsIdle()
   return self.state == CabCinematicAnimation.STATES.IDLE
 end
 
----Tells whether the animation is currently in a running state
----@return boolean
+--- Tells whether the animation is currently in a running state
+--- @return boolean
 function CabCinematicAnimation:getIsRunning()
   return self.state == CabCinematicAnimation.STATES.BEFORE_START
       or self.state == CabCinematicAnimation.STATES.STARTED
 end
 
----Tells whether the animation is currently paused
----@return boolean
+--- Tells whether the animation is currently paused
+--- @return boolean
 function CabCinematicAnimation:getIsPaused()
   return self.state == CabCinematicAnimation.STATES.PAUSED
 end
 
----Tells whether the animation is currently finished
----@return boolean
+--- Tells whether the animation is currently finished
+--- @return boolean
 function CabCinematicAnimation:getIsFinished()
   return self.state == CabCinematicAnimation.STATES.BEFORE_END
       or self.state == CabCinematicAnimation.STATES.ENDED
 end
 
----Tells whether the animation is currently in a stale state, meaning it has finished and is waiting to be deleted
----@return boolean
+--- Tells whether the animation is currently in a stale state, meaning it has finished and is waiting to be deleted
+--- @return boolean
 function CabCinematicAnimation:getIsStale()
   return self.state == CabCinematicAnimation.STATES.STALE
 end
 
----Runs the current animation tick
----@param dt number Delta time since last update
----@return boolean isFinished whether the animation has finished
+--- Runs the current animation tick
+--- @param dt number Delta time since last update
+--- @return boolean isFinished whether the animation has finished
 function CabCinematicAnimation:tick(dt)
   self.timer = self.timer + (dt / 1000.0)
 
@@ -190,8 +190,8 @@ function CabCinematicAnimation:tick(dt)
   return self.timer >= self.duration
 end
 
----Update main animation lifecycle, should be called by the vehicle spec
----@param dt number Delta time since last update
+--- Update main animation lifecycle, should be called by the vehicle spec
+--- @param dt number Delta time since last update
 function CabCinematicAnimation:update(dt)
   if self.state == CabCinematicAnimation.STATES.IDLE then
     if CabCinematic.debugLevel > 0 then
@@ -235,7 +235,7 @@ function CabCinematicAnimation:update(dt)
   end
 end
 
----Prints debug information about the animation and its keyframes
+--- Prints debug information about the animation and its keyframes
 function CabCinematicAnimation:printDebug()
   Log:info(string.format("Animation state: %s, duration: %.2f, keyframes: %d", self.state, self.duration, #self.keyframes))
 
@@ -244,7 +244,7 @@ function CabCinematicAnimation:printDebug()
   end
 end
 
----Draw debug
+--- Draw debug
 function CabCinematicAnimation:drawDebug()
   if self.keyframes ~= nil then
     for _, keyframe in ipairs(self.keyframes) do

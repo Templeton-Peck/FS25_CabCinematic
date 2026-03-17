@@ -1,26 +1,26 @@
----@class CabCinematicVehicleAnalyzer
----Analyzes vehicle features to determine positions and flags for cab cinematics
+--- @class CabCinematicVehicleAnalyzer
+--- Analyzes vehicle features to determine positions and flags for cab cinematics
 CabCinematicVehicleAnalyzer = {}
 local CabCinematicVehicleAnalyzer_mt = Class(CabCinematicVehicleAnalyzer)
 
 local DOOR_SAFE_DISTANCE = 0.35
 
----Creates a new vehicle analyzer instance
----@param vehicle table The vehicle to analyze
----@return CabCinematicVehicleAnalyzer
+--- Creates a new vehicle analyzer instance
+--- @param vehicle table The vehicle to analyze
+--- @return CabCinematicVehicleAnalyzer
 function CabCinematicVehicleAnalyzer.new(vehicle)
   local self = setmetatable({}, CabCinematicVehicleAnalyzer_mt)
   self.vehicle = vehicle
   return self
 end
 
----Deletes the vehicle analyzer instance and clears references
+--- Deletes the vehicle analyzer instance and clears references
 function CabCinematicVehicleAnalyzer:delete()
   self.vehicle = nil
 end
 
----Gets the indoor camera position relative to vehicle root
----@return table Position {x, y, z}
+--- Gets the indoor camera position relative to vehicle root
+--- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
   local camera = self.vehicle:getIndoorCamera()
   if camera ~= nil then
@@ -31,17 +31,17 @@ function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
   return { 0, 0, 0 }
 end
 
----Gets the vehicle exit position relative to vehicle root
----@return table Position {x, y, z}
+--- Gets the vehicle exit position relative to vehicle root
+--- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleExitPosition()
   local exitNode = self.vehicle:getExitNode()
   return { localToLocal(getParent(exitNode), self.vehicle.rootNode, getTranslation(exitNode)) }
 end
 
----Gets features of a pneumatic wheel
----@param wheel table The wheel data
----@param positions table Current positions for reference
----@return table|nil Wheel features with position, sidewallPosition, treadBackPosition, treadFrontPosition
+--- Gets features of a pneumatic wheel
+--- @param wheel table The wheel data
+--- @param positions table Current positions for reference
+--- @return table|nil Wheel features with position, sidewallPosition, treadBackPosition, treadFrontPosition
 function CabCinematicVehicleAnalyzer:getPneumaticWheelFeatures(wheel, positions)
   if wheel == nil or wheel.visualWheels == nil or #wheel.visualWheels == 0 then
     return nil
@@ -84,10 +84,10 @@ function CabCinematicVehicleAnalyzer:getPneumaticWheelFeatures(wheel, positions)
   return result
 end
 
----Gets features of a crawler track
----@param crawler table The crawler data
----@param positions table Current positions for reference
----@return table Features features with position, sidewallPosition, treadBackPosition, treadFrontPosition
+--- Gets features of a crawler track
+--- @param crawler table The crawler data
+--- @param positions table Current positions for reference
+--- @return table Features features with position, sidewallPosition, treadBackPosition, treadFrontPosition
 function CabCinematicVehicleAnalyzer:getCrawlerWheelFeatures(crawler, positions)
   local x, y, z = localToLocal(crawler.linkNode, self.vehicle.rootNode, getTranslation(crawler.linkNode))
 
@@ -148,9 +148,9 @@ function CabCinematicVehicleAnalyzer:getCrawlerWheelFeatures(crawler, positions)
   return result
 end
 
----Gets the position of character's feet when seated
----@param positions table Current positions for reference
----@return table Position Position of character's feet
+--- Gets the position of character's feet when seated
+--- @param positions table Current positions for reference
+--- @return table Position Position of character's feet
 function CabCinematicVehicleAnalyzer:getCabCharacterFootPosition(positions)
   local characterTargets = self.vehicle.spec_enterable.defaultCharacterTargets;
 
@@ -185,9 +185,9 @@ function CabCinematicVehicleAnalyzer:getCabCharacterFootPosition(positions)
   return { positions.camera[1], positions.camera[2] - 1.5, positions.camera[3] + 0.5 }
 end
 
----Gets the steering wheel position relative to vehicle root
----@param positions table Current positions for reference
----@return table Position {x, y, z}
+--- Gets the steering wheel position relative to vehicle root
+--- @param positions table Current positions for reference
+--- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
   if self.vehicle.spec_drivable == nil or self.vehicle.spec_drivable.steeringWheel == nil then
     return { positions.camera[1], (positions.characterFoot[2] + positions.camera[2]) / 2, math.max(positions.characterFoot[3], positions.camera[3] + 0.35) }
@@ -197,9 +197,9 @@ function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
   return { localToLocal(steeringWheelNode, self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
 end
 
----Performs raycasts to determine cab bounding box
----@param positions table Current positions for reference
----@return table Raycast results with positions and debug hits
+--- Performs raycasts to determine cab bounding box
+--- @param positions table Current positions for reference
+--- @return table Raycast results with positions and debug hits
 function CabCinematicVehicleAnalyzer:raycastCabBoundingBox(positions)
   local backHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
@@ -261,9 +261,9 @@ function CabCinematicVehicleAnalyzer:raycastCabBoundingBox(positions)
   }
 end
 
----Calculates the cab bounding box
----@param positions table Current positions for reference
----@return table Features features with bounding box positions, flags and debug hits
+--- Calculates the cab bounding box
+--- @param positions table Current positions for reference
+--- @return table Features features with bounding box positions, flags and debug hits
 function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
   local raycastResult = self:raycastCabBoundingBox(positions)
   local debugPositions = {}
@@ -324,14 +324,14 @@ function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
   }
 end
 
----Gets the count of crawler tracks on the vehicle
----@return number Number of crawlers
+--- Gets the count of crawler tracks on the vehicle
+--- @return number Number of crawlers
 function CabCinematicVehicleAnalyzer:getCrawlersCount()
   return self.vehicle.spec_crawlers ~= nil and self.vehicle.spec_crawlers.crawlers ~= nil and #self.vehicle.spec_crawlers.crawlers or 0
 end
 
----Gets the count of pneumatic wheels on the vehicle
----@return number Number of pneumatic wheels
+--- Gets the count of pneumatic wheels on the vehicle
+--- @return number Number of pneumatic wheels
 function CabCinematicVehicleAnalyzer:getPneumaticWheelsCount()
   local count = 0
 
@@ -346,9 +346,9 @@ function CabCinematicVehicleAnalyzer:getPneumaticWheelsCount()
   return count
 end
 
----Analyzes all wheel features (pneumatic and crawler)
----@param positions table Current positions for reference
----@return table Features features with flags and positions
+--- Analyzes all wheel features (pneumatic and crawler)
+--- @param positions table Current positions for reference
+--- @return table Features features with flags and positions
 function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
   local crawlersCount = self:getCrawlersCount()
   local wheelsCount = self:getPneumaticWheelsCount()
@@ -448,9 +448,9 @@ function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
   return result
 end
 
----Analyzes the vehicle to determine the enter position and related flags
----@param positions table Current positions for reference
----@return table Features features with positions and flags
+--- Analyzes the vehicle to determine the enter position and related flags
+--- @param positions table Current positions for reference
+--- @return table Features features with positions and flags
 function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
   local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight()
   local wex, wey, wez = getWorldTranslation(self.vehicle:getExitNode())
@@ -489,9 +489,9 @@ function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
   }
 end
 
----Finds the closest wheel to the enter position based on combined distance to exit and camera
----@param positions table Current positions for reference
----@return table Wheel position {x, y, z }
+--- Finds the closest wheel to the enter position based on combined distance to exit and camera
+--- @param positions table Current positions for reference
+--- @return table Wheel position {x, y, z }
 function CabCinematicVehicleAnalyzer:getCabEnterWheelPosition(positions)
   local candidates = {}
 
@@ -566,10 +566,10 @@ function CabCinematicVehicleAnalyzer:getCabEnterWheelPosition(positions)
   return CabCinematicUtil.getClosestPositionToTwoRefs(candidates, positions.exit, positions.camera)
 end
 
----Builds candidate Z door depths based on entry class and cabin depth
----@param positions table
----@param flags table
----@return table
+--- Builds candidate Z door depths based on entry class and cabin depth
+--- @param positions table
+--- @param flags table
+--- @return table
 function CabCinematicVehicleAnalyzer:getDoorZCandidates(positions, flags)
   local minDoorZ = positions.back[3] + 0.2
   local maxDoorZ = positions.front[3] - 0.2
@@ -600,10 +600,10 @@ function CabCinematicVehicleAnalyzer:getDoorZCandidates(positions, flags)
   }
 end
 
----Calculates the door positions on left and right sides
----@param positions table Current positions for reference
----@param flags table Current flags for reference
----@return table Doors features with positions and flags
+--- Calculates the door positions on left and right sides
+--- @param positions table Current positions for reference
+--- @param flags table Current flags for reference
+--- @return table Doors features with positions and flags
 function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
   local doorZCandidates = self:getDoorZCandidates(positions, flags)
   local minDoorZ = doorZCandidates.minDoorZ
@@ -683,10 +683,10 @@ function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
   }
 end
 
----Calculates the standup position inside the cab
----@param positions table Current positions for reference
----@param flags table Current flags for reference
----@return table Standup position {x, y, z}
+--- Calculates the standup position inside the cab
+--- @param positions table Current positions for reference
+--- @param flags table Current flags for reference
+--- @return table Standup position {x, y, z}
 function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
   local standupX = (positions.camera[1] + positions.left[1]) / 2
 
@@ -700,9 +700,9 @@ function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
   return { standupX, standupY, standupZ }
 end
 
----Calculates the platform positions if the vehicle has a platform or returns empty if not
----@param positions table Current positions for reference
----@return table Platform features with positions and flags
+--- Calculates the platform positions if the vehicle has a platform or returns empty if not
+--- @param positions table Current positions for reference
+--- @return table Platform features with positions and flags
 function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
   if CabCinematicUtil.isVehicleTractor(self.vehicle) or CabCinematicUtil.isVehicleTelehandler(self.vehicle) or positions.bottom[2] <= 1.2 then
     return {
@@ -764,9 +764,9 @@ function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
   }
 end
 
----Calculates the mirror positions if the vehicle has mirrors or returns empty if not
----@param positions table Current positions for reference
----@return table Mirror features with positions and flags
+--- Calculates the mirror positions if the vehicle has mirrors or returns empty if not
+--- @param positions table Current positions for reference
+--- @return table Mirror features with positions and flags
 function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
   local leftMirrors = {}
   local rightMirrors = {}
@@ -800,9 +800,9 @@ function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
   }
 end
 
----Calculates the movable ladder positions based on combine ladder or enter animations
----@param positions table Current positions for reference
----@return table | nil ladderTopXZ The top X and Z positions for the ladder, can be nil if no candidates found
+--- Calculates the movable ladder positions based on combine ladder or enter animations
+--- @param positions table Current positions for reference
+--- @return table | nil ladderTopXZ The top X and Z positions for the ladder, can be nil if no candidates found
 function CabCinematicVehicleAnalyzer:getCabMovableLadderTopXZ(positions)
   local nodes = {}
 
@@ -844,10 +844,10 @@ function CabCinematicVehicleAnalyzer:getCabMovableLadderTopXZ(positions)
   return nil
 end
 
----Calculates the ladder positions if the vehicle has a movable ladder or returns empty if not
----@param positions table Current positions for reference
----@param flags table Current flags for reference
----@return table Ladder features with positions and flags
+--- Calculates the ladder positions if the vehicle has a movable ladder or returns empty if not
+--- @param positions table Current positions for reference
+--- @param flags table Current flags for reference
+--- @return table Ladder features with positions and flags
 function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
   local ladderTopXZ = self:getCabMovableLadderTopXZ(positions)
 
@@ -902,10 +902,10 @@ function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
   }
 end
 
----Determines the preferred enter position based on the entry point and available features
----@param positions table Current positions for reference
----@param flags table Current flags for reference
----@return table Preferred enter position
+--- Determines the preferred enter position based on the entry point and available features
+--- @param positions table Current positions for reference
+--- @param flags table Current flags for reference
+--- @return table Preferred enter position
 function CabCinematicVehicleAnalyzer:getPreferredEnterPosition(positions, flags)
   local preferredEnter = { positions.enter[1], positions.enter[2], positions.enter[3] }
   local bodyworkSafeDistance = 0.5
@@ -952,8 +952,8 @@ function CabCinematicVehicleAnalyzer:getPreferredEnterPosition(positions, flags)
   return preferredEnter
 end
 
----Analyzes the vehicle and returns all positions and flags
----@return table Analysis result with positions, flags, and debug information
+--- Analyzes the vehicle and returns all positions and flags
+--- @return table Analysis result with positions, flags, and debug information
 function CabCinematicVehicleAnalyzer:analyze()
   local flags = {}
   local debugPositions = {}

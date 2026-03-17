@@ -1,13 +1,13 @@
----@class CabCinematicKeyframeListBuilder
----Builds a sequence of keyframes by chaining positions and movement types.
----@field waypoints table List of positions (tables with x, y, z) for each keyframe.
----@field types table List of movement types (strings) corresponding to each keyframe.
+--- @class CabCinematicKeyframeListBuilder
+--- Builds a sequence of keyframes by chaining positions and movement types.
+--- @field waypoints table List of positions (tables with x, y, z) for each keyframe.
+--- @field types table List of movement types (strings) corresponding to each keyframe.
 CabCinematicKeyframeListBuilder = {}
 local CabCinematicKeyframeListBuilder_mt = Class(CabCinematicKeyframeListBuilder)
 
----Creates a new builder starting from the given position.
----@param startPosition table The starting position {x, y, z}
----@return CabCinematicKeyframeListBuilder
+--- Creates a new builder starting from the given position.
+--- @param startPosition table The starting position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder
 function CabCinematicKeyframeListBuilder.new(startPosition)
   local self = setmetatable({}, CabCinematicKeyframeListBuilder_mt)
   self.waypoints = { startPosition }
@@ -15,10 +15,10 @@ function CabCinematicKeyframeListBuilder.new(startPosition)
   return self
 end
 
----Adds a waypoint to the sequence.
----@param type string The movement type to reach this position (e.g., WALK, CLIMB)
----@param position table The target position {x, y, z}
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adds a waypoint to the sequence.
+--- @param type string The movement type to reach this position (e.g., WALK, CLIMB)
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:add(type, position)
   if #self.waypoints > 0 then
     local lastPosition = self.waypoints[#self.waypoints]
@@ -38,43 +38,43 @@ function CabCinematicKeyframeListBuilder:add(type, position)
   return self
 end
 
----Adds a walk waypoint to the sequence.
----@param position table The target position {x, y, z}
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adds a walk waypoint to the sequence.
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:walkTo(position)
   return self:add(CabCinematicKeyframe.TYPES.WALK, position)
 end
 
----Adds a climb waypoint to the sequence.
----@param position table The target position {x, y, z}
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adds a climb waypoint to the sequence.
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:climbTo(position)
   return self:add(CabCinematicKeyframe.TYPES.CLIMB, position)
 end
 
----Adds a shift waypoint to the sequence.
----@param position table The target position {x, y, z}
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adds a shift waypoint to the sequence.
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:shiftTo(position)
   return self:add(CabCinematicKeyframe.TYPES.SHIFT, position)
 end
 
----Adds a sit waypoint to the sequence.
----@param position table The target position {x, y, z}
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adds a sit waypoint to the sequence.
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:sitIn(position)
   return self:add(CabCinematicKeyframe.TYPES.SIT, position)
 end
 
----Adds a move in cab waypoint to the sequence.
----@param position table The target position {x, y, z}
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adds a move in cab waypoint to the sequence.
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:moveInCabTo(type, position)
   return self:add(type, position)
 end
 
----Builds and returns the array of keyframes.
----@return table keyframes The list of CabCinematicKeyframe instances
+--- Builds and returns the array of keyframes.
+--- @return table keyframes The list of CabCinematicKeyframe instances
 function CabCinematicKeyframeListBuilder:build()
   local keyframes = {}
   for i = 1, #self.types do
@@ -83,8 +83,8 @@ function CabCinematicKeyframeListBuilder:build()
   return keyframes
 end
 
----Reverses the order of the waypoints and movement types in the builder.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Reverses the order of the waypoints and movement types in the builder.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:reverse()
   local reversedWaypoints = {}
   for i = #self.waypoints, 1, -1 do
@@ -101,10 +101,10 @@ function CabCinematicKeyframeListBuilder:reverse()
   return self
 end
 
----Adapts builder to start from the given position and lead to the closest waypoint
----@param position table The starting position for the adapted keyframe.
----@param type string | nil The type of the adapted keyframe.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Adapts builder to start from the given position and lead to the closest waypoint
+--- @param position table The starting position for the adapted keyframe.
+--- @param type string | nil The type of the adapted keyframe.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:adaptFromPosition(position, type)
   local shortestDistance = math.huge
   local shortestIndex = 1
@@ -135,11 +135,11 @@ function CabCinematicKeyframeListBuilder:adaptFromPosition(position, type)
   return self
 end
 
----Builds a keyframe sequence for a tractor based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a tractor based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildTractorKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   if not vehicleFeatures.flags.isCabEquipped then
     return self:shiftTo(doorSafePosition)
@@ -168,20 +168,20 @@ function CabCinematicKeyframeListBuilder:buildTractorKeyframes(enterPosition, do
   end
 end
 
----Builds a keyframe sequence for a teleloader based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a teleloader based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildTeleloaderKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   return self:climbTo(doorSafePosition)
 end
 
----Builds a keyframe sequence for a grain harvester based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a grain harvester based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildGrainHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
   local ladderTop = {}
@@ -206,11 +206,11 @@ function CabCinematicKeyframeListBuilder:buildGrainHarvesterKeyframes(enterPosit
       :walkTo(doorSafePosition)
 end
 
----Builds a keyframe sequence for a forage harvester based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a forage harvester based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildForageHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   if vehicleFeatures.flags.isEntryFromCabSideRear then
     local ladderBottom = {
@@ -241,11 +241,11 @@ function CabCinematicKeyframeListBuilder:buildForageHarvesterKeyframes(enterPosi
   return self
 end
 
----Builds a keyframe sequence for a beet harvester based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a beet harvester based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
   local ladderTop = {}
@@ -277,11 +277,11 @@ function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(enterPositi
       :walkTo(doorSafePosition)
 end
 
----Builds a keyframe sequence for a grape and olive harvester based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a grape and olive harvester based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   if vehicleFeatures.flags.isEntryFromCabSideRear then
     local ladderBottom = vehicleFeatures.positions.ladderBottom or {
@@ -305,11 +305,11 @@ function CabCinematicKeyframeListBuilder:buildGrapeAndOliveHarvesterKeyframes(en
   return self
 end
 
----Builds a keyframe sequence for a sugarcane harvester based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a sugarcane harvester based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildSugarcaneHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   if vehicleFeatures.flags.isEntryFromCabSide then
     local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
@@ -329,11 +329,11 @@ function CabCinematicKeyframeListBuilder:buildSugarcaneHarvesterKeyframes(enterP
   return self
 end
 
----Builds a keyframe sequence for a rice harvester based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for a rice harvester based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   if vehicleFeatures.flags.isEntryFromCabSide then
     local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
@@ -352,11 +352,11 @@ function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(enterPositi
   return self
 end
 
----Builds a keyframe sequence for sprayers based on its features and entry configuration.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- Builds a keyframe sequence for sprayers based on its features and entry configuration.
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   if vehicleFeatures.flags.isEntryFromCabSide then
     local ladderBottom = vehicleFeatures.positions.ladderBottom or enterPosition
@@ -388,17 +388,17 @@ function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(enterPosition, d
 end
 
 --- Builds a keyframe sequence for skidsteers which don't have a cab and require the player to shift to the door safe position before entering.
----@param enterPosition table The position where the player enters the vehicle.
----@param doorSafePosition table The position in front of the door considered safe for the player.
----@param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
----@return CabCinematicKeyframeListBuilder self for method chaining
+--- @param enterPosition table The position where the player enters the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleFeatures table The analyzed features of the vehicle, including positions and flags.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:buildSkidsteersKeyframes(enterPosition, doorSafePosition, vehicleFeatures)
   return self:shiftTo(doorSafePosition)
 end
 
----Prepares a keyframe list builder for the given vehicle by analyzing its features and generating appropriate keyframes.
----@param vehicle table The vehicle for which to prepare the keyframe builder
----@return CabCinematicKeyframeListBuilder | nil builder The prepared keyframe list builder
+--- Prepares a keyframe list builder for the given vehicle by analyzing its features and generating appropriate keyframes.
+--- @param vehicle table The vehicle for which to prepare the keyframe builder
+--- @return CabCinematicKeyframeListBuilder | nil builder The prepared keyframe list builder
 function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   local vehicleFeatures = vehicle:getCabCinematicFeatures()
   if vehicleFeatures == nil then

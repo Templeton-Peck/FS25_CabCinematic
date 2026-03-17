@@ -152,28 +152,28 @@ function CabCinematicUtil.drawDebugPlatformBoundingBox(node, boundingBox)
   return CabCinematicUtil.drawDebugBoundingBox(node, minX, maxX, minY, maxY, minZ, maxZ)
 end
 
----Clamps a value between a minimum and maximum range
----@param value number The value to clamp
----@param min number The minimum value
----@param max number The maximum value
----@return number The clamped value
+--- Clamps a value between a minimum and maximum range
+--- @param value number The value to clamp
+--- @param min number The minimum value
+--- @param max number The maximum value
+--- @return number The clamped value
 function CabCinematicUtil.clamp(value, min, max)
   return math.min(math.max(value, min), max)
 end
 
----Checks if two values are within a certain threshold of each other
----@param valueA number The first value
----@param valueB number The second value
----@param threshold number The maximum allowed difference between the values
----@return boolean True if the values are within the threshold, false otherwise
+--- Checks if two values are within a certain threshold of each other
+--- @param valueA number The first value
+--- @param valueB number The second value
+--- @param threshold number The maximum allowed difference between the values
+--- @return boolean True if the values are within the threshold, false otherwise
 function CabCinematicUtil.isNear(valueA, valueB, threshold)
   return math.abs(valueA - valueB) <= threshold
 end
 
----Get the closest position from a list to a reference point
----@param positions table Positions to evaluate {{x, y, z}, ...}
----@param ref table Reference point {x, y, z}
----@return table | nil ClosestPosition {x, y, z }
+--- Get the closest position from a list to a reference point
+--- @param positions table Positions to evaluate {{x, y, z}, ...}
+--- @param ref table Reference point {x, y, z}
+--- @return table | nil ClosestPosition {x, y, z }
 function CabCinematicUtil.getClosestPositionToRef(positions, ref)
   local bestPoint = nil
   local bestDist = math.huge
@@ -189,11 +189,11 @@ function CabCinematicUtil.getClosestPositionToRef(positions, ref)
   return bestPoint
 end
 
----Get the closest position from a list to two reference points
----@param positions table Positions to evaluate {{x, y, z}, ...}
----@param ref1 table Reference point 1 {x, y, z}
----@param ref2 table Reference point 2 {x, y, z}
----@return table ClosestPosition {x, y, z }
+--- Get the closest position from a list to two reference points
+--- @param positions table Positions to evaluate {{x, y, z}, ...}
+--- @param ref1 table Reference point 1 {x, y, z}
+--- @param ref2 table Reference point 2 {x, y, z}
+--- @return table ClosestPosition {x, y, z }
 function CabCinematicUtil.getClosestPositionToTwoRefs(positions, ref1, ref2)
   local bestPoint = nil
   local bestScore = math.huge
@@ -235,9 +235,9 @@ function CabCinematicUtil.concat(t1, ...)
   return t1
 end
 
----Calculate the average of a list of numbers
----@param values table List of numbers
----@return number Average of the numbers
+--- Calculate the average of a list of numbers
+--- @param values table List of numbers
+--- @return number Average of the numbers
 function CabCinematicUtil.avg(values)
   if #values == 0 then
     return 0
@@ -251,10 +251,10 @@ function CabCinematicUtil.avg(values)
   return sum / #values
 end
 
----Calculate the weighted average of a list of numbers
----@param values table List of numbers
----@param weights table List of weights corresponding to the values
----@return number Weighted average of the numbers
+--- Calculate the weighted average of a list of numbers
+--- @param values table List of numbers
+--- @param weights table List of weights corresponding to the values
+--- @return number Weighted average of the numbers
 function CabCinematicUtil.weightedAvg(values, weights)
   if #values == 0 or #values ~= #weights then
     return 0
@@ -271,16 +271,16 @@ function CabCinematicUtil.weightedAvg(values, weights)
   return sum / weightSum
 end
 
----Raycast against a vehicle and return all hit positions on the vehicle, as well as the closest hit if specified
----@param vehicle table The vehicle to raycast against
----@param startX number Ray start position X in local vehicle coordinates
----@param startY number Ray start position Y in local vehicle coordinates
----@param startZ number Ray start position Z in local vehicle coordinates
----@param endX number Ray end position X in local vehicle coordinates
----@param endY number Ray end position Y in local vehicle coordinates
----@param endZ number Ray end position Z in local vehicle coordinates
----@param closest boolean Whether to return only the closest hit or all hits
----@return table Raycast result containing hit positions and distances
+--- Raycast against a vehicle and return all hit positions on the vehicle, as well as the closest hit if specified
+--- @param vehicle table The vehicle to raycast against
+--- @param startX number Ray start position X in local vehicle coordinates
+--- @param startY number Ray start position Y in local vehicle coordinates
+--- @param startZ number Ray start position Z in local vehicle coordinates
+--- @param endX number Ray end position X in local vehicle coordinates
+--- @param endY number Ray end position Y in local vehicle coordinates
+--- @param endZ number Ray end position Z in local vehicle coordinates
+--- @param closest boolean Whether to return only the closest hit or all hits
+--- @return table Raycast result containing hit positions and distances
 function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, endY, endZ, closest)
   local dist = MathUtil.vector3Length(endX - startX, endY - startY, endZ - startZ)
   local sx, sy, sz = localToWorld(vehicle.rootNode, startX, startY, startZ)
@@ -321,9 +321,9 @@ function CabCinematicUtil.raycastVehicle(vehicle, startX, startY, startZ, endX, 
   return result
 end
 
----Tells whether the given vehicle is a tractor.
----@param vehicle table The vehicle to check.
----@return boolean true if the vehicle is a tractor, false otherwise.
+--- Tells whether the given vehicle is a tractor.
+--- @param vehicle table The vehicle to check.
+--- @return boolean true if the vehicle is a tractor, false otherwise.
 function CabCinematicUtil.isVehicleTractor(vehicle)
   local category = vehicle:getStoreCategory()
 
@@ -333,14 +333,14 @@ function CabCinematicUtil.isVehicleTractor(vehicle)
 end
 
 --- Tells whether the given vehicle is a telehandler.
----@param vehicle table The vehicle to check.
----@return boolean true if the vehicle is a telehandler, false otherwise.
+--- @param vehicle table The vehicle to check.
+--- @return boolean true if the vehicle is a telehandler, false otherwise.
 function CabCinematicUtil.isVehicleTelehandler(vehicle)
   return vehicle:getStoreCategory() == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
 end
 
 --- Get the player's eyesight height from the ground
----@return number The player's eyesight height in meters
+--- @return number The player's eyesight height in meters
 function CabCinematicUtil.getPlayerEyesightHeight()
   return 1.75
 end
@@ -392,16 +392,16 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
   return dist <= range
 end
 
----Tells whether the player is currently in first person mode while on foot.
----@param player table The player to check.
----@return boolean true if the player is in first person mode, false otherwise.
+--- Tells whether the player is currently in first person mode while on foot.
+--- @param player table The player to check.
+--- @return boolean true if the player is in first person mode, false otherwise.
 function CabCinematicUtil.isOnFootPlayerInFirstPerson(player)
   return player.camera.isFirstPerson == true
 end
 
----Tells whether the vehicle camera indoor first person camera is used
----@param vehicle table The vehicle to check.
----@return boolean true if the vehicle is in first person mode, false otherwise.
+--- Tells whether the vehicle camera indoor first person camera is used
+--- @param vehicle table The vehicle to check.
+--- @return boolean true if the vehicle is in first person mode, false otherwise.
 function CabCinematicUtil.isVehicleInFirstPerson(vehicle)
   local camera = vehicle:getIndoorCamera()
   if camera ~= nil then
@@ -411,9 +411,9 @@ function CabCinematicUtil.isVehicleInFirstPerson(vehicle)
   return false
 end
 
----Applies the player's camera rotation to the vehicle's indoor camera rotation
----@param player table The player whose camera rotation to apply
----@param vehicle table The vehicle whose camera rotation to modify
+--- Applies the player's camera rotation to the vehicle's indoor camera rotation
+--- @param player table The player whose camera rotation to apply
+--- @param vehicle table The vehicle whose camera rotation to modify
 function CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(player, vehicle)
   local playerCamera = player.camera
   local vehicleCamera = vehicle:getIndoorCamera()
@@ -432,9 +432,9 @@ function CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(playe
   vehicleCamera:updateRotateNodeRotation()
 end
 
----Applies the vehicle's indoor camera rotation to the player's camera rotation
----@param vehicle table The vehicle whose camera rotation to apply
----@param player table The player whose camera rotation to modify
+--- Applies the vehicle's indoor camera rotation to the player's camera rotation
+--- @param vehicle table The vehicle whose camera rotation to apply
+--- @param player table The player whose camera rotation to modify
 function CabCinematicUtil.applyVehicleCameraRotationToPlayerCameraRotation(vehicle, player)
   local playerCamera = player.camera
   local vehicleCamera = vehicle:getIndoorCamera()
@@ -462,10 +462,10 @@ function CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, state)
   g_inputBinding:setActionEventActive(actionEvent.actionEventId, state)
 end
 
----Gets all nodes involved in an animation
----@param vehicle table The vehicle whose animation to extract nodes from
----@param animationName string The name of the animation to extract nodes from
----@return table List of nodes involved in the animation
+--- Gets all nodes involved in an animation
+--- @param vehicle table The vehicle whose animation to extract nodes from
+--- @param animationName string The name of the animation to extract nodes from
+--- @return table List of nodes involved in the animation
 function CabCinematicUtil.getVehicleAnimationNodes(vehicle, animationName)
   local nodes = {}
 
@@ -493,11 +493,11 @@ function CabCinematicUtil.getVehicleAnimationNodes(vehicle, animationName)
   return nodes
 end
 
----Adds two x axis values together, taking into account the direction of the keyframe (positive or negative).
----@param x1 number The first x value.
----@param x2 number The second x value to add to the first.
----@param positiveDir boolean Whether to add on a positive direction (true for left/front, false for right/rear).
----@return number Result The result of the addition, adjusted for the direction.
+--- Adds two x axis values together, taking into account the direction of the keyframe (positive or negative).
+--- @param x1 number The first x value.
+--- @param x2 number The second x value to add to the first.
+--- @param positiveDir boolean Whether to add on a positive direction (true for left/front, false for right/rear).
+--- @return number Result The result of the addition, adjusted for the direction.
 function CabCinematicUtil.addByDirection(x1, x2, positiveDir)
   if positiveDir then
     return x1 + x2
@@ -506,11 +506,11 @@ function CabCinematicUtil.addByDirection(x1, x2, positiveDir)
   end
 end
 
----Subtracts two x axis values, taking into account the direction of the keyframe (positive or negative).
----@param x1 number The first x value.
----@param x2 number The second x value to subtract from the first.
----@param positiveDir boolean Whether to subtract in a positive direction (true for left/front, false for right/rear).
----@return number Result The result of the subtraction, adjusted for the direction.
+--- Subtracts two x axis values, taking into account the direction of the keyframe (positive or negative).
+--- @param x1 number The first x value.
+--- @param x2 number The second x value to subtract from the first.
+--- @param positiveDir boolean Whether to subtract in a positive direction (true for left/front, false for right/rear).
+--- @return number Result The result of the subtraction, adjusted for the direction.
 function CabCinematicUtil.subByDirection(x1, x2, positiveDir)
   return CabCinematicUtil.addByDirection(x1, -x2, positiveDir)
 end

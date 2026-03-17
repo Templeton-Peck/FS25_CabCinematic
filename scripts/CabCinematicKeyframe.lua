@@ -1,5 +1,5 @@
----@class CabCinematicKeyframe
----Describes a single animation keyframe
+--- @class CabCinematicKeyframe
+--- Describes a single animation keyframe
 CabCinematicKeyframe = {}
 local CabCinematicKeyframe_mt = Class(CabCinematicKeyframe)
 
@@ -54,11 +54,11 @@ CabCinematicKeyframe.VIEW_BOBBING = {
   },
 }
 
----Creates a new keyframe with the given type, start and end positions.
----@param type string The type of the keyframe (ex: walk, climb, etc).
----@param startPosition table The starting position of the keyframe.
----@param endPosition table The ending position of the keyframe.
----@return table CabCinematicKeyframe The created keyframe instance.
+--- Creates a new keyframe with the given type, start and end positions.
+--- @param type string The type of the keyframe (ex: walk, climb, etc).
+--- @param startPosition table The starting position of the keyframe.
+--- @param endPosition table The ending position of the keyframe.
+--- @return table CabCinematicKeyframe The created keyframe instance.
 function CabCinematicKeyframe.new(type, startPosition, endPosition)
   local self = setmetatable({}, CabCinematicKeyframe_mt)
   self.type = type
@@ -70,7 +70,7 @@ function CabCinematicKeyframe.new(type, startPosition, endPosition)
   return self
 end
 
----Deletes the keyframe and its resources
+--- Deletes the keyframe and its resources
 function CabCinematicKeyframe:delete()
   self.type = nil
   self.startPosition = nil
@@ -80,17 +80,17 @@ function CabCinematicKeyframe:delete()
   self.distance = nil
 end
 
----Gets the duration of the keyframe based on its distance and speed.
----@return number duration The duration of the keyframe in seconds.
+--- Gets the duration of the keyframe based on its distance and speed.
+--- @return number duration The duration of the keyframe in seconds.
 function CabCinematicKeyframe:getDuration()
   return self.distance / self.speed
 end
 
----Calculates the view bobbing offset for the keyframe at time t.
----@param t number The time along the keyframe's duration to calculate the offset for.
----@return number horizontalOffset The horizontal offset to apply to the camera.
----@return number verticalOffset The vertical offset to apply to the camera.
----@return number depthOffset The depth offset to apply to the camera.
+--- Calculates the view bobbing offset for the keyframe at time t.
+--- @param t number The time along the keyframe's duration to calculate the offset for.
+--- @return number horizontalOffset The horizontal offset to apply to the camera.
+--- @return number verticalOffset The vertical offset to apply to the camera.
+--- @return number depthOffset The depth offset to apply to the camera.
 function CabCinematicKeyframe:getViewBobbingOffset(t)
   if self.distance == 0 then
     return 0, 0, 0
@@ -110,9 +110,9 @@ function CabCinematicKeyframe:getViewBobbingOffset(t)
   return horizontalOffset * fadeFactor, verticalOffset * fadeFactor, 0
 end
 
----Calculates the interpolated position along the keyframe's path at time t, including view bobbing offsets.
----@param t number The time along the keyframe's duration to calculate the position for.
----@return table The interpolated position at time t.
+--- Calculates the interpolated position along the keyframe's path at time t, including view bobbing offsets.
+--- @param t number The time along the keyframe's duration to calculate the position for.
+--- @return table The interpolated position at time t.
 function CabCinematicKeyframe:getInterpolatedPositionAtTime(t)
   if self.distance == 0 then
     return { 0, 0, 0 }
@@ -130,23 +130,23 @@ function CabCinematicKeyframe:getInterpolatedPositionAtTime(t)
   return { baseX + bobX, baseY + bobY, baseZ + bobZ }
 end
 
----Reverses the keyframe's start and end positions, effectively creating a keyframe that goes in the opposite direction.
----This is useful for generating exit animations from the same keyframes used for entering.
+--- Reverses the keyframe's start and end positions, effectively creating a keyframe that goes in the opposite direction.
+--- This is useful for generating exit animations from the same keyframes used for entering.
 function CabCinematicKeyframe:reverse()
   local temp = self.startPosition
   self.startPosition = self.endPosition
   self.endPosition = temp
 end
 
----Draws a debug line in the world representing the keyframe's path.
----@param relativeNode number The relative node to convert local positions to world positions.
+--- Draws a debug line in the world representing the keyframe's path.
+--- @param relativeNode number The relative node to convert local positions to world positions.
 function CabCinematicKeyframe:drawDebug(relativeNode)
   local startWorldPos = { localToWorld(relativeNode, unpack(self.startPosition)) }
   local endWorldPos = { localToWorld(relativeNode, unpack(self.endPosition)) }
   DebugUtil.drawDebugLine(startWorldPos[1], startWorldPos[2], startWorldPos[3], endWorldPos[1], endWorldPos[2], endWorldPos[3], 1, 0, 0, 0.1)
 end
 
----Prints the keyframe's details for debugging purposes.
+--- Prints the keyframe's details for debugging purposes.
 function CabCinematicKeyframe:printDebug()
   Log:info(
     "  Keyframe: type=%s, start=(%.2f, %.2f, %.2f), end=(%.2f, %.2f, %.2f), speed=%.2f, distance=%.2f, duration=%.2f",
