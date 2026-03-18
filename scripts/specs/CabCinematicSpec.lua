@@ -252,7 +252,7 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
       return superFunc(playerInputComponent, ...)
     end
 
-    if not CabCinematicUtil.isPlayerInVehicleEnterRange(playerInputComponent.player, vehicle, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) then
+    if not CabCinematicUtil.isPlayerInVehicleAccessRange(playerInputComponent.player, vehicle, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) then
       return
     end
 

@@ -368,20 +368,20 @@ function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
   end
 end
 
-function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
+function CabCinematicUtil.isPlayerInVehicleAccessRange(player, vehicle, range)
   local analysis = vehicle:getCabCinematicAnalysis()
   if analysis == nil then
     return false
   end
 
-  local enterPosition = analysis.positions.enter
+  local accessPosition = analysis.positions.access
 
   local px, py, pz = localToLocal(getParent(player.rootNode), vehicle.rootNode, getTranslation(player.rootNode))
-  local ex, ey, ez = unpack(enterPosition)
+  local ex, ey, ez = unpack(accessPosition)
 
   if analysis.flags.isEntryFromCabSide then
-    -- if player is between vehicle and enter point on X axis
-    -- and more than 1.0m away from enter point, then return false
+    -- if player is between vehicle and access point on X axis
+    -- and more than 1.0m away from access point, then return false
     if analysis.flags.isEntryFromCabSideLeft then
       if px < ex - 1 then return false end
     else

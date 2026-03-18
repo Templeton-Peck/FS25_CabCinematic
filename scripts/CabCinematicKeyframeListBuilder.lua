@@ -136,11 +136,11 @@ function CabCinematicKeyframeListBuilder:adaptFromPosition(position, type)
 end
 
 --- Builds a keyframe sequence for a tractor based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildTractorKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildTractorKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   if not vehicleAnalysis.flags.isCabEquipped then
     return self:shiftTo(doorSafePosition)
   elseif vehicleAnalysis.flags.isBiTracks and vehicleAnalysis.flags.isTracksOnly then
@@ -149,8 +149,8 @@ function CabCinematicKeyframeListBuilder:buildTractorKeyframes(enterPosition, do
 
     local ladderBottom = vehicleAnalysis.positions.ladderBottom or {
       wheel[1] or doorSafePosition[1],
-      enterPosition[2],
-      enterPosition[3]
+      accessPosition[2],
+      accessPosition[3]
     }
 
     local ladderTop = vehicleAnalysis.positions.ladderTop or {
@@ -169,21 +169,21 @@ function CabCinematicKeyframeListBuilder:buildTractorKeyframes(enterPosition, do
 end
 
 --- Builds a keyframe sequence for a teleloader based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildTeleloaderKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildTeleloaderKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   return self:climbTo(doorSafePosition)
 end
 
 --- Builds a keyframe sequence for a grain harvester based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildGrainHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
-  local ladderBottom = vehicleAnalysis.positions.ladderBottom or enterPosition
+function CabCinematicKeyframeListBuilder:buildGrainHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
+  local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
   local ladderTop = {}
 
   if vehicleAnalysis.flags.isEntryFromCabSide then
@@ -207,16 +207,16 @@ function CabCinematicKeyframeListBuilder:buildGrainHarvesterKeyframes(enterPosit
 end
 
 --- Builds a keyframe sequence for a forage harvester based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildForageHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildForageHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   if vehicleAnalysis.flags.isEntryFromCabSideRear then
     local ladderBottom = {
       doorSafePosition[1],
-      enterPosition[2] + 0.25,
-      enterPosition[3] + 0.25
+      accessPosition[2] + 0.25,
+      accessPosition[3] + 0.25
     }
 
     local ladderTop = {
@@ -226,9 +226,9 @@ function CabCinematicKeyframeListBuilder:buildForageHarvesterKeyframes(enterPosi
     }
 
     local ladderStep = {
-      CabCinematicUtil.addByDirection(vehicleAnalysis.positions.enterWheel[1], 0.15, vehicleAnalysis.flags.isEntryFromCabSideLeft),
-      enterPosition[2],
-      enterPosition[3] + 0.07
+      CabCinematicUtil.addByDirection(vehicleAnalysis.positions.accessWheel[1], 0.15, vehicleAnalysis.flags.isEntryFromCabSideLeft),
+      accessPosition[2],
+      accessPosition[3] + 0.07
     }
 
     return self
@@ -242,12 +242,12 @@ function CabCinematicKeyframeListBuilder:buildForageHarvesterKeyframes(enterPosi
 end
 
 --- Builds a keyframe sequence for a beet harvester based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
-  local ladderBottom = vehicleAnalysis.positions.ladderBottom or enterPosition
+function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
+  local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
   local ladderTop = {}
 
   if vehicleAnalysis.flags.isEntryFromCabSide then
@@ -278,16 +278,16 @@ function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(enterPositi
 end
 
 --- Builds a keyframe sequence for a grape and olive harvester based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildGrapeAndOliveHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   if vehicleAnalysis.flags.isEntryFromCabSideRear then
     local ladderBottom = vehicleAnalysis.positions.ladderBottom or {
       doorSafePosition[1],
-      enterPosition[2],
-      enterPosition[3]
+      accessPosition[2],
+      accessPosition[3]
     }
 
     local ladderTop = vehicleAnalysis.positions.ladderTop or {
@@ -306,13 +306,13 @@ function CabCinematicKeyframeListBuilder:buildGrapeAndOliveHarvesterKeyframes(en
 end
 
 --- Builds a keyframe sequence for a sugarcane harvester based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildSugarcaneHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildSugarcaneHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   if vehicleAnalysis.flags.isEntryFromCabSide then
-    local ladderBottom = vehicleAnalysis.positions.ladderBottom or enterPosition
+    local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
 
     local ladderTop = vehicleAnalysis.positions.ladderTop or {
       CabCinematicUtil.subByDirection(ladderBottom[1], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleAnalysis.flags.isEntryFromCabSideLeft),
@@ -330,13 +330,13 @@ function CabCinematicKeyframeListBuilder:buildSugarcaneHarvesterKeyframes(enterP
 end
 
 --- Builds a keyframe sequence for a rice harvester based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   if vehicleAnalysis.flags.isEntryFromCabSide then
-    local ladderBottom = vehicleAnalysis.positions.ladderBottom or enterPosition
+    local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
     local ladderTop = vehicleAnalysis.positions.ladderTop or {
       doorSafePosition[1],
       doorSafePosition[2],
@@ -353,13 +353,13 @@ function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(enterPositi
 end
 
 --- Builds a keyframe sequence for sprayers based on its analysis and entry configuration.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   if vehicleAnalysis.flags.isEntryFromCabSide then
-    local ladderBottom = vehicleAnalysis.positions.ladderBottom or enterPosition
+    local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
     local ladderTop = vehicleAnalysis.positions.ladderTop or {
       CabCinematicUtil.subByDirection(ladderBottom[1], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleAnalysis.flags.isEntryFromCabSideLeft),
       doorSafePosition[2],
@@ -371,7 +371,7 @@ function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(enterPosition, d
         :climbTo(ladderTop)
         :walkTo(doorSafePosition)
   elseif vehicleAnalysis.flags.isEntryFromCabFront then
-    local ladderBottom = vehicleAnalysis.positions.ladderBottom or enterPosition
+    local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
     local ladderTop = vehicleAnalysis.positions.ladderTop or {
       ladderBottom[1],
       doorSafePosition[2],
@@ -388,11 +388,11 @@ function CabCinematicKeyframeListBuilder:buildSprayersKeyframes(enterPosition, d
 end
 
 --- Builds a keyframe sequence for skidsteers which don't have a cab and require the player to shift to the door safe position before entering.
---- @param enterPosition table The position where the player enters the vehicle.
+--- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
 --- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
-function CabCinematicKeyframeListBuilder:buildSkidsteersKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+function CabCinematicKeyframeListBuilder:buildSkidsteersKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   return self:shiftTo(doorSafePosition)
 end
 
@@ -407,38 +407,38 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
 
   local storeCategory = vehicle:getStoreCategory()
   local useLeftDoor = vehicleAnalysis.flags.isEntryFromCabSideLeft or not vehicleAnalysis.flags.isEntryFromCabSide
-  local enterPosition = vehicleAnalysis.positions.preferredEnter
+  local accessPosition = vehicleAnalysis.positions.preferredAccess
   local doorPosition = useLeftDoor and vehicleAnalysis.positions.leftDoor or vehicleAnalysis.positions.rightDoor
   local doorSafePosition = useLeftDoor and vehicleAnalysis.positions.leftDoorSafe or vehicleAnalysis.positions.rightDoorSafe
 
-  local builder = CabCinematicKeyframeListBuilder.new(vehicleAnalysis.positions.enter)
-      :walkTo(enterPosition)
+  local builder = CabCinematicKeyframeListBuilder.new(vehicleAnalysis.positions.access)
+      :walkTo(accessPosition)
 
   if CabCinematicUtil.isVehicleTractor(vehicle) then
-    builder:buildTractorKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildTractorKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FRONTLOADERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WHEELLOADERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORKLIFTS then
-    builder:buildTeleloaderKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildTeleloaderKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAIN_HARVESTERS then
-    builder:buildGrainHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildGrainHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.FORAGE_HARVESTERS then
-    builder:buildForageHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildForageHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.BEET_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
-    builder:buildBeetHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildBeetHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAPE_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.OLIVE_HARVESTERS then
-    builder:buildGrapeAndOliveHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildGrapeAndOliveHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SUGARCANE_HARVESTERS then
-    builder:buildSugarcaneHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildSugarcaneHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.RICE_HARVESTERS then
-    builder:buildRiceHarvesterKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildRiceHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
-    builder:buildSprayersKeyframes(enterPosition, doorSafePosition, vehicleAnalysis)
+    builder:buildSprayersKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   end
 
   return builder
