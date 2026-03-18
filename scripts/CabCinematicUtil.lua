@@ -45,7 +45,6 @@ function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, 
     return
   end
 
-  local debugString = ""
   for i, j in pairs(inputTable) do
     local skip = false
 
@@ -66,8 +65,6 @@ function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, 
       end
     end
   end
-
-  return debugString
 end
 
 function CabCinematicUtil.drawDebugNodeRelativePositions(node, positions)
@@ -203,7 +200,7 @@ end
 --- @param positions table Positions to evaluate {{x, y, z}, ...}
 --- @param ref1 table Reference point 1 {x, y, z}
 --- @param ref2 table Reference point 2 {x, y, z}
---- @return table ClosestPosition {x, y, z }
+--- @return table | nil ClosestPosition {x, y, z }
 function CabCinematicUtil.getClosestPositionToTwoRefs(positions, ref1, ref2)
   local bestPoint = nil
   local bestScore = math.huge
@@ -218,27 +215,40 @@ function CabCinematicUtil.getClosestPositionToTwoRefs(positions, ref1, ref2)
     end
   end
 
-  return bestPoint, bestScore
+  return bestPoint
 end
 
+--- Merges multiple tables into the first table.
+--- Later tables will overwrite values of earlier tables in case of key conflicts.
+--- @param t1 table The first table to merge into and return
+--- @param ... table | nil Additional tables to merge into the first table
+--- @return table Merged table (same as the first table)
 function CabCinematicUtil.merge(t1, ...)
   local args = { ... }
 
   for _, t2 in ipairs(args) do
-    for k, v in pairs(t2) do
-      t1[k] = v
+    if t2 ~= nil then
+      for k, v in pairs(t2) do
+        t1[k] = v
+      end
     end
   end
 
   return t1
 end
 
+--- Concatenates multiple lists into the first list.
+--- @param t1 table The first list to concatenate into and return
+--- @param ... table | nil Additional lists to concatenate into the first list
+--- @return table Concatenated list (same as the first list)
 function CabCinematicUtil.concat(t1, ...)
   local args = { ... }
 
   for _, t2 in ipairs(args) do
-    for _, v in ipairs(t2) do
-      table.insert(t1, v)
+    if t2 ~= nil then
+      for _, v in ipairs(t2) do
+        table.insert(t1, v)
+      end
     end
   end
 
@@ -276,6 +286,10 @@ function CabCinematicUtil.weightedAvg(values, weights)
     local w = weights[i]
     sum = sum + v * w
     weightSum = weightSum + w
+  end
+
+  if weightSum == 0 then
+    return 0
   end
 
   return sum / weightSum
@@ -369,22 +383,14 @@ function CabCinematicUtil.isPlayerInVehicleEnterRange(player, vehicle, range)
     -- if player is between vehicle and enter point on X axis
     -- and more than 1.0m away from enter point, then return false
     if analysis.flags.isEntryFromCabSideLeft then
-      if px < math.max(ex - 1, 0) then
-        return false
-      end
+      if px < ex - 1 then return false end
     else
-      if px > math.min(ex + 1, 0) then
-        return false
-      end
+      if px > ex + 1 then return false end
     end
   elseif analysis.flags.isEntryFromCabFront then
-    if pz < math.max(ez - 1, 0) then
-      return false
-    end
+    if pz < ez - 1 then return false end
   elseif analysis.flags.isEntryFromCabBack then
-    if pz > math.min(ez + 1, 0) then
-      return false
-    end
+    if pz > ez + 1 then return false end
   end
 
   local dist = MathUtil.vector3Length(px - ex, py - ey, pz - ez)

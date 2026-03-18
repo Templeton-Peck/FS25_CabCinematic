@@ -23,7 +23,7 @@ end
 --- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
   local camera = self.vehicle:getIndoorCamera()
-  if camera ~= nil then
+  if camera ~= nil and camera.cameraPositionNode ~= nil and camera.cameraPositionNode ~= 0 then
     local dx, dy, dz = getTranslation(camera.cameraPositionNode)
     return { localToLocal(getParent(camera.cameraPositionNode), self.vehicle.rootNode, dx, dy, dz) }
   end
@@ -35,7 +35,10 @@ end
 --- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleExitPosition()
   local exitNode = self.vehicle:getExitNode()
-  return { localToLocal(getParent(exitNode), self.vehicle.rootNode, getTranslation(exitNode)) }
+  if exitNode ~= nil and exitNode ~= 0 then
+    return { localToLocal(getParent(exitNode), self.vehicle.rootNode, getTranslation(exitNode)) }
+  end
+  return { 0, 0, 0 }
 end
 
 --- Gets analysis of a pneumatic wheel
@@ -131,12 +134,14 @@ function CabCinematicVehicleAnalyzer:getCrawlerWheelAnalysis(crawler, positions)
         summedPosition[3] = summedPosition[3] + z
         wheelsCount = wheelsCount + 1
 
+        local radius = wheel.wheel.physics and wheel.wheel.physics.radius or 0
+
         if (largestZWheel == nil or z > largestZWheel[3]) then
-          largestZWheel = { x, y, z, radius = wheel.wheel.physics.radius, width = getHalfWidth(wheel.wheel) }
+          largestZWheel = { x, y, z, radius = radius, width = getHalfWidth(wheel.wheel) }
         end
 
         if (smallestZWheel == nil or z < smallestZWheel[3]) then
-          smallestZWheel = { x, y, z, radius = wheel.wheel.physics.radius, width = getHalfWidth(wheel.wheel) }
+          smallestZWheel = { x, y, z, radius = radius, width = getHalfWidth(wheel.wheel) }
         end
       end
     end
@@ -165,7 +170,7 @@ end
 --- @param positions table Current positions for reference
 --- @return table Position Position of character's feet
 function CabCinematicVehicleAnalyzer:getCabCharacterFootPosition(positions)
-  local characterTargets = self.vehicle.spec_enterable.defaultCharacterTargets
+  local characterTargets = self.vehicle.spec_enterable and self.vehicle.spec_enterable.defaultCharacterTargets
 
   if characterTargets ~= nil then
     local foots = { characterTargets.leftFoot, characterTargets.rightFoot }
@@ -173,25 +178,30 @@ function CabCinematicVehicleAnalyzer:getCabCharacterFootPosition(positions)
     local lowestFootY = math.huge
     local largestFootZ = -math.huge
 
+    local footsNodes = {}
     for _, foot in pairs(foots) do
-      if foot ~= nil then
-        local footX, footY, footZ = localToLocal(foot.targetNode, self.vehicle.rootNode, 0, 0, 0)
-        if footX ~= nil then
-          sumFootX = sumFootX + footX
-        end
-
-        if footY ~= nil and footY < lowestFootY then
-          lowestFootY = footY
-        end
-
-        if footZ ~= nil and footZ > largestFootZ then
-          largestFootZ = footZ
-        end
+      if foot ~= nil and foot.targetNode ~= nil and foot.targetNode ~= 0 then
+        table.insert(footsNodes, foot.targetNode)
       end
     end
 
-    if lowestFootY ~= math.huge and largestFootZ ~= -math.huge then
-      return { sumFootX / 2, lowestFootY, largestFootZ }
+    for _, footNode in pairs(footsNodes) do
+      local footX, footY, footZ = localToLocal(footNode, self.vehicle.rootNode, 0, 0, 0)
+      if footX ~= nil then
+        sumFootX = sumFootX + footX
+      end
+
+      if footY ~= nil and footY < lowestFootY then
+        lowestFootY = footY
+      end
+
+      if footZ ~= nil and footZ > largestFootZ then
+        largestFootZ = footZ
+      end
+    end
+
+    if #footsNodes > 0 and lowestFootY ~= math.huge and largestFootZ ~= -math.huge then
+      return { sumFootX / #footsNodes, lowestFootY, largestFootZ }
     end
   end
 
@@ -202,11 +212,12 @@ end
 --- @param positions table Current positions for reference
 --- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
-  if self.vehicle.spec_drivable == nil or self.vehicle.spec_drivable.steeringWheel == nil then
+  local steeringWheelNode = self.vehicle.spec_drivable and self.vehicle.spec_drivable.steeringWheel and self.vehicle.spec_drivable.steeringWheel.node
+
+  if steeringWheelNode == nil or steeringWheelNode == 0 then
     return { positions.camera[1], (positions.characterFoot[2] + positions.camera[2]) / 2, math.max(positions.characterFoot[3], positions.camera[3] + 0.35) }
   end
 
-  local steeringWheelNode = self.vehicle.spec_drivable.steeringWheel.node
   return { localToLocal(steeringWheelNode, self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
 end
 
@@ -468,7 +479,7 @@ end
 --- @return table Analysis analysis with positions and flags
 function CabCinematicVehicleAnalyzer:getVehicleEnterAnalysis(positions)
   local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight()
-  local wex, wey, wez = getWorldTranslation(self.vehicle:getExitNode())
+  local wex, wey, wez = localToWorld(self.vehicle.rootNode, positions.exit[1], positions.exit[2], positions.exit[3])
   local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez)
   local _, wpy, _ = worldToLocal(self.vehicle.rootNode, wex, wty, wez)
   local enter = { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
@@ -578,7 +589,8 @@ function CabCinematicVehicleAnalyzer:getCabEnterWheelPosition(positions)
     end
   end
 
-  return CabCinematicUtil.getClosestPositionToTwoRefs(candidates, positions.exit, positions.camera)
+  local enterWheel = CabCinematicUtil.getClosestPositionToTwoRefs(candidates, positions.exit, positions.camera);
+  return enterWheel or positions.exit
 end
 
 --- Builds candidate Z door depths based on entry class and cabin depth
@@ -703,7 +715,7 @@ function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
 
   local standupY = positions.camera[2] + 0.05
   local preferredStandupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05
-  local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.leftDoor[3], positions.front[3] - 0.15)
+  local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.leftDoor[3], math.max(positions.front[3] - 0.15, positions.leftDoor[3]))
   return { standupX, standupY, standupZ }
 end
 
@@ -716,7 +728,8 @@ function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
       positions = {},
       flags = {
         isPlatformEquipped = false
-      }
+      },
+      debugHits = {},
     }
   end
 
@@ -748,22 +761,18 @@ function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
   local platformLeftX = math.max(unpack(leftPositions))
   local platformRightX = math.min(unpack(rightPositions))
 
-  local positions = {
-    platformLeft = { platformLeftX, positions.bottom[2], positions.center[3] },
-    platformRight = { platformRightX, positions.bottom[2], positions.center[3] },
-    platformFront = { positions.center[1], positions.bottom[2], positions.front[3] },
-    platformBack = { positions.center[1], positions.bottom[2], positions.back[3] },
-    platformTop = { positions.center[1], positions.bottom[2], positions.center[3] },
-    platformBottom = { positions.center[1], positions.bottom[2] - 0.25, positions.center[3] },
-  }
-
-  local flags = {
-    isPlatformEquipped = true
-  }
-
   return {
-    positions = positions,
-    flags = flags,
+    positions = {
+      platformLeft = { platformLeftX, positions.bottom[2], positions.center[3] },
+      platformRight = { platformRightX, positions.bottom[2], positions.center[3] },
+      platformFront = { positions.center[1], positions.bottom[2], positions.front[3] },
+      platformBack = { positions.center[1], positions.bottom[2], positions.back[3] },
+      platformTop = { positions.center[1], positions.bottom[2], positions.center[3] },
+      platformBottom = { positions.center[1], positions.bottom[2] - 0.25, positions.center[3] },
+    },
+    flags = {
+      isPlatformEquipped = true
+    },
     debugHits = {
       leftPlatformHitResult = leftPlatformHitResult,
       rightPlatformHitResult = rightPlatformHitResult,
@@ -1012,7 +1021,6 @@ function CabCinematicVehicleAnalyzer:analyze()
   local doors = self:getCabDoorsAnalysis(positions, flags)
   CabCinematicUtil.merge(positions, doors.positions)
   CabCinematicUtil.merge(flags, doors.flags)
-  CabCinematicUtil.merge(debugPositions, doors.debugPositions)
 
   -- Ladder analysis
   local ladderAnalysis = self:getCabLadderAnalysis(positions, flags)
