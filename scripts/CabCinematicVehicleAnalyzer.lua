@@ -1,5 +1,5 @@
 --- @class CabCinematicVehicleAnalyzer
---- Analyzes vehicle features to determine positions and flags for cab cinematics
+--- Analyzes vehicle physics and metadata properties to determine positions and flags for cab cinematics
 CabCinematicVehicleAnalyzer = {}
 local CabCinematicVehicleAnalyzer_mt = Class(CabCinematicVehicleAnalyzer)
 
@@ -38,11 +38,11 @@ function CabCinematicVehicleAnalyzer:getVehicleExitPosition()
   return { localToLocal(getParent(exitNode), self.vehicle.rootNode, getTranslation(exitNode)) }
 end
 
---- Gets features of a pneumatic wheel
+--- Gets analysis of a pneumatic wheel
 --- @param wheel table The wheel data
 --- @param positions table Current positions for reference
---- @return table|nil Wheel features with position, sidewallPosition, treadBackPosition, treadFrontPosition
-function CabCinematicVehicleAnalyzer:getPneumaticWheelFeatures(wheel, positions)
+--- @return table|nil Wheel analysis with position, sidewallPosition, treadBackPosition, treadFrontPosition
+function CabCinematicVehicleAnalyzer:getPneumaticWheelAnalysis(wheel, positions)
   if wheel == nil or wheel.visualWheels == nil or #wheel.visualWheels == 0 then
     return nil
   end
@@ -97,11 +97,11 @@ function CabCinematicVehicleAnalyzer:getPneumaticWheelFeatures(wheel, positions)
   return result
 end
 
---- Gets features of a crawler track
+--- Gets analysis of a crawler track
 --- @param crawler table The crawler data
 --- @param positions table Current positions for reference
---- @return table Features features with position, sidewallPosition, treadBackPosition, treadFrontPosition
-function CabCinematicVehicleAnalyzer:getCrawlerWheelFeatures(crawler, positions)
+--- @return table Analysis analysis with position, sidewallPosition, treadBackPosition, treadFrontPosition
+function CabCinematicVehicleAnalyzer:getCrawlerWheelAnalysis(crawler, positions)
   local x, y, z = localToLocal(crawler.linkNode, self.vehicle.rootNode, getTranslation(crawler.linkNode))
 
   local result = {
@@ -282,8 +282,8 @@ end
 
 --- Calculates the cab bounding box
 --- @param positions table Current positions for reference
---- @return table Features features with bounding box positions, flags and debug hits
-function CabCinematicVehicleAnalyzer:getCabFeatures(positions)
+--- @return table Analysis analysis with bounding box positions, flags and debug hits
+function CabCinematicVehicleAnalyzer:getCabAnalysis(positions)
   local raycastResult = self:raycastCabBoundingBox(positions)
   local debugPositions = {}
 
@@ -361,10 +361,10 @@ function CabCinematicVehicleAnalyzer:getPneumaticWheelsCount()
   return count
 end
 
---- Analyzes all wheel features (pneumatic and crawler)
+--- Analyzes all wheel analysis (pneumatic and crawler)
 --- @param positions table Current positions for reference
---- @return table Features features with flags and positions
-function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
+--- @return table Analysis analysis with flags and positions
+function CabCinematicVehicleAnalyzer:getWheelsAnalysis(positions)
   local crawlersCount = self:getCrawlersCount()
   local wheelsCount = self:getPneumaticWheelsCount()
 
@@ -396,31 +396,31 @@ function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
 
   if crawlersCount > 0 then
     for _, crawler in pairs(self.vehicle.spec_crawlers.crawlers) do
-      local crawlerFeatures = self:getCrawlerWheelFeatures(crawler, positions)
-      if crawlerFeatures ~= nil then
+      local crawlerAnalysis = self:getCrawlerWheelAnalysis(crawler, positions)
+      if crawlerAnalysis ~= nil then
         if crawler.isLeft then
-          if crawlerFeatures.position[3] > positions.root[3] then
-            result.positions.wheelLeftFront = crawlerFeatures.position
-            result.positions.wheelLeftFrontTreadFront = crawlerFeatures.treadFrontPosition
-            result.positions.wheelLeftFrontTreadBack = crawlerFeatures.treadBackPosition
-            result.positions.wheelLeftFrontSidewall = crawlerFeatures.sidewallPosition
+          if crawlerAnalysis.position[3] > positions.root[3] then
+            result.positions.wheelLeftFront = crawlerAnalysis.position
+            result.positions.wheelLeftFrontTreadFront = crawlerAnalysis.treadFrontPosition
+            result.positions.wheelLeftFrontTreadBack = crawlerAnalysis.treadBackPosition
+            result.positions.wheelLeftFrontSidewall = crawlerAnalysis.sidewallPosition
           else
-            result.positions.wheelLeftBack = crawlerFeatures.position
-            result.positions.wheelLeftBackTreadFront = crawlerFeatures.treadFrontPosition
-            result.positions.wheelLeftBackTreadBack = crawlerFeatures.treadBackPosition
-            result.positions.wheelLeftBackSidewall = crawlerFeatures.sidewallPosition
+            result.positions.wheelLeftBack = crawlerAnalysis.position
+            result.positions.wheelLeftBackTreadFront = crawlerAnalysis.treadFrontPosition
+            result.positions.wheelLeftBackTreadBack = crawlerAnalysis.treadBackPosition
+            result.positions.wheelLeftBackSidewall = crawlerAnalysis.sidewallPosition
           end
         else
-          if crawlerFeatures.position[3] > positions.root[3] then
-            result.positions.wheelRightFront = crawlerFeatures.position
-            result.positions.wheelRightFrontTreadFront = crawlerFeatures.treadFrontPosition
-            result.positions.wheelRightFrontTreadBack = crawlerFeatures.treadBackPosition
-            result.positions.wheelRightFrontSidewall = crawlerFeatures.sidewallPosition
+          if crawlerAnalysis.position[3] > positions.root[3] then
+            result.positions.wheelRightFront = crawlerAnalysis.position
+            result.positions.wheelRightFrontTreadFront = crawlerAnalysis.treadFrontPosition
+            result.positions.wheelRightFrontTreadBack = crawlerAnalysis.treadBackPosition
+            result.positions.wheelRightFrontSidewall = crawlerAnalysis.sidewallPosition
           else
-            result.positions.wheelRightBack = crawlerFeatures.position
-            result.positions.wheelRightBackTreadFront = crawlerFeatures.treadFrontPosition
-            result.positions.wheelRightBackTreadBack = crawlerFeatures.treadBackPosition
-            result.positions.wheelRightBackSidewall = crawlerFeatures.sidewallPosition
+            result.positions.wheelRightBack = crawlerAnalysis.position
+            result.positions.wheelRightBackTreadFront = crawlerAnalysis.treadFrontPosition
+            result.positions.wheelRightBackTreadBack = crawlerAnalysis.treadBackPosition
+            result.positions.wheelRightBackSidewall = crawlerAnalysis.sidewallPosition
           end
         end
       end
@@ -429,31 +429,31 @@ function CabCinematicVehicleAnalyzer:getWheelsFeatures(positions)
 
   if wheelsCount > 0 then
     for _, wheel in pairs(self.vehicle.spec_wheels.wheels) do
-      local wheelFeatures = self:getPneumaticWheelFeatures(wheel, positions)
-      if wheelFeatures ~= nil then
-        if wheelFeatures.position[1] > positions.root[1] then
-          if wheelFeatures.position[3] > positions.root[3] then
-            result.positions.wheelLeftFront = wheelFeatures.position
-            result.positions.wheelLeftFrontTreadFront = wheelFeatures.treadFrontPosition
-            result.positions.wheelLeftFrontTreadBack = wheelFeatures.treadBackPosition
-            result.positions.wheelLeftFrontSidewall = wheelFeatures.sidewallPosition
+      local wheelAnalysis = self:getPneumaticWheelAnalysis(wheel, positions)
+      if wheelAnalysis ~= nil then
+        if wheelAnalysis.position[1] > positions.root[1] then
+          if wheelAnalysis.position[3] > positions.root[3] then
+            result.positions.wheelLeftFront = wheelAnalysis.position
+            result.positions.wheelLeftFrontTreadFront = wheelAnalysis.treadFrontPosition
+            result.positions.wheelLeftFrontTreadBack = wheelAnalysis.treadBackPosition
+            result.positions.wheelLeftFrontSidewall = wheelAnalysis.sidewallPosition
           else
-            result.positions.wheelLeftBack = wheelFeatures.position
-            result.positions.wheelLeftBackTreadFront = wheelFeatures.treadFrontPosition
-            result.positions.wheelLeftBackTreadBack = wheelFeatures.treadBackPosition
-            result.positions.wheelLeftBackSidewall = wheelFeatures.sidewallPosition
+            result.positions.wheelLeftBack = wheelAnalysis.position
+            result.positions.wheelLeftBackTreadFront = wheelAnalysis.treadFrontPosition
+            result.positions.wheelLeftBackTreadBack = wheelAnalysis.treadBackPosition
+            result.positions.wheelLeftBackSidewall = wheelAnalysis.sidewallPosition
           end
         else
-          if wheelFeatures.position[3] > positions.root[3] then
-            result.positions.wheelRightFront = wheelFeatures.position
-            result.positions.wheelRightFrontTreadFront = wheelFeatures.treadFrontPosition
-            result.positions.wheelRightFrontTreadBack = wheelFeatures.treadBackPosition
-            result.positions.wheelRightFrontSidewall = wheelFeatures.sidewallPosition
+          if wheelAnalysis.position[3] > positions.root[3] then
+            result.positions.wheelRightFront = wheelAnalysis.position
+            result.positions.wheelRightFrontTreadFront = wheelAnalysis.treadFrontPosition
+            result.positions.wheelRightFrontTreadBack = wheelAnalysis.treadBackPosition
+            result.positions.wheelRightFrontSidewall = wheelAnalysis.sidewallPosition
           else
-            result.positions.wheelRightBack = wheelFeatures.position
-            result.positions.wheelRightBackTreadFront = wheelFeatures.treadFrontPosition
-            result.positions.wheelRightBackTreadBack = wheelFeatures.treadBackPosition
-            result.positions.wheelRightBackSidewall = wheelFeatures.sidewallPosition
+            result.positions.wheelRightBack = wheelAnalysis.position
+            result.positions.wheelRightBackTreadFront = wheelAnalysis.treadFrontPosition
+            result.positions.wheelRightBackTreadBack = wheelAnalysis.treadBackPosition
+            result.positions.wheelRightBackSidewall = wheelAnalysis.sidewallPosition
           end
         end
       end
@@ -465,8 +465,8 @@ end
 
 --- Analyzes the vehicle to determine the enter position and related flags
 --- @param positions table Current positions for reference
---- @return table Features features with positions and flags
-function CabCinematicVehicleAnalyzer:getVehicleEnterFeatures(positions)
+--- @return table Analysis analysis with positions and flags
+function CabCinematicVehicleAnalyzer:getVehicleEnterAnalysis(positions)
   local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight()
   local wex, wey, wez = getWorldTranslation(self.vehicle:getExitNode())
   local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez)
@@ -618,8 +618,8 @@ end
 --- Calculates the door positions on left and right sides
 --- @param positions table Current positions for reference
 --- @param flags table Current flags for reference
---- @return table Doors features with positions and flags
-function CabCinematicVehicleAnalyzer:getCabDoorsFeatures(positions, flags)
+--- @return table Doors analysis with positions and flags
+function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
   local doorZCandidates = self:getDoorZCandidates(positions, flags)
   local minDoorZ = doorZCandidates.minDoorZ
   local maxDoorZ = doorZCandidates.maxDoorZ
@@ -709,8 +709,8 @@ end
 
 --- Calculates the platform positions if the vehicle has a platform or returns empty if not
 --- @param positions table Current positions for reference
---- @return table Platform features with positions and flags
-function CabCinematicVehicleAnalyzer:getCabPlatformFeatures(positions)
+--- @return table Platform analysis with positions and flags
+function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
   if CabCinematicUtil.isVehicleTractor(self.vehicle) or CabCinematicUtil.isVehicleTelehandler(self.vehicle) or positions.bottom[2] <= 1.2 then
     return {
       positions = {},
@@ -773,8 +773,8 @@ end
 
 --- Calculates the mirror positions if the vehicle has mirrors or returns empty if not
 --- @param positions table Current positions for reference
---- @return table Mirror features with positions and flags
-function CabCinematicVehicleAnalyzer:getCabMirrorsFeatures(positions)
+--- @return table Mirror analysis with positions and flags
+function CabCinematicVehicleAnalyzer:getCabMirrorsAnalysis(positions)
   local leftMirrors = {}
   local rightMirrors = {}
 
@@ -854,8 +854,8 @@ end
 --- Calculates the ladder positions if the vehicle has a movable ladder or returns empty if not
 --- @param positions table Current positions for reference
 --- @param flags table Current flags for reference
---- @return table Ladder features with positions and flags
-function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
+--- @return table Ladder analysis with positions and flags
+function CabCinematicVehicleAnalyzer:getCabLadderAnalysis(positions, flags)
   local ladderTopXZ = self:getCabMovableLadderTopXZ(positions)
 
   if ladderTopXZ ~= nil then
@@ -909,7 +909,7 @@ function CabCinematicVehicleAnalyzer:getCabLadderFeatures(positions, flags)
   }
 end
 
---- Determines the preferred enter position based on the entry point and available features
+--- Determines the preferred enter position based on the entry point and available analysis
 --- @param positions table Current positions for reference
 --- @param flags table Current flags for reference
 --- @return table Preferred enter position
@@ -977,47 +977,47 @@ function CabCinematicVehicleAnalyzer:analyze()
   positions.characterFoot = self:getCabCharacterFootPosition(positions)
   positions.steeringWheel = self:getVehicleSteeringWheelPosition(positions)
 
-  -- Wheel features
-  local wheelsFeatures = self:getWheelsFeatures(positions)
-  CabCinematicUtil.merge(positions, wheelsFeatures.positions)
-  CabCinematicUtil.merge(flags, wheelsFeatures.flags)
+  -- Wheel analysis
+  local wheelsAnalysis = self:getWheelsAnalysis(positions)
+  CabCinematicUtil.merge(positions, wheelsAnalysis.positions)
+  CabCinematicUtil.merge(flags, wheelsAnalysis.flags)
 
   -- Enter wheel position
   positions.enterWheel = self:getCabEnterWheelPosition(positions)
 
-  -- Cab features
-  local cabFeatures = self:getCabFeatures(positions)
-  CabCinematicUtil.merge(positions, cabFeatures.positions)
-  CabCinematicUtil.merge(flags, cabFeatures.flags)
-  CabCinematicUtil.merge(debugPositions, cabFeatures.debugPositions)
-  CabCinematicUtil.merge(debugHits, cabFeatures.debugHits)
+  -- Cab analysis
+  local cabAnalysis = self:getCabAnalysis(positions)
+  CabCinematicUtil.merge(positions, cabAnalysis.positions)
+  CabCinematicUtil.merge(flags, cabAnalysis.flags)
+  CabCinematicUtil.merge(debugPositions, cabAnalysis.debugPositions)
+  CabCinematicUtil.merge(debugHits, cabAnalysis.debugHits)
 
-  --- Platform features
-  local platformFeatures = self:getCabPlatformFeatures(positions)
-  CabCinematicUtil.merge(positions, platformFeatures.positions)
-  CabCinematicUtil.merge(flags, platformFeatures.flags)
-  CabCinematicUtil.merge(debugHits, platformFeatures.debugHits)
+  --- Platform analysis
+  local platformAnalysis = self:getCabPlatformAnalysis(positions)
+  CabCinematicUtil.merge(positions, platformAnalysis.positions)
+  CabCinematicUtil.merge(flags, platformAnalysis.flags)
+  CabCinematicUtil.merge(debugHits, platformAnalysis.debugHits)
 
-  -- Enter features
-  local enterFeatures = self:getVehicleEnterFeatures(positions)
-  CabCinematicUtil.merge(positions, enterFeatures.positions)
-  CabCinematicUtil.merge(flags, enterFeatures.flags)
+  -- Enter analysis
+  local enterAnalysis = self:getVehicleEnterAnalysis(positions)
+  CabCinematicUtil.merge(positions, enterAnalysis.positions)
+  CabCinematicUtil.merge(flags, enterAnalysis.flags)
 
-  --- Mirror features
-  local mirrorsFeatures = self:getCabMirrorsFeatures(positions)
-  CabCinematicUtil.merge(positions, mirrorsFeatures.positions)
-  CabCinematicUtil.merge(flags, mirrorsFeatures.flags)
+  --- Mirror analysis
+  local mirrorsAnalysis = self:getCabMirrorsAnalysis(positions)
+  CabCinematicUtil.merge(positions, mirrorsAnalysis.positions)
+  CabCinematicUtil.merge(flags, mirrorsAnalysis.flags)
 
   -- Door positions
-  local doors = self:getCabDoorsFeatures(positions, flags)
+  local doors = self:getCabDoorsAnalysis(positions, flags)
   CabCinematicUtil.merge(positions, doors.positions)
   CabCinematicUtil.merge(flags, doors.flags)
   CabCinematicUtil.merge(debugPositions, doors.debugPositions)
 
-  -- Ladder features
-  local ladderFeatures = self:getCabLadderFeatures(positions, flags)
-  CabCinematicUtil.merge(positions, ladderFeatures.positions)
-  CabCinematicUtil.merge(flags, ladderFeatures.flags)
+  -- Ladder analysis
+  local ladderAnalysis = self:getCabLadderAnalysis(positions, flags)
+  CabCinematicUtil.merge(positions, ladderAnalysis.positions)
+  CabCinematicUtil.merge(flags, ladderAnalysis.flags)
 
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)
