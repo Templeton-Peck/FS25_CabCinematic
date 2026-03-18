@@ -56,6 +56,7 @@ function CabCinematicSpec:onPreLoad()
   spec.debugAnimation      = nil
   spec.allowStartAnimation = false
   spec.lastInteractionTime = -1
+  spec.accessNode          = nil
   self.spec_cabCinematic   = spec
 end
 
@@ -64,6 +65,10 @@ function CabCinematicSpec:onLoad()
   local spec           = self.spec_cabCinematic
   spec.camera          = CabCinematicCamera.new(self)
   spec.vehicleAnalyzer = CabCinematicVehicleAnalyzer.new(self)
+  spec.accessNode      = createTransformGroup("cc_accessNode")
+  link(self.rootNode, spec.accessNode)
+  setTranslation(spec.accessNode, 0, 0, 0)
+  setRotation(spec.accessNode, 0, 0, 0)
 
   g_messageCenter:subscribe(MessageType.SETTING_CHANGED[GameSettings.SETTING.FOV_Y], CabCinematicSpec.onFovYSettingChanged, self)
   g_messageCenter:subscribe(MessageType.SETTING_CHANGED[GameSettings.SETTING.FOV_Y_PLAYER_FIRST_PERSON], CabCinematicSpec.onFovYSettingChanged, self)
@@ -77,6 +82,10 @@ function CabCinematicSpec:onDelete()
 
   g_messageCenter:unsubscribeAll(self)
   self:clearActionEventsTable(spec.actionEvents)
+
+  if spec.accessNode ~= nil then
+    delete(spec.accessNode)
+  end
 
   if spec.camera ~= nil then
     spec.camera:delete()
@@ -102,6 +111,7 @@ function CabCinematicSpec:onDelete()
   spec.debugAnimation = nil
   spec.allowStartAnimation = nil
   spec.lastInteractionTime = nil
+  spec.accessNode = nil
 end
 
 --- Updates the cab cinematic animation and camera if an animation is ongoing
@@ -455,12 +465,15 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   end
 end
 
+--- Overwrites base method to provide custom exit node when cinematic animation is ongoing, to prevent the player from exiting too far from the vehicle and breaking the immersion
 function CabCinematicSpec:getExitNode(superFunc, ...)
-  -- if self:getIsCabCinematicAnimationOngoing() then
-  --   -- Log:info("getExitNode called for vehicle during cinematic, returning mirror node as exit node")
-  --   return self.spec_enterable.mirrors[1].node
-  -- end
-  -- Log:info("getExitNode called for vehicle not in cinematic, calling original function")
+  if self:getIsCabCinematicAnimationOngoing() then
+    local analysis = self:getCabCinematicAnalysis()
+    if analysis ~= nil then
+      setTranslation(self.spec_cabCinematic.accessNode, analysis.positions.preferredAccess[1], analysis.positions.exit[2], analysis.positions.preferredAccess[3])
+      return self.spec_cabCinematic.accessNode
+    end
+  end
 
   return superFunc(self, ...)
 end
@@ -580,15 +593,32 @@ end
 function CabCinematicSpec:drawCabCinematicDebug()
   local analysis = self:getCabCinematicAnalysis()
   if analysis ~= nil then
+    local textX, textY = 0.005, 0.75
     CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, analysis.positions)
-    CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, analysis.positions)
-
-    if analysis.flags.isPlatformEquipped then
-      CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, analysis.positions)
-    end
-
 
     if CabCinematic.debugLevel > 1 then
+      CabCinematicUtil.drawDebugCabBoundingBox(self.rootNode, analysis.positions)
+
+      if analysis.flags.isPlatformEquipped then
+        CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, analysis.positions)
+      end
+
+      local alphaSortedFlags = {}
+      for text, state in pairs(analysis.flags) do
+        table.insert(alphaSortedFlags, { text = text, state = state })
+      end
+      table.sort(alphaSortedFlags, function(a, b) return a.text < b.text end)
+
+      for _, flag in ipairs(alphaSortedFlags) do
+        textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("%s: %s", flag.text, tostring(flag.state)))
+      end
+    end
+
+    if CabCinematic.debugLevel > 2 then
+      if self.spec_cabCinematic.accessNode ~= nil then
+        DebugUtil.drawDebugNode(self.spec_cabCinematic.accessNode, getName(self.spec_cabCinematic.accessNode))
+      end
+
       CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, analysis.debugPositions)
       CabCinematicUtil.drawDebugNodeRelativeHitResults(self.rootNode, analysis.debugHits)
 
@@ -597,29 +627,20 @@ function CabCinematicSpec:drawCabCinematicDebug()
       end
     end
 
-    -- if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
-    --   local nodes = CabCinematicUtil.getVehicleAnimationNodes(self, self.spec_combine.ladder.animName)
-    --   for _, node in pairs(nodes) do
-    --     DebugUtil.drawDebugNode(node, getName(node))
-    --   end
-    -- end
+    if CabCinematic.debugLevel > 3 then
+      if self.spec_combine ~= nil and self.spec_combine.ladder ~= nil then
+        local nodes = CabCinematicUtil.getVehicleAnimationNodes(self, self.spec_combine.ladder.animName)
+        for _, node in pairs(nodes) do
+          DebugUtil.drawDebugNode(node, getName(node))
+        end
+      end
 
-    -- if self.spec_enterable ~= nil and self.spec_enterable.enterAnimation ~= nil then
-    --   local nodes = CabCinematicUtil.getVehicleAnimationNodes(self, self.spec_enterable.enterAnimation)
-    --   for _, node in pairs(nodes) do
-    --     DebugUtil.drawDebugNode(node, getName(node))
-    --   end
-    -- end
-
-    local x, y = 0.005, 0.75
-    local alphaSortedFlags = {}
-    for text, state in pairs(analysis.flags) do
-      table.insert(alphaSortedFlags, { text = text, state = state })
-    end
-    table.sort(alphaSortedFlags, function(a, b) return a.text < b.text end)
-
-    for _, flag in ipairs(alphaSortedFlags) do
-      y = DebugUtil.renderTextLine(x, y, 0.02, string.format("%s: %s", flag.text, tostring(flag.state)))
+      if self.spec_enterable ~= nil and self.spec_enterable.enterAnimation ~= nil then
+        local nodes = CabCinematicUtil.getVehicleAnimationNodes(self, self.spec_enterable.enterAnimation)
+        for _, node in pairs(nodes) do
+          DebugUtil.drawDebugNode(node, getName(node))
+        end
+      end
     end
   end
 

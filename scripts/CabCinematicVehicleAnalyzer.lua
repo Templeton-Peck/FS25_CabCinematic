@@ -3,8 +3,6 @@
 CabCinematicVehicleAnalyzer = {}
 local CabCinematicVehicleAnalyzer_mt = Class(CabCinematicVehicleAnalyzer)
 
-local DOOR_SAFE_DISTANCE = 0.35
-
 --- Creates a new vehicle analyzer instance
 --- @param vehicle table The vehicle to analyze
 --- @return CabCinematicVehicleAnalyzer
@@ -681,8 +679,8 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
 
   local leftDoor = { positions.left[1], positions.camera[2], leftZ }
   local rightDoor = { positions.right[1], positions.camera[2], rightZ }
-  local leftDoorSafe = { math.min(leftDoor[1] + DOOR_SAFE_DISTANCE, platformLeft), leftDoor[2], leftDoor[3] }
-  local rightDoorSafe = { math.max(rightDoor[1] - DOOR_SAFE_DISTANCE, platformRight), rightDoor[2], rightDoor[3] }
+  local leftDoorSafe = { math.min(leftDoor[1] + CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, platformLeft), leftDoor[2], leftDoor[3] }
+  local rightDoorSafe = { math.max(rightDoor[1] - CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, platformRight), rightDoor[2], rightDoor[3] }
 
   if flags.isEntryFromCabSideFront then
     leftDoorSafe[3] = leftDoorSafe[3] + 0.15
@@ -735,15 +733,15 @@ function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
 
   local leftPlatformHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.left[1] + 1.5, positions.bottom[2] - 0.175, positions.left[3] },
-    { positions.left[1], positions.bottom[2] - 0.175, positions.left[3] },
+    { positions.left[1] + 1.5, positions.bottom[2] - 0.01, positions.left[3] },
+    { positions.left[1], positions.bottom[2] - 0.01, positions.left[3] },
     function(hitA, hitB) return hitA[1] > hitB[1] end
   )
 
   local rightPlatformHitResult = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.right[1] - 1.5, positions.bottom[2] - 0.175, positions.right[3] },
-    { positions.right[1], positions.bottom[2] - 0.175, positions.right[3] },
+    { positions.right[1] - 1.5, positions.bottom[2] - 0.01, positions.right[3] },
+    { positions.right[1], positions.bottom[2] - 0.01, positions.right[3] },
     function(hitA, hitB) return hitA[1] < hitB[1] end
   )
 

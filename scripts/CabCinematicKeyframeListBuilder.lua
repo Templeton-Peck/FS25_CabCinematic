@@ -411,8 +411,7 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   local doorPosition = useLeftDoor and vehicleAnalysis.positions.leftDoor or vehicleAnalysis.positions.rightDoor
   local doorSafePosition = useLeftDoor and vehicleAnalysis.positions.leftDoorSafe or vehicleAnalysis.positions.rightDoorSafe
 
-  local builder = CabCinematicKeyframeListBuilder.new(vehicleAnalysis.positions.access)
-      :walkTo(accessPosition)
+  local builder = CabCinematicKeyframeListBuilder.new(accessPosition)
 
   if CabCinematicUtil.isVehicleTractor(vehicle) then
     builder:buildTractorKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)

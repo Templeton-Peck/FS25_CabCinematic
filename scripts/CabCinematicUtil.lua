@@ -1,6 +1,7 @@
 CabCinematicUtil = {
   VEHICLE_TARGET_DISTANCE = 6.0,
-  VEHICLE_INTERACT_DISTANCE = 2.5,
+  VEHICLE_INTERACT_DISTANCE = 2.75,
+  VEHICLE_DOOR_SAFE_DISTANCE = 0.35,
   SUPPORTED_VEHICLE_CATEGORIES = {
     TRACTORS_S = 'tractorss',
     TRACTORS_M = 'tractorsm',
@@ -355,7 +356,7 @@ end
 --- Get the player's eyesight height from the ground
 --- @return number The player's eyesight height in meters
 function CabCinematicUtil.getPlayerEyesightHeight()
-  return 1.75
+  return 1.78
 end
 
 function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
