@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="98" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
+<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="107" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
   <author>TempletonPeck</author>
-  <version>0.1.6.0</version>
+  <version>0.2.0.0</version>
 
   <title>
     <en>Cab Cinematic</en>
