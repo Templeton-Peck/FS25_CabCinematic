@@ -31,6 +31,7 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
   - ⬜ Cotton Harvesters
   - ⬜ Vegetable Harvesters
   - ⬜ Beet Loaders
+  - ⬜ Rice Planters
 - Loaders
   - ✅ Wheel Loaders
   - ✅ Front Loaders
@@ -74,7 +75,6 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 
 - [ ] Cinematics for all vehicle types
 - [ ] modDesc icon
-- [ ] Code cleanup
 
 ### V1.1
 
