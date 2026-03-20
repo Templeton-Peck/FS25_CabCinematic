@@ -233,7 +233,9 @@ end
 
 --- Overrides base method to ignore call when cinematic animation is ongoing
 function CabCinematicSpec.ignoreWhenActive(vehicle, superFunc, ...)
-  if vehicle:getIsCabCinematicAnimationOngoing() then
+  local attacherVehicle = vehicle.getAttacherVehicle ~= nil and vehicle:getAttacherVehicle() or nil
+  local targetVehicle = attacherVehicle or vehicle.rootVehicle or vehicle
+  if targetVehicle ~= nil and targetVehicle.spec_cabCinematic and targetVehicle:getIsCabCinematicAnimationOngoing() then
     return
   end
 
