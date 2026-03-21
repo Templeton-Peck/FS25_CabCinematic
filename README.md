@@ -65,16 +65,11 @@ It’s a standalone mod that doesn’t require any vehicle modifications.
 
 ## TODO
 
-### BETA
-
-- [x] Try/Fix vehicle without physical cab
-- [x] Animations accuracy improvements
-- [ ] Fix camera clipping right after leaving vehicle
-
 ### V1
 
+- [x] modDesc icon
+- [ ] Fix camera clipping right after leaving vehicle
 - [ ] Cinematics for all vehicle types
-- [ ] modDesc icon
 
 ### V1.1
 
