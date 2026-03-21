@@ -1,7 +1,12 @@
-# FS25_CabCinematic
+<img width="220" height="220" src="https://github.com/user-attachments/assets/a26ab65c-534d-4cd5-b782-b50b26e1ec6d" alt="Mod icon" />
 
+# FS25_CabCinematic
+  
 A Farming Simulator 25 mod that adds enter-and-exit animations for vehicles.
-It’s a standalone mod that doesn’t require any vehicle modifications.
+It’s a standalone mod that doesn’t require any vehicle modifications and works with base game vehicles and mods.
+
+It enhances immersion by allowing players to see their character physically get in and out of vehicles instead of instantly switching perspectives.
+The animations are smooth, seamless, and designed to fit naturally into the gameplay experience.
 
 ## Installation
 
