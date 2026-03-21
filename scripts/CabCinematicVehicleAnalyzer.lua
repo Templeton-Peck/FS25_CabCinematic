@@ -731,30 +731,45 @@ function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
     }
   end
 
-  local leftPlatformHitResult = CabCinematicUtil.raycastVehicle(
+  local leftPlatformHitResult1 = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.left[1] + 1.5, positions.bottom[2] - 0.01, positions.left[3] },
+    { positions.left[1] + 2, positions.bottom[2] - 0.01, positions.left[3] },
     { positions.left[1], positions.bottom[2] - 0.01, positions.left[3] },
     function(hitA, hitB) return hitA[1] > hitB[1] end
   )
 
-  local rightPlatformHitResult = CabCinematicUtil.raycastVehicle(
+  local rightPlatformHitResult1 = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.right[1] - 1.5, positions.bottom[2] - 0.01, positions.right[3] },
+    { positions.right[1] - 2, positions.bottom[2] - 0.01, positions.right[3] },
     { positions.right[1], positions.bottom[2] - 0.01, positions.right[3] },
+    function(hitA, hitB) return hitA[1] < hitB[1] end
+  )
+
+  local leftPlatformHitResult2 = CabCinematicUtil.raycastVehicle(
+    self.vehicle,
+    { positions.left[1] + 2, positions.bottom[2] - 0.1, positions.left[3] },
+    { positions.left[1], positions.bottom[2] - 0.1, positions.left[3] },
+    function(hitA, hitB) return hitA[1] > hitB[1] end
+  )
+
+  local rightPlatformHitResult2 = CabCinematicUtil.raycastVehicle(
+    self.vehicle,
+    { positions.right[1] - 2, positions.bottom[2] - 0.1, positions.right[3] },
+    { positions.right[1], positions.bottom[2] - 0.1, positions.right[3] },
     function(hitA, hitB) return hitA[1] < hitB[1] end
   )
 
   local leftPositions = { positions.left[1] }
   if positions.wheelLeftBack ~= nil then table.insert(leftPositions, positions.wheelLeftBack[1]) end
   if positions.wheelLeftFront ~= nil then table.insert(leftPositions, positions.wheelLeftFront[1]) end
-  if leftPlatformHitResult.best ~= nil then table.insert(leftPositions, leftPlatformHitResult.best[1]) end
-
+  if leftPlatformHitResult1.best ~= nil then table.insert(leftPositions, leftPlatformHitResult1.best[1]) end
+  if leftPlatformHitResult2.best ~= nil then table.insert(leftPositions, leftPlatformHitResult2.best[1]) end
 
   local rightPositions = { positions.right[1] }
   if positions.wheelRightBack ~= nil then table.insert(rightPositions, positions.wheelRightBack[1]) end
   if positions.wheelRightFront ~= nil then table.insert(rightPositions, positions.wheelRightFront[1]) end
-  if rightPlatformHitResult.best ~= nil then table.insert(rightPositions, rightPlatformHitResult.best[1]) end
+  if rightPlatformHitResult1.best ~= nil then table.insert(rightPositions, rightPlatformHitResult1.best[1]) end
+  if rightPlatformHitResult2.best ~= nil then table.insert(rightPositions, rightPlatformHitResult2.best[1]) end
 
   local platformLeftX = math.max(unpack(leftPositions))
   local platformRightX = math.min(unpack(rightPositions))

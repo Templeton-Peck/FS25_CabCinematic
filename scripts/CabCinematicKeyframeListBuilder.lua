@@ -352,6 +352,26 @@ function CabCinematicKeyframeListBuilder:buildRiceHarvesterKeyframes(accessPosit
   return self
 end
 
+function CabCinematicKeyframeListBuilder:buildCottonHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
+  if vehicleAnalysis.flags.isEntryFromCabSide then
+    if vehicleAnalysis.flags.isEntryFromCabSideCenter then
+      local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
+      local ladderTop = vehicleAnalysis.positions.ladderTop or {
+        CabCinematicUtil.subByDirection(ladderBottom[1], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_LIGHT_SLOPE, true),
+        doorSafePosition[2],
+        ladderBottom[3]
+      }
+
+      return self
+          :walkTo(ladderBottom)
+          :climbTo(ladderTop)
+          :walkTo(doorSafePosition)
+    end
+  end
+
+  return self
+end
+
 --- Builds a keyframe sequence for sprayers based on its analysis and entry configuration.
 --- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
@@ -436,6 +456,8 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
     builder:buildSugarcaneHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.RICE_HARVESTERS then
     builder:buildRiceHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.COTTON_HARVESTERS then
+    builder:buildCottonHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
     builder:buildSprayersKeyframes(accessPosition, doorSafePosition, vehicleAnalysis)
   end

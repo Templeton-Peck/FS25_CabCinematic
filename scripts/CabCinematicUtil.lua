@@ -16,6 +16,7 @@ CabCinematicUtil = {
     OLIVE_HARVESTERS = "oliveharvesters",
     SUGARCANE_HARVESTERS = "sugarcaneharvesters",
     RICE_HARVESTERS = "riceharvesters",
+    COTTON_HARVESTERS = "cottonharvesters",
     TELELOADERS = 'teleloadervehicles',
     FRONTLOADERS = 'frontloadervehicles',
     WHEELLOADERS = 'wheelloadervehicles',
@@ -23,6 +24,7 @@ CabCinematicUtil = {
     SPRAYERS = 'sprayers',
   },
   KEYFRAME_OFFSETS = {
+    LADDER_LIGHT_SLOPE = 0.6,
     LADDER_SLOPE = 0.8,
     STAIRS_SLOPE = 1.0,
   }
