@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Configurations>
+  <Configuration vehicleName="example.xml">
+    <Positions>
+      <Position name="access" xOffset="0" yOffset="0" zOffset="0" />
+    </Positions>
+    <KeyframeWaypoints after="ladderTop">
+      <KeyframeWaypoint name="platform1" x="0" y="0" z="0" />
+      <KeyframeWaypoint name="platform2" x="0" y="0" z="0" />
+    </KeyframeWaypoints>
+  </Configuration>
+</Configurations>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<VehicleConfigurations>
-  <VehicleConfiguration name="example.xml">
-    <Waypoint index="0" type="override" name="ladderBottom" xOffset="0" yOffset="0" zOffset="0" />
-    <Waypoint index="1" type="override" name="ladderTop" xOffset="0" yOffset="0" zOffset="0" />
-    <Waypoint index="2" type="new" name="path1" x="0" y="0" z="0" />
-    <Waypoint index="3" type="new" name="path2" x="0" y="0" z="0" />
-  </VehicleConfiguration>
-</VehicleConfigurations>
