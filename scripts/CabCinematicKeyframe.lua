@@ -143,7 +143,7 @@ end
 function CabCinematicKeyframe:drawDebug(relativeNode)
   local startWorldPos = { localToWorld(relativeNode, unpack(self.startPosition)) }
   local endWorldPos = { localToWorld(relativeNode, unpack(self.endPosition)) }
-  DebugUtil.drawDebugLine(startWorldPos[1], startWorldPos[2], startWorldPos[3], endWorldPos[1], endWorldPos[2], endWorldPos[3], 1, 0, 0, 0.1)
+  DebugUtil.drawDebugLine(startWorldPos[1], startWorldPos[2], startWorldPos[3], endWorldPos[1], endWorldPos[2], endWorldPos[3], 1, 0, 0, 0.05)
 end
 
 --- Prints the keyframe's details for debugging purposes.

@@ -4,9 +4,10 @@
     <Positions>
       <Position name="access" xOffset="0" yOffset="0" zOffset="0.70" />
     </Positions>
-    <KeyframeWaypoints after="ladderTop">
-      <KeyframeWaypoint name="platform1" x="0" y="0" z="0" />
-      <KeyframeWaypoint name="platform2" x="0" y="0" z="0" />
+    <KeyframeWaypoints>
+      <KeyframeWaypoint type="walk" xOffset="-0.35" yOffset="0" zOffset="0" />
+      <KeyframeWaypoint type="walk" xOffset="-0.15" yOffset="0" zOffset="-0.3" />
+      <KeyframeWaypoint type="walk" xOffset="-1" yOffset="0" zOffset="0" />
     </KeyframeWaypoints>
   </Configuration>
 </Configurations>

@@ -484,9 +484,7 @@ function CabCinematicVehicleAnalyzer:getVehicleAccessAnalysis(positions)
 
   local configuration = CabCinematic.configurationManager:get(self.vehicle)
   if configuration ~= nil then
-    Log:info("Applying access position configuration, original access position: %.2f, %.2f, %.2f", access[1], access[2], access[3])
     configuration:applyPosition("access", access)
-    Log:info("Applied access position configuration, new access position: %.2f, %.2f, %.2f", access[1], access[2], access[3])
   end
 
   local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
@@ -963,6 +961,17 @@ function CabCinematicVehicleAnalyzer:getPreferredAccessPosition(positions, flags
           end
         end
       end
+
+      local leftAccessHitResult = CabCinematicUtil.raycastVehicle(
+        self.vehicle,
+        { preferredAccess[1], preferredAccess[2] * 0.3, preferredAccess[3] },
+        { preferredAccess[1] - 1, preferredAccess[2], preferredAccess[3] },
+        function(hitA, hitB) return hitA[1] > hitB[1] end
+      )
+
+      if leftAccessHitResult.best ~= nil then
+        preferredAccess[1] = math.max(preferredAccess[1], leftAccessHitResult.best[1] + bodyworkSafeDistance)
+      end
     elseif flags.isEntryFromCabSideRight then
       local bodyworkX = math.min(positions.accessWheel[1], positions.platformRight and positions.platformRight[1] or 0, positions.right[1])
       preferredAccess[1] = math.max(positions.access[1], bodyworkX - bodyworkSafeDistance)
@@ -974,6 +983,17 @@ function CabCinematicVehicleAnalyzer:getPreferredAccessPosition(positions, flags
             preferredAccess[3] = centerEnterZ
           end
         end
+      end
+
+      local rightAccessHitResult = CabCinematicUtil.raycastVehicle(
+        self.vehicle,
+        { preferredAccess[1], preferredAccess[2] * 0.3, preferredAccess[3] },
+        { preferredAccess[1] + 1, preferredAccess[2], preferredAccess[3] },
+        function(hitA, hitB) return hitA[1] < hitB[1] end
+      )
+
+      if rightAccessHitResult.best ~= nil then
+        preferredAccess[1] = math.min(preferredAccess[1], rightAccessHitResult.best[1] - bodyworkSafeDistance)
       end
     end
   else

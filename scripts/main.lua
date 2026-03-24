@@ -52,6 +52,8 @@ function CabCinematic:delete()
   removeConsoleCommand("ccDebug")
   removeConsoleCommand("ccInvalidateAnalysis")
   removeConsoleCommand("ccReloadConfigurations")
+
+  self.configurationManager:delete()
 end
 
 function CabCinematic:onDebugConsoleCommand(level)

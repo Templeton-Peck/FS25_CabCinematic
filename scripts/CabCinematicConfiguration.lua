@@ -1,25 +1,43 @@
 --- @class CabCinematicConfiguration
---- Load and manage cinematic configurations for vehicles from XML files.
+--- A vehicle-specific configuration, containing named positions and keyframe waypoints.
 CabCinematicConfiguration = {}
 local CabCinematicConfiguration_mt = Class(CabCinematicConfiguration)
 
+--- Creates a new vehicle-specific configuration.
+--- @return CabCinematicConfiguration
 function CabCinematicConfiguration.new()
   local self = setmetatable({}, CabCinematicConfiguration_mt)
   self.positions = {}
-  self.keyframeWaypointsAfter = nil
   self.keyframeWaypoints = {}
   return self
 end
 
-function CabCinematicConfiguration:addPosition(name, position)
-  self.positions[name] = position
+--- Deletes the configuration, clearing all positions and keyframe waypoints.
+function CabCinematicConfiguration:delete()
+  self.positions = nil
+  self.keyframeWaypoints = nil
 end
 
-function CabCinematicConfiguration:setKeyframeWaypoints(positionName, waypoints)
-  self.keyframeWaypointsAfter = positionName
-  self.keyframeWaypoints = waypoints
+--- Adds a named position to the configuration.
+--- @param position table A table containing the position including its name and coordinates.
+--- @return CabCinematicConfiguration The configuration instance for chaining.
+function CabCinematicConfiguration:addPosition(position)
+  self.positions[position.name] = position
+  return self
 end
 
+--- Adds a keyframe waypoint to the configuration.
+--- @param keyframeWaypoint table The keyframe waypoint to add.
+--- @return CabCinematicConfiguration The configuration instance for chaining.
+function CabCinematicConfiguration:addKeyframeWaypoint(keyframeWaypoint)
+  table.insert(self.keyframeWaypoints, keyframeWaypoint)
+  return self
+end
+
+--- Applies the named position's coordinates to the given position, overriding any non-nil values.
+--- @param name string The name of the position to apply.
+--- @param position table The position table to apply the coordinates to.
+--- @return table The updated position table.
 function CabCinematicConfiguration:applyPosition(name, position)
   local existingPosition = self.positions[name]
   if existingPosition == nil then
