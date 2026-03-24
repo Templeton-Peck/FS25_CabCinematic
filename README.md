@@ -30,7 +30,7 @@ The animations are smooth, seamless, and designed to fit naturally into the game
   - ✅ Sugarcane Harvesters
   - ✅ Rice Harvesters
   - ✅ Potato Harvesters
-  - 🟨 Cotton Harvesters
+  - ✅ Cotton Harvesters
   - 🟨 Green Bean Harvesters 
   - 🟨 Spinach Harvesters
   - ⬜ Pea Harvesters
