@@ -9,6 +9,7 @@ function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicSupported", CabCinematicSpec.getIsCabCinematicSupported)
   SpecializationUtil.registerFunction(vehicleType, "getIndoorCamera", CabCinematicSpec.getIndoorCamera)
   SpecializationUtil.registerFunction(vehicleType, "setIndoorCameraActive", CabCinematicSpec.setIndoorCameraActive)
+  SpecializationUtil.registerFunction(vehicleType, "setCameraResetProtectState", CabCinematicSpec.setCameraResetProtectState)
   SpecializationUtil.registerFunction(vehicleType, "getCabCinematicAnalysis", CabCinematicSpec.getCabCinematicAnalysis)
   SpecializationUtil.registerFunction(vehicleType, "invalidateCabCinematicAnalysisCache", CabCinematicSpec.invalidateCabCinematicAnalysisCache)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicAnimationOngoing", CabCinematicSpec.getIsCabCinematicAnimationOngoing)
@@ -45,19 +46,20 @@ end
 
 --- Initializes the spec when the vehicle is pre loading
 function CabCinematicSpec:onPreLoad()
-  local spec               = {}
-  spec.actionEvents        = {}
-  spec.camera              = nil
-  spec.vehicleAnalyzer     = nil
-  spec.storeCategory       = nil
-  spec.indoorCamera        = nil
-  spec.analysis            = nil
-  spec.animation           = nil
-  spec.debugAnimation      = nil
-  spec.allowStartAnimation = false
-  spec.lastInteractionTime = -1
-  spec.accessNode          = nil
-  self.spec_cabCinematic   = spec
+  local spec                     = {}
+  spec.actionEvents              = {}
+  spec.camera                    = nil
+  spec.vehicleAnalyzer           = nil
+  spec.storeCategory             = nil
+  spec.indoorCamera              = nil
+  spec.analysis                  = nil
+  spec.animation                 = nil
+  spec.debugAnimation            = nil
+  spec.allowStartAnimation       = false
+  spec.lastInteractionTime       = -1
+  spec.accessNode                = nil
+  spec.protectedResetCameraState = nil
+  self.spec_cabCinematic         = spec
 end
 
 --- Initializes the spec when the vehicle is loaded
@@ -112,6 +114,7 @@ function CabCinematicSpec:onDelete()
   spec.allowStartAnimation = nil
   spec.lastInteractionTime = nil
   spec.accessNode = nil
+  spec.protectedResetCameraState = nil
 end
 
 --- Updates the cab cinematic animation and camera if an animation is ongoing
@@ -150,6 +153,7 @@ function CabCinematicSpec:onDraw()
   end
 end
 
+-- Registers the input action events for pausing the cab cinematic animation when the vehicle is active for input
 function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
   if self.isClient then
     local spec = self.spec_cabCinematic
@@ -227,6 +231,22 @@ function CabCinematicSpec:setIndoorCameraActive()
         self:setActiveCameraIndex(i)
         break
       end
+    end
+  end
+end
+
+--- Protects or restores the indoor camera reset on vehicle switch state
+--- to prevent the camera from resetting to default position during the cinematic animation and breaking the immersion
+--- @param protect boolean Whether to protect or restore the reset camera state
+function CabCinematicSpec:setCameraResetProtectState(protect)
+  local indoorCamera = self:getIndoorCamera()
+  if indoorCamera ~= nil then
+    if protect then
+      self.spec_cabCinematic.protectedResetCameraState = indoorCamera.resetCameraOnVehicleSwitch
+      indoorCamera.resetCameraOnVehicleSwitch = false
+    else
+      indoorCamera.resetCameraOnVehicleSwitch = self.spec_cabCinematic.protectedResetCameraState or false
+      self.spec_cabCinematic.protectedResetCameraState = nil
     end
   end
 end
@@ -348,14 +368,14 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
     return superFunc(vehicle, unpack(args))
   end
 
-  vehicle.spec_cabCinematic.allowStartAnimation = false
-
   -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
   local playerPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
   local keyframeBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   if keyframeBuilder == nil then
     return superFunc(vehicle, unpack(args))
   end
+
+  self:setCameraResetProtectState(true)
 
   keyframeBuilder:adaptFromPosition(playerPosition)
 
@@ -392,6 +412,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
     end
 
     g_currentMission.isPlayerFrozen = false
+    self:setCameraResetProtectState(false)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
@@ -424,6 +445,8 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   if keyframeBuilder == nil then
     return superFunc(vehicle, unpack(args))
   end
+
+  self:setCameraResetProtectState(true)
 
   keyframeBuilder:reverse()
 
@@ -459,6 +482,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
     g_currentMission.isPlayerFrozen = false
     -- g_cameraManager:setActiveCamera(player.camera.firstPersonCamera)
+    self:setCameraResetProtectState(false)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
