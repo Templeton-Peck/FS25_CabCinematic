@@ -484,7 +484,8 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.BEET_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
-      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS then
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WINDROWERS then
     builder:buildBeetHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAPE_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.OLIVE_HARVESTERS then
@@ -495,7 +496,8 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
     builder:buildRiceHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.COTTON_HARVESTERS then
     builder:buildCottonHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
-  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS then
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPRAYERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SLURRY_TANKS then
     builder:buildSprayersKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
   end
 

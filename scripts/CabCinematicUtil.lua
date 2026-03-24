@@ -22,6 +22,8 @@ CabCinematicUtil = {
     WHEELLOADERS = 'wheelloadervehicles',
     FORKLIFTS = 'forklifts',
     SPRAYERS = 'sprayers',
+    WINDROWERS = 'combinewindrower',
+    SLURRY_TANKS = 'slurrytanks',
   },
   KEYFRAME_OFFSETS = {
     LADDER_LIGHT_SLOPE = 0.6,

@@ -629,6 +629,8 @@ function CabCinematicSpec:drawCabCinematicDebug()
         CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, analysis.positions)
       end
 
+      textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("configFileNameClean: %s", self.configFileNameClean))
+
       local alphaSortedFlags = {}
       for text, state in pairs(analysis.flags) do
         table.insert(alphaSortedFlags, { text = text, state = state })

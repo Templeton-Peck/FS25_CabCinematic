@@ -31,12 +31,14 @@ The animations are smooth, seamless, and designed to fit naturally into the game
   - ✅ Rice Harvesters
   - ✅ Potato Harvesters
   - ✅ Cotton Harvesters
+  - ✅ Windrowers
   - 🟨 Green Bean Harvesters 
   - 🟨 Spinach Harvesters
   - ⬜ Pea Harvesters
   - ⬜ Vegetable Harvesters
   - ⬜ Beet Loaders
   - ⬜ Rice Planters
+  - ⬜ Nexat
 - Loaders
   - ✅ Wheel Loaders
   - ✅ Front Loaders
@@ -45,8 +47,9 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 - Telehandlers
   - ✅ Standards
   - ✅ Moving cabs
-- Sprayers
-  - ✅ Standards
+- Fertilizers
+  - ✅ Sprayers
+  - ✅ Slurry tanks
 - Forestry
   - ⬜ Harvesters
   - ⬜ Forwarders
@@ -75,11 +78,11 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 - [x] modDesc icon
 - [ ] Fix camera clipping right after leaving vehicle
 - [ ] Cinematics for all vehicle types
+- [ ] Testing with other camera-related mods to prevent conflicts
+- [ ] Multiplayer support (requires help and testing)
 
 ### V1.1
 
-- [ ] Testing with other camera-related mods to prevent conflicts
-- [ ] Multiplayer support (requires help and testing)
 - [ ] Track IR support
 - [ ] Full Interactive Control (IC) support
 - [ ] Passenger mode support

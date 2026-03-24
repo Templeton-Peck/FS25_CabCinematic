@@ -10,4 +10,19 @@
       <KeyframeWaypoint type="walk" xOffset="-1" yOffset="0" zOffset="0" />
     </KeyframeWaypoints>
   </Configuration>
+  <Configuration vehicleName="vt4556">
+    <Positions>
+      <Position name="access" xOffset="-0.25" yOffset="0" zOffset="0.3" />
+    </Positions>
+  </Configuration>
+  <Configuration vehicleName="vt5536">
+    <Positions>
+      <Position name="access" xOffset="-0.6" yOffset="0" zOffset="0.70" />
+    </Positions>
+  </Configuration>
+  <Configuration vehicleName="vt7138">
+    <Positions>
+      <Position name="access" xOffset="-0.35" yOffset="0" zOffset="0.70" />
+    </Positions>
+  </Configuration>
 </Configurations>
