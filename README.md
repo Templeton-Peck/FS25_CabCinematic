@@ -99,6 +99,8 @@ A big thank-you to **w33zl** (https://github.com/w33zl) for all the open-source 
 Following console commands are for testing and debugging purposes.
 
 - `ccDebug` : Draw debug gizmos and lines for animation and vehicle.
+- `ccInvalidateAnalysis` : Invalidate the current vehicle analysis.
+- `ccReloadConfigurations` : Reload the vehicle configurations.
 
 ### Frequently asked questions (FAQ)
 

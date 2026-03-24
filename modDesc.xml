@@ -42,6 +42,8 @@
     <sourceFile filename="scripts/lib/ModHelper.lua" />
     <sourceFile filename="scripts/lib/TimerHelper.lua" />
     <sourceFile filename="scripts/CabCinematicUtil.lua" />
+    <sourceFile filename="scripts/CabCinematicConfiguration.lua" />
+    <sourceFile filename="scripts/CabCinematicConfigurationManager.lua" />
     <sourceFile filename="scripts/CabCinematicCamera.lua" />
     <sourceFile filename="scripts/CabCinematicVehicleAnalyzer.lua" />
     <sourceFile filename="scripts/CabCinematicKeyframe.lua" />

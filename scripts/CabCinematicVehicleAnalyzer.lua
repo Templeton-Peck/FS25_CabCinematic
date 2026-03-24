@@ -482,6 +482,13 @@ function CabCinematicVehicleAnalyzer:getVehicleAccessAnalysis(positions)
   local _, wpy, _ = worldToLocal(self.vehicle.rootNode, wex, wty, wez)
   local access = { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
 
+  local configuration = CabCinematic.configurationManager:get(self.vehicle)
+  if configuration ~= nil then
+    Log:info("Applying access position configuration, original access position: %.2f, %.2f, %.2f", access[1], access[2], access[3])
+    configuration:applyPosition("access", access)
+    Log:info("Applied access position configuration, new access position: %.2f, %.2f, %.2f", access[1], access[2], access[3])
+  end
+
   local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
   local isEntryLeft = access[1] >= positions.root[1]
   local isEntryRight = not isEntryLeft
@@ -493,6 +500,7 @@ function CabCinematicVehicleAnalyzer:getVehicleAccessAnalysis(positions)
   local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(access[3] - middleZ, 2) >= 0.35
   local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(access[3] - middleZ, 2) <= -0.35
   local isEntryFromCabSideCenter = isEntryFromCabSide and not isEntryFromCabSideFront and not isEntryFromCabSideRear
+
 
   return {
     positions = {

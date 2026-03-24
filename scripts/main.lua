@@ -1,5 +1,6 @@
 CabCinematic = Mod:init({
   debugLevel = 0,
+  configurationManager = CabCinematicConfigurationManager.new()
 })
 
 CabCinematic:addSpecialization("cabCinematic", function(specializations)
@@ -8,6 +9,12 @@ end)
 
 function CabCinematic:beforeLoadMap()
   addConsoleCommand("ccDebug", "Toggle cab cinematic debug and set level (default: 1)", "onDebugConsoleCommand", self)
+  addConsoleCommand("ccInvalidateAnalysis", "Invalidate the current vehicle analysis", "onInvalidateAnalysisConsoleCommand", self)
+  addConsoleCommand("ccReloadConfigurations", "Reload the vehicle configurations", "onReloadConfigurationsConsoleCommand", self)
+end
+
+function CabCinematic:loadMap()
+  self.configurationManager:load()
 end
 
 function CabCinematic:startMission()
@@ -43,6 +50,8 @@ end
 
 function CabCinematic:delete()
   removeConsoleCommand("ccDebug")
+  removeConsoleCommand("ccInvalidateAnalysis")
+  removeConsoleCommand("ccReloadConfigurations")
 end
 
 function CabCinematic:onDebugConsoleCommand(level)
@@ -51,6 +60,22 @@ function CabCinematic:onDebugConsoleCommand(level)
   else
     self.debugLevel = tonumber(level) or 0
   end
+end
+
+function CabCinematic:onInvalidateAnalysisConsoleCommand()
+  local vehicle = g_localPlayer.targetedVehicle or g_localPlayer:getCurrentVehicle()
+  if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
+    self:onReloadConfigurationsConsoleCommand()
+    vehicle:invalidateCabCinematicAnalysisCache()
+    Log:info("Invalidated analysis for targeted vehicle: %s", vehicle:getFullName())
+  else
+    Log:info("No targeted or current vehicle")
+  end
+end
+
+function CabCinematic:onReloadConfigurationsConsoleCommand()
+  self.configurationManager:reload()
+  Log:info("Reloaded vehicle configurations")
 end
 
 PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, function(playerCamera, superFunc, ...)
