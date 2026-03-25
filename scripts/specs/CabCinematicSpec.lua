@@ -625,9 +625,15 @@ end
 
 --- Draws debug information for the cab cinematic spec
 function CabCinematicSpec:drawCabCinematicDebug()
+  local textX, textY = 0.005, 0.75
+
+  if CabCinematic.debugLevel > 1 then
+      textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("configFileNameClean: %s", self.configFileNameClean))
+      textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("storeCategory: %s", self:getStoreCategory()))
+  end
+
   local analysis = self:getCabCinematicAnalysis()
   if analysis ~= nil then
-    local textX, textY = 0.005, 0.75
     CabCinematicUtil.drawDebugNodeRelativePositions(self.rootNode, analysis.positions)
 
     if CabCinematic.debugLevel > 1 then
@@ -636,8 +642,6 @@ function CabCinematicSpec:drawCabCinematicDebug()
       if analysis.flags.isPlatformEquipped then
         CabCinematicUtil.drawDebugPlatformBoundingBox(self.rootNode, analysis.positions)
       end
-
-      textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("configFileNameClean: %s", self.configFileNameClean))
 
       local alphaSortedFlags = {}
       for text, state in pairs(analysis.flags) do

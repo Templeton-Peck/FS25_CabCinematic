@@ -297,6 +297,44 @@ function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(accessPosit
       :walkTo(doorSafePosition)
 end
 
+--- Builds a keyframe sequence for a vegetable harvester based on its analysis and entry configuration.
+--- @param accessPosition table The position where the player accesses the vehicle.
+--- @param doorSafePosition table The position in front of the door considered safe for the player.
+--- @param vehicleAnalysis table The analyzed analysis of the vehicle, including positions and flags.
+--- @param configuration CabCinematicConfiguration | nil The vehicle-specific configuration.
+--- @return CabCinematicKeyframeListBuilder self for method chaining
+function CabCinematicKeyframeListBuilder:buildVegetableHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
+  local ladderBottom = vehicleAnalysis.positions.ladderBottom or accessPosition
+  local ladderTop = {}
+
+  if vehicleAnalysis.flags.isEntryFromCabSide then
+    ladderTop = vehicleAnalysis.positions.ladderTop or {
+      CabCinematicUtil.subByDirection(ladderBottom[1], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleAnalysis.flags.isEntryFromCabSideLeft),
+      doorSafePosition[2],
+      ladderBottom[3]
+    }
+  else
+    ladderTop = vehicleAnalysis.positions.ladderTop or {
+      ladderBottom[1],
+      doorSafePosition[2],
+      CabCinematicUtil.subByDirection(ladderBottom[3], CabCinematicUtil.KEYFRAME_OFFSETS.LADDER_SLOPE, vehicleAnalysis.flags.isEntryFromCabFront),
+    }
+  end
+
+  self:walkTo(ladderBottom)
+  self:climbTo(ladderTop)
+  
+  if configuration ~= nil then
+    for _, waypoint in ipairs(configuration.keyframeWaypoints) do
+      self:addRelative(waypoint.type, waypoint.offsets)
+    end
+  end
+
+  self:walkTo(doorSafePosition)
+
+  return self
+end
+
 --- Builds a keyframe sequence for a grape and olive harvester based on its analysis and entry configuration.
 --- @param accessPosition table The position where the player accesses the vehicle.
 --- @param doorSafePosition table The position in front of the door considered safe for the player.
@@ -461,10 +499,8 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   end
 
   local storeCategory = vehicle:getStoreCategory()
-  local useLeftDoor = vehicleAnalysis.flags.isEntryFromCabSideLeft or not vehicleAnalysis.flags.isEntryFromCabSide
   local accessPosition = vehicleAnalysis.positions.preferredAccess
-  local doorPosition = useLeftDoor and vehicleAnalysis.positions.leftDoor or vehicleAnalysis.positions.rightDoor
-  local doorSafePosition = useLeftDoor and vehicleAnalysis.positions.leftDoorSafe or vehicleAnalysis.positions.rightDoorSafe
+  local doorSafePosition = vehicleAnalysis.positions.preferredDoorSafe
 
   local builder = CabCinematicKeyframeListBuilder.new(accessPosition)
 
@@ -487,6 +523,8 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WINDROWERS then
     builder:buildBeetHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
+  elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.VEGETABLE_HARVESTERS then
+    builder:buildVegetableHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GRAPE_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.OLIVE_HARVESTERS then
     builder:buildGrapeAndOliveHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
@@ -502,7 +540,7 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   end
 
   return builder
-      :walkTo(doorPosition)
+      :walkTo(vehicleAnalysis.positions.preferredDoor)
       :moveInCabTo(CabCinematicKeyframe.TYPES.MOVE_IN_CAB, vehicleAnalysis.positions.standup)
       :sitIn(vehicleAnalysis.positions.seat)
 end

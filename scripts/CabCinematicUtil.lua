@@ -17,6 +17,7 @@ CabCinematicUtil = {
     SUGARCANE_HARVESTERS = "sugarcaneharvesters",
     RICE_HARVESTERS = "riceharvesters",
     COTTON_HARVESTERS = "cottonharvesters",
+    VEGETABLE_HARVESTERS = "vegetableharvesters",
     TELELOADERS = 'teleloadervehicles',
     FRONTLOADERS = 'frontloadervehicles',
     WHEELLOADERS = 'wheelloadervehicles',

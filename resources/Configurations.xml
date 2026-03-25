@@ -25,4 +25,12 @@
       <Position name="access" xOffset="-0.35" yOffset="0" zOffset="0.70" />
     </Positions>
   </Configuration>
+  <Configuration vehicleName="zkivSe">
+    <KeyframeWaypoints>
+      <KeyframeWaypoint type="walk" xOffset="0.50" yOffset="0" zOffset="0" />
+      <KeyframeWaypoint type="climb" xOffset="0" yOffset="0.65" zOffset="-0.85" />
+      <KeyframeWaypoint type="walk" xOffset="2.60" yOffset="0" zOffset="0" />
+      <KeyframeWaypoint type="climb" xOffset="0" yOffset="-0.65" zOffset="0.85" />
+    </KeyframeWaypoints>
+  </Configuration>
 </Configurations>

@@ -706,20 +706,24 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
   }
 end
 
+function CabCinematicVehicleAnalyzer:getPreferredDoorFeature(positions, flags)
+  return {
+    positions = {
+      preferredDoor = positions.leftDoor,
+      preferredDoorSafe = positions.leftDoorSafe
+    }
+  }
+end
+
 --- Calculates the standup position inside the cab
 --- @param positions table Current positions for reference
 --- @param flags table Current flags for reference
 --- @return table Standup position {x, y, z}
 function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
-  local standupX = (positions.camera[1] + positions.left[1]) / 2
-
-  if flags.isEntryFromCabSide and not flags.isEntryFromCabSideLeft then
-    standupX = (positions.camera[1] + positions.right[1]) / 2
-  end
-
+  local standupX = (positions.camera[1] + positions.preferredDoor[1]) / 2
   local standupY = positions.camera[2] + 0.05
   local preferredStandupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05
-  local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.leftDoor[3], math.max(positions.front[3] - 0.15, positions.leftDoor[3]))
+  local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.preferredDoor[3], math.max(positions.front[3] - 0.15, positions.preferredDoor[3]))
   return { standupX, standupY, standupZ }
 end
 
@@ -1067,6 +1071,10 @@ function CabCinematicVehicleAnalyzer:analyze()
   local ladderAnalysis = self:getCabLadderAnalysis(positions, flags)
   CabCinematicUtil.merge(positions, ladderAnalysis.positions)
   CabCinematicUtil.merge(flags, ladderAnalysis.flags)
+
+  -- Preferred door position
+  local preferredDoorFeature = self:getPreferredDoorFeature(positions, flags)
+  CabCinematicUtil.merge(positions, preferredDoorFeature.positions)
 
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)
