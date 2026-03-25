@@ -11,7 +11,7 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 ## Installation
 
 1. Go to the [Releases](https://github.com/Templeton-Peck/FS25_CabCinematic/releases) page
-2. Download the latest **FS25_CabCinematic.zip** file
+2. Download the latest **FS25_CabCinematic.zip** file under `Assets`
 3. Place the file in your mods folder
 
 ## Supported Vehicles (WIP)
