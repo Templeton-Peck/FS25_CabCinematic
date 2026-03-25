@@ -159,7 +159,7 @@ function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForIn
     local spec = self.spec_cabCinematic
     self:clearActionEventsTable(spec.actionEvents)
 
-    if isActiveForInputIgnoreSelection then
+    if self:getIsActiveForInput(true, true) then
       local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.CAB_CINEMATIC_PAUSE, self, CabCinematicSpec.onPlayerPauseCabCinematic, true, true, false, false, nil)
       g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_NORMAL)
       g_inputBinding:setActionEventTextVisibility(actionEventId, false)
