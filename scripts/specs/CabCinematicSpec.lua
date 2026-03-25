@@ -390,6 +390,10 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
     vehicle.spec_cabCinematic.camera:activate()
     CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, true)
 
+    g_soundManager:setIsIndoor(false)
+    g_currentMission.ambientSoundSystem:setIsIndoor(false)
+    g_currentMission.environment.environmentMaskSystem:setIsIndoor(false)
+
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
 
@@ -458,6 +462,10 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
     vehicle.spec_cabCinematic.camera:setPosition(unpack(animation.currentPosition))
     vehicle.spec_cabCinematic.camera:activate()
     CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, true)
+
+    g_soundManager:setIsIndoor(false)
+    g_currentMission.ambientSoundSystem:setIsIndoor(false)
+    g_currentMission.environment.environmentMaskSystem:setIsIndoor(false)
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:deleteVehicleCharacter()
