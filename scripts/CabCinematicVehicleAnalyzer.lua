@@ -476,15 +476,23 @@ end
 --- @param positions table Current positions for reference
 --- @return table Analysis analysis with positions and flags
 function CabCinematicVehicleAnalyzer:getVehicleAccessAnalysis(positions)
+  local result = {
+    positions = {
+      access = nil,
+    },
+  }
+
   local playerEyeHeight = CabCinematicUtil.getPlayerEyesightHeight()
   local wex, wey, wez = localToWorld(self.vehicle.rootNode, positions.exit[1], positions.exit[2], positions.exit[3])
   local wty = getTerrainHeightAtWorldPos(g_terrainNode, wex, wey, wez)
   local _, wpy, _ = worldToLocal(self.vehicle.rootNode, wex, wty, wez)
   local access = { positions.exit[1], wpy + playerEyeHeight, positions.exit[3] }
 
+  result.positions.access = access
+
   local configuration = CabCinematic.configurationManager:get(self.vehicle)
   if configuration ~= nil then
-    configuration:applyPosition("access", access)
+    configuration:overridePositions(result.positions)
   end
 
   local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
@@ -501,9 +509,7 @@ function CabCinematicVehicleAnalyzer:getVehicleAccessAnalysis(positions)
 
 
   return {
-    positions = {
-      access = access,
-    },
+    positions = result.positions,
     flags = {
       isEntryLeft = isEntryLeft,
       isEntryRight = isEntryRight,
@@ -680,18 +686,15 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
     end
   end
 
-  local platformLeft = positions.platformLeft ~= nil and (positions.platformLeft[1] - 0.25) or math.huge
-  local platformRight = positions.platformRight ~= nil and (positions.platformRight[1] + 0.25) or -math.huge
-
   local leftDoor = { positions.left[1], positions.camera[2], leftZ }
   local rightDoor = { positions.right[1], positions.camera[2], rightZ }
-  local leftDoorSafe = { math.min(leftDoor[1] + CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, platformLeft), leftDoor[2], leftDoor[3] }
-  local rightDoorSafe = { math.max(rightDoor[1] - CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, platformRight), rightDoor[2], rightDoor[3] }
+  local leftDoorSafe = { leftDoor[1] + CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, leftDoor[2], leftDoor[3] }
+  local rightDoorSafe = { rightDoor[1] - CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, rightDoor[2], rightDoor[3] }
 
-  if flags.isEntryFromCabSideFront then
+  if flags.isEntryFromCabSideFront or flags.isEntryFromCabFront then
     leftDoorSafe[3] = leftDoorSafe[3] + 0.15
     rightDoorSafe[3] = rightDoorSafe[3] + 0.15
-  elseif flags.isEntryFromCabSideRear then
+  elseif flags.isEntryFromCabSideRear or flags.isEntryFromCabRear then
     leftDoorSafe[3] = leftDoorSafe[3] - 0.15
     rightDoorSafe[3] = rightDoorSafe[3] - 0.15
   end
@@ -707,6 +710,15 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
 end
 
 function CabCinematicVehicleAnalyzer:getPreferredDoorFeature(positions, flags)
+  if flags.isEntryFromCabSideRight then
+    return {
+      positions = {
+        preferredDoor = positions.rightDoor,
+        preferredDoorSafe = positions.rightDoorSafe
+      }
+    }
+  end
+
   return {
     positions = {
       preferredDoor = positions.leftDoor,
@@ -862,25 +874,45 @@ function CabCinematicVehicleAnalyzer:getCabMovableLadderTopXZ(positions)
   if #nodes > 0 then
     local xCandidates = {}
     local zCandidates = {}
-    local weights = {}
+    local xWeights = {}
+    local zWeights = {}
+    local xSeen = {}
+    local zSeen = {}
 
     for _, node in ipairs(nodes) do
       local nodeName = getName(node)
       if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil and nodeName:lower():find("joint") == nil then
         local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
-        table.insert(xCandidates, x)
-        table.insert(zCandidates, z)
-        table.insert(weights, 1.5)
+
+        if not xSeen[x] then
+          xSeen[x] = true
+          table.insert(xCandidates, x)
+          table.insert(xWeights, 1.25)
+        end
+
+        if not zSeen[z] then
+          zSeen[z] = true
+          table.insert(zCandidates, z)
+          table.insert(zWeights, 1.25)
+        end
       end
     end
 
     if #xCandidates > 0 and #zCandidates > 0 then
-      table.insert(xCandidates, positions.access[1])
-      table.insert(zCandidates, positions.access[3])
-      table.insert(weights, 1.0)
+      if not xSeen[positions.access[1]] then
+        xSeen[positions.access[1]] = true
+        table.insert(xCandidates, positions.access[1])
+        table.insert(xWeights, 1.0)
+      end
 
-      local ladderTopX = CabCinematicUtil.weightedAvg(xCandidates, weights)
-      local ladderTopZ = CabCinematicUtil.weightedAvg(zCandidates, weights)
+      if not zSeen[positions.access[3]] then
+        zSeen[positions.access[3]] = true
+        table.insert(zCandidates, positions.access[3])
+        table.insert(zWeights, 1.0)
+      end
+
+      local ladderTopX = CabCinematicUtil.weightedAvg(xCandidates, xWeights)
+      local ladderTopZ = CabCinematicUtil.weightedAvg(zCandidates, zWeights)
 
       return { ladderTopX = ladderTopX, ladderTopZ = ladderTopZ }
     end
@@ -931,12 +963,7 @@ function CabCinematicVehicleAnalyzer:getCabLadderAnalysis(positions, flags)
 
   local configuration = CabCinematic.configurationManager:get(self.vehicle)
   if configuration ~= nil then
-    if result.positions.ladderTop ~= nil then
-      configuration:applyPosition("ladderTop", result.positions.ladderTop)
-    end
-    if result.positions.ladderBottom ~= nil then
-      configuration:applyPosition("ladderBottom", result.positions.ladderBottom)
-    end
+    configuration:overridePositions(result.positions)
   end
 
   if result.positions.ladderTop ~= nil and result.positions.ladderBottom ~= nil then

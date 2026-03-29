@@ -34,11 +34,11 @@ function CabCinematicConfiguration:addKeyframeWaypoint(keyframeWaypoint)
   return self
 end
 
---- Applies the named position's coordinates to the given position, overriding any non-nil values.
---- @param name string The name of the position to apply.
---- @param position table The position table to apply the coordinates to.
+--- Overrides the named position's coordinates with the configuration position, overriding any non-nil values.
+--- @param name string The name of the position to override.
+--- @param position table The position table to override the coordinates to.
 --- @return table The updated position table.
-function CabCinematicConfiguration:applyPosition(name, position)
+function CabCinematicConfiguration:overridePosition(name, position)
   local existingPosition = self.positions[name]
   if existingPosition == nil then
     return position
@@ -52,4 +52,14 @@ function CabCinematicConfiguration:applyPosition(name, position)
   if existingPosition.zOffset ~= nil then position[3] = position[3] + existingPosition.zOffset end
 
   return position
+end
+
+--- Overrides the coordinates of all named positions in the given table with the configuration positions, overriding any non-nil values.
+--- @param positions table A table of named positions to override.
+--- @return table The updated table of named positions.
+function CabCinematicConfiguration:overridePositions(positions)
+  for name, position in pairs(positions) do
+    positions[name] = self:overridePosition(name, position)
+  end
+  return positions
 end
