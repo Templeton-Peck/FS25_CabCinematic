@@ -15,6 +15,12 @@ function CabCinematicKeyframeListBuilder.new(startPosition)
   return self
 end
 
+--- Deletes the builder and its resources.
+function CabCinematicKeyframeListBuilder:delete()
+  self.waypoints = nil
+  self.types = nil
+end
+
 --- Adds a waypoint to the sequence.
 --- @param type string The movement type to reach this position (e.g., WALK, CLIMB)
 --- @param position table The target position {x, y, z}

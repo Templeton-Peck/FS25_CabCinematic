@@ -54,7 +54,6 @@ function CabCinematicSpec:onPreLoad()
   spec.indoorCamera              = nil
   spec.analysis                  = nil
   spec.animation                 = nil
-  spec.debugAnimation            = nil
   spec.allowStartAnimation       = false
   spec.lastInteractionTime       = -1
   spec.accessNode                = nil
@@ -101,16 +100,11 @@ function CabCinematicSpec:onDelete()
     spec.animation:delete()
   end
 
-  if spec.debugAnimation ~= nil then
-    spec.debugAnimation:delete()
-  end
-
   spec.camera = nil
   spec.storeCategory = nil
   spec.indoorCamera = nil
   spec.analysis = nil
   spec.animation = nil
-  spec.debugAnimation = nil
   spec.allowStartAnimation = nil
   spec.lastInteractionTime = nil
   spec.accessNode = nil
@@ -370,18 +364,19 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
   local playerPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
-  local keyframeBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
-  if keyframeBuilder == nil then
+  local keyframeListBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
+  if keyframeListBuilder == nil then
     return superFunc(vehicle, unpack(args))
   end
 
   self:setCameraResetProtectState(true)
 
-  keyframeBuilder:adaptFromPosition(playerPosition)
+  keyframeListBuilder:adaptFromPosition(playerPosition)
 
   CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(player, vehicle)
 
-  local animation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
+  local animation = CabCinematicAnimation.new(vehicle, keyframeListBuilder:build())
+  keyframeListBuilder:delete()
 
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true
@@ -420,9 +415,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
-  if CabCinematic.debugLevel > 0 then
-    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
-  end
+
 
   superFunc(vehicle, unpack(args))
 end
@@ -445,16 +438,16 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   vehicle.spec_cabCinematic.allowStartAnimation = false
 
-  local keyframeBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
-  if keyframeBuilder == nil then
+  local keyframeListBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
+  if keyframeListBuilder == nil then
     return superFunc(vehicle, unpack(args))
   end
 
   self:setCameraResetProtectState(true)
 
-  keyframeBuilder:reverse()
+  local animation = CabCinematicAnimation.new(vehicle, keyframeListBuilder:reverse():build())
 
-  local animation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
+  keyframeListBuilder:delete()
 
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true
@@ -494,9 +487,6 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   end)
 
   vehicle.spec_cabCinematic.animation = animation
-  if CabCinematic.debugLevel > 0 then
-    vehicle.spec_cabCinematic.debugAnimation = CabCinematicAnimation.new(vehicle, keyframeBuilder:build())
-  end
 end
 
 --- Overwrites base method to provide custom exit node when cinematic animation is ongoing, to prevent the player from exiting too far from the vehicle and breaking the immersion
@@ -682,12 +672,18 @@ function CabCinematicSpec:drawCabCinematicDebug()
         end
       end
     end
+    
+    if self.spec_cabCinematic.animation then
+      self.spec_cabCinematic.animation:drawDebug()
+    else
+      local keyframeListBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(self)
+      local animation = CabCinematicAnimation.new(self, keyframeListBuilder:build())
+      animation:drawDebug()
+      animation:delete()
+      keyframeListBuilder:delete()
+    end
   end
 
-  local animation = self.spec_cabCinematic.debugAnimation or self.spec_cabCinematic.animation
-  if animation ~= nil then
-    animation:drawDebug()
-  end
 
   if self.spec_cabCinematic.camera ~= nil then
     self.spec_cabCinematic.camera:drawDebug()
