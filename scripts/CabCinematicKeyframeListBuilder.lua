@@ -284,7 +284,7 @@ function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(accessPosit
     }
   end
 
-  local ladderSafe = {
+  local ladderTopSafe = vehicleAnalysis.positions.ladderTopSafe or {
     doorSafePosition[1],
     doorSafePosition[2],
     ladderTop[3]
@@ -293,7 +293,7 @@ function CabCinematicKeyframeListBuilder:buildBeetHarvesterKeyframes(accessPosit
   return self
       :walkTo(ladderBottom)
       :climbTo(ladderTop)
-      :walkTo(ladderSafe)
+      :walkTo(ladderTopSafe)
       :walkTo(doorSafePosition)
 end
 
@@ -521,6 +521,7 @@ function CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.SPINACH_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.POTATO_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.GREEN_BEAN_HARVESTERS
+      or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.PEA_HARVESTERS
       or storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.WINDROWERS then
     builder:buildBeetHarvesterKeyframes(accessPosition, doorSafePosition, vehicleAnalysis, configuration)
   elseif storeCategory == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.VEGETABLE_HARVESTERS then

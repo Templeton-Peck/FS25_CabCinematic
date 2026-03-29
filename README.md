@@ -33,9 +33,9 @@ The animations are smooth, seamless, and designed to fit naturally into the game
   - ✅ Cotton Harvesters
   - ✅ Windrowers
   - ✅ Vegetable Harvesters
-  - 🟨 Green Bean Harvesters 
+  - ✅ Green Bean Harvesters 
+  - ✅ Pea Harvesters
   - 🟨 Spinach Harvesters
-  - ⬜ Pea Harvesters
   - ⬜ Beet Loaders
   - ⬜ Rice Planters
   - ⬜ Nexat

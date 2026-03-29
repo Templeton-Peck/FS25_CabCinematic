@@ -741,31 +741,35 @@ function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
     }
   end
 
+  local platformMaxY = positions.bottom[2]
+  local platformMinY = positions.bottom[2] - 0.25
+  local platformHitZ = math.max(positions.back[3], positions.exit[3])
+
   local leftPlatformHitResult1 = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.left[1] + 2, positions.bottom[2] - 0.01, positions.left[3] },
-    { positions.left[1], positions.bottom[2] - 0.01, positions.left[3] },
+    { positions.left[1] + 2, platformMaxY, platformHitZ },
+    { positions.left[1], platformMaxY, platformHitZ },
     function(hitA, hitB) return hitA[1] > hitB[1] end
   )
 
   local rightPlatformHitResult1 = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.right[1] - 2, positions.bottom[2] - 0.01, positions.right[3] },
-    { positions.right[1], positions.bottom[2] - 0.01, positions.right[3] },
+    { positions.right[1] - 2, platformMaxY, platformHitZ },
+    { positions.right[1], platformMaxY, platformHitZ },
     function(hitA, hitB) return hitA[1] < hitB[1] end
   )
 
   local leftPlatformHitResult2 = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.left[1] + 2, positions.bottom[2] - 0.1, positions.left[3] },
-    { positions.left[1], positions.bottom[2] - 0.1, positions.left[3] },
+    { positions.left[1] + 2, platformMinY, platformHitZ },
+    { positions.left[1], platformMinY, platformHitZ },
     function(hitA, hitB) return hitA[1] > hitB[1] end
   )
 
   local rightPlatformHitResult2 = CabCinematicUtil.raycastVehicle(
     self.vehicle,
-    { positions.right[1] - 2, positions.bottom[2] - 0.1, positions.right[3] },
-    { positions.right[1], positions.bottom[2] - 0.1, positions.right[3] },
+    { positions.right[1] - 2, platformMinY, platformHitZ },
+    { positions.right[1], platformMinY, platformHitZ },
     function(hitA, hitB) return hitA[1] < hitB[1] end
   )
 
@@ -786,19 +790,21 @@ function CabCinematicVehicleAnalyzer:getCabPlatformAnalysis(positions)
 
   return {
     positions = {
-      platformLeft = { platformLeftX, positions.bottom[2], positions.center[3] },
-      platformRight = { platformRightX, positions.bottom[2], positions.center[3] },
-      platformFront = { positions.center[1], positions.bottom[2], positions.front[3] },
-      platformBack = { positions.center[1], positions.bottom[2], positions.back[3] },
-      platformTop = { positions.center[1], positions.bottom[2], positions.center[3] },
-      platformBottom = { positions.center[1], positions.bottom[2] - 0.25, positions.center[3] },
+      platformLeft = { platformLeftX, platformMaxY, positions.center[3] },
+      platformRight = { platformRightX, platformMaxY, positions.center[3] },
+      platformFront = { positions.center[1], platformMaxY, positions.front[3] },
+      platformBack = { positions.center[1], platformMaxY, positions.back[3] },
+      platformTop = { positions.center[1], platformMaxY, positions.center[3] },
+      platformBottom = { positions.center[1], platformMinY, positions.center[3] },
     },
     flags = {
       isPlatformEquipped = true
     },
     debugHits = {
-      leftPlatformHitResult = leftPlatformHitResult,
-      rightPlatformHitResult = rightPlatformHitResult,
+      leftPlatformHitResult1 = leftPlatformHitResult1,
+      leftPlatformHitResult2 = leftPlatformHitResult2,
+      rightPlatformHitResult1 = rightPlatformHitResult1,
+      rightPlatformHitResult2 = rightPlatformHitResult2,
     }
   }
 end
@@ -889,56 +895,76 @@ end
 --- @return table Ladder analysis with positions and flags
 function CabCinematicVehicleAnalyzer:getCabLadderAnalysis(positions, flags)
   local ladderTopXZ = self:getCabMovableLadderTopXZ(positions)
+  local result = {
+    positions = {},
+    flags = {
+      isMovableLadderEquipped = true,
+    }
+  }
 
   if ladderTopXZ ~= nil then
     if flags.isEntryFromCabSide then
       if flags.isEntryFromCabSideLeft then
         local ladderTop = { math.max(positions.platformLeft and positions.platformLeft[1] or 0, positions.left[1], positions.accessWheel[1] + 0.1), positions.camera[2], ladderTopXZ.ladderTopZ }
         local ladderBottom = { math.min(ladderTop[1] + 0.8, positions.access[1]), positions.access[2], ladderTop[3] }
-        return {
-          positions = {
-            ladderTop = ladderTop,
-            ladderBottom = ladderBottom
-          },
-          flags = {
-            isMovableLadderEquipped = true,
-          }
-        }
+
+        result.positions.ladderTop = ladderTop
+        result.positions.ladderBottom = ladderBottom
+        result.flags.isMovableLadderEquipped = true
       else
         local ladderTop = { math.min(positions.platformRight and positions.platformRight[1] or 0, positions.right[1], positions.accessWheel[1] - 0.1), positions.camera[2], ladderTopXZ.ladderTopZ }
         local ladderBottom = { math.max(ladderTop[1] - 0.8, positions.access[1]), positions.access[2], ladderTop[3] }
-        return {
-          positions = {
-            ladderTop = ladderTop,
-            ladderBottom = ladderBottom
-          },
-          flags = {
-            isMovableLadderEquipped = true,
-          }
-        }
+
+        result.positions.ladderTop = ladderTop
+        result.positions.ladderBottom = ladderBottom
+        result.flags.isMovableLadderEquipped = true
       end
     elseif flags.isEntryFromCabFront then
       local ladderTop = { ladderTopXZ.ladderTopX, positions.camera[2], math.max(positions.platformFront and positions.platformFront[3] or 0, positions.front[3], positions.accessWheel[3] + 0.1) }
       local ladderBottom = { ladderTop[1], positions.access[2], math.min(ladderTop[3] + 0.8, positions.access[3]) }
 
-      return {
-        positions = {
-          ladderTop = ladderTop,
-          ladderBottom = ladderBottom
-        },
-        flags = {
-          isMovableLadderEquipped = true,
-        }
-      }
+      result.positions.ladderTop = ladderTop
+      result.positions.ladderBottom = ladderBottom
+      result.flags.isMovableLadderEquipped = true
     end
   end
 
-  return {
-    positions = {},
-    flags = {
-      isMovableLadderEquipped = false,
+  local configuration = CabCinematic.configurationManager:get(self.vehicle)
+  if configuration ~= nil then
+    if result.positions.ladderTop ~= nil then
+      configuration:applyPosition("ladderTop", result.positions.ladderTop)
+    end
+    if result.positions.ladderBottom ~= nil then
+      configuration:applyPosition("ladderBottom", result.positions.ladderBottom)
+    end
+  end
+
+  if result.positions.ladderTop ~= nil and result.positions.ladderBottom ~= nil then
+    result.flags.isLadderParallel = CabCinematicUtil.isNear(result.positions.ladderTop[1], result.positions.ladderBottom[1], 0.15)
+    local ladderTopSafe = {
+      result.positions.ladderTop[1],
+      result.positions.ladderTop[2],
+      result.positions.ladderTop[3]
     }
-  }
+
+    if result.flags.isLadderParallel then
+      if result.positions.ladderTop[3] > result.positions.ladderBottom[3] then
+        ladderTopSafe[3] = math.min(ladderTopSafe[3] + 0.25, positions.preferredDoorSafe[3])
+      else
+        ladderTopSafe[3] = math.max(ladderTopSafe[3] - 0.25, positions.preferredDoorSafe[3])
+      end
+    else
+      if result.positions.ladderTop[1] > result.positions.ladderBottom[1] then
+        ladderTopSafe[1] = math.min(ladderTopSafe[1] + 0.25, positions.preferredDoorSafe[1])
+      else
+        ladderTopSafe[1] = math.max(ladderTopSafe[1] - 0.25, positions.preferredDoorSafe[1])
+      end
+    end
+    
+    result.positions.ladderTopSafe = ladderTopSafe
+  end
+
+  return result
 end
 
 --- Determines the preferred access position based on the access point and available analysis
@@ -1067,17 +1093,17 @@ function CabCinematicVehicleAnalyzer:analyze()
   CabCinematicUtil.merge(positions, doors.positions)
   CabCinematicUtil.merge(flags, doors.flags)
 
-  -- Ladder analysis
-  local ladderAnalysis = self:getCabLadderAnalysis(positions, flags)
-  CabCinematicUtil.merge(positions, ladderAnalysis.positions)
-  CabCinematicUtil.merge(flags, ladderAnalysis.flags)
-
   -- Preferred door position
   local preferredDoorFeature = self:getPreferredDoorFeature(positions, flags)
   CabCinematicUtil.merge(positions, preferredDoorFeature.positions)
 
   -- Standup position
   positions.standup = self:getCabStandupPosition(positions, flags)
+
+  -- Ladder analysis
+  local ladderAnalysis = self:getCabLadderAnalysis(positions, flags)
+  CabCinematicUtil.merge(positions, ladderAnalysis.positions)
+  CabCinematicUtil.merge(flags, ladderAnalysis.flags)
 
   -- Preferred access position
   positions.preferredAccess = self:getPreferredAccessPosition(positions, flags)
