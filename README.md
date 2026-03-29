@@ -8,6 +8,11 @@ It’s a standalone mod that doesn’t require any vehicle modifications and wor
 It enhances immersion by allowing players to see their character physically get in and out of vehicles instead of instantly switching perspectives.
 The animations are smooth, seamless, and designed to fit naturally into the gameplay experience.
 
+> [!IMPORTANT]
+> This mod is still in development. Features may change, evolve, and be improved over time as development progresses.
+> 
+> It is officially distributed through [ModHub](https://www.farming-simulator.com/mods.php) and [this GitHub repository](https://github.com/Templeton-Peck/FS25_CabCinematic). I cannot guarantee the content or safety of files distributed on third-party sites.
+
 ## Installation
 
 1. Go to the [Releases](https://github.com/Templeton-Peck/FS25_CabCinematic/releases) page
