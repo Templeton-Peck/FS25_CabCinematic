@@ -126,6 +126,8 @@ Following console commands are for testing and debugging purposes.
 
 ## Preview
 
+> [Watch previews on Youtube](https://www.youtube.com/watch?v=IIV8NFzhGjY&list=PLJ0CEvqvynwoF00VxZE-w7Pkk-yY1bLmK)
+
 https://github.com/user-attachments/assets/573625d1-088f-496b-9e8a-25be32d2a286
 
 https://github.com/user-attachments/assets/4c978b29-7b1e-40b9-acba-5128765c7beb
