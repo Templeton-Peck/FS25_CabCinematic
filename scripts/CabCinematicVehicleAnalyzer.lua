@@ -710,7 +710,7 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
 end
 
 function CabCinematicVehicleAnalyzer:getPreferredDoorFeature(positions, flags)
-  if flags.isEntryFromCabSideRight then
+  if positions.camera[1] < (positions.root[1] - 0.2) then
     return {
       positions = {
         preferredDoor = positions.rightDoor,
@@ -987,7 +987,7 @@ function CabCinematicVehicleAnalyzer:getCabLadderAnalysis(positions, flags)
         ladderTopSafe[1] = math.max(ladderTopSafe[1] - 0.25, positions.preferredDoorSafe[1])
       end
     end
-    
+
     result.positions.ladderTopSafe = ladderTopSafe
   end
 
