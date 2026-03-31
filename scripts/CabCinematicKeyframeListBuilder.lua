@@ -22,7 +22,7 @@ function CabCinematicKeyframeListBuilder:delete()
 end
 
 --- Adds a waypoint to the sequence.
---- @param type string The movement type to reach this position (e.g., WALK, CLIMB)
+--- @param type string | nil The movement type to reach this position (e.g., WALK, CLIMB)
 --- @param position table The target position {x, y, z}
 --- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:add(type, position)
@@ -40,6 +40,29 @@ function CabCinematicKeyframeListBuilder:add(type, position)
 
   table.insert(self.types, type or CabCinematicKeyframe.TYPES.WALK)
   table.insert(self.waypoints, position)
+
+  return self
+end
+
+--- Adds a waypoint at the beginning of the sequence.
+--- @param type string | nil The movement type to reach this position (e.g., WALK, CLIMB)
+--- @param position table The target position {x, y, z}
+--- @return CabCinematicKeyframeListBuilder self for method chaining
+function CabCinematicKeyframeListBuilder:prepend(type, position)
+  if #self.waypoints > 0 then
+    local firstPosition = self.waypoints[1]
+    local distance = MathUtil.vector3Length(position[1] - firstPosition[1], position[2] - firstPosition[2], position[3] - firstPosition[3])
+    if distance <= 0.15 then
+      firstPosition[1] = (firstPosition[1] + position[1]) / 2
+      firstPosition[2] = (firstPosition[2] + position[2]) / 2
+      firstPosition[3] = (firstPosition[3] + position[3]) / 2
+
+      return self
+    end
+  end
+
+  table.insert(self.waypoints, 1, position)
+  table.insert(self.types, 1, type or CabCinematicKeyframe.TYPES.WALK)
 
   return self
 end
@@ -122,38 +145,63 @@ function CabCinematicKeyframeListBuilder:reverse()
   return self
 end
 
---- Adapts builder to start from the given position and lead to the closest waypoint
+--- Adapts builder to start from the given position by finding which segment the position falls between.
+--- If position is between waypoints[i] and waypoints[i+1], all waypoints before i+1 are removed
+--- and position is inserted before waypoints[i+1]. If not between any segment, position is inserted before the first waypoint.
 --- @param position table The starting position for the adapted keyframe.
 --- @param type string | nil The type of the adapted keyframe.
 --- @return CabCinematicKeyframeListBuilder self for method chaining
 function CabCinematicKeyframeListBuilder:adaptFromPosition(position, type)
-  local shortestDistance = math.huge
-  local shortestIndex = 1
+  local bestSegmentIndex = nil
+  local bestDistance = math.huge
 
-  for i, waypoint in ipairs(self.waypoints) do
-    local dx = position[1] - waypoint[1]
-    local dy = position[2] - waypoint[2]
-    local dz = position[3] - waypoint[3]
-    local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
-    if dist < shortestDistance then
-      shortestDistance = dist
-      shortestIndex = i
+  for i = 1, #self.waypoints - 1 do
+    local a = self.waypoints[i]
+    local b = self.waypoints[i + 1]
+
+    local abx = b[1] - a[1]
+    local aby = b[2] - a[2]
+    local abz = b[3] - a[3]
+
+    local apx = position[1] - a[1]
+    local apy = position[2] - a[2]
+    local apz = position[3] - a[3]
+
+    local segLenSq = abx * abx + aby * aby + abz * abz
+    if segLenSq > 0 then
+      local t = (apx * abx + apy * aby + apz * abz) / segLenSq
+
+      if t >= 0 and t <= 1 then
+        local cx = a[1] + t * abx
+        local cy = a[2] + t * aby
+        local cz = a[3] + t * abz
+
+        if math.abs(position[2] - cy) < 0.2 then
+          local dx = position[1] - cx
+          local dy = position[2] - cy
+          local dz = position[3] - cz
+          local dist = math.sqrt(dx * dx + dy * dy + dz * dz)
+
+          if dist < bestDistance then
+            bestDistance = dist
+            bestSegmentIndex = i
+          end
+        end
+      end
     end
   end
 
-  table.insert(self.waypoints, 1, position)
-  table.insert(self.types, 1, type or CabCinematicKeyframe.TYPES.WALK)
+  if bestSegmentIndex ~= nil then
+    local bestSegmentType = self.types[bestSegmentIndex]
+    for j = 1, bestSegmentIndex do
+      table.remove(self.waypoints, 1)
+      table.remove(self.types, 1)
+    end
 
-  if shortestIndex == 1 then
-    return self
+    return self:prepend(bestSegmentType, position)
   end
 
-  for i = 2, shortestIndex do
-    table.remove(self.waypoints, 2)
-    table.remove(self.types, 2)
-  end
-
-  return self
+  return self:prepend(type, position)
 end
 
 --- Builds a keyframe sequence for a tractor based on its analysis and entry configuration.
@@ -329,7 +377,7 @@ function CabCinematicKeyframeListBuilder:buildVegetableHarvesterKeyframes(access
 
   self:walkTo(ladderBottom)
   self:climbTo(ladderTop)
-  
+
   if configuration ~= nil then
     for _, waypoint in ipairs(configuration.keyframeWaypoints) do
       self:addRelative(waypoint.type, waypoint.offsets)
