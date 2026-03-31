@@ -36,8 +36,8 @@
   <Configuration vehicleName="epd540E">
     <Positions>
       <Position name="access" xOffset="0" yOffset="0" zOffset="0.3" />
-      <Position name="ladderTop" xOffset="-0.3" yOffset="0" zOffset="0.2" />
-      <Position name="ladderBottom" xOffset="-0.3" yOffset="0" zOffset="-0.5" />
+      <Position name="ladderTop" xOffset="-0.3" yOffset="0" zOffset="-0.1" />
+      <Position name="ladderBottom" xOffset="-0.3" yOffset="0" zOffset="-0.9" />
     </Positions>
     <KeyframeWaypoints>
       <KeyframeWaypoint type="walk" xOffset="0.50" yOffset="0" zOffset="0" />
@@ -48,8 +48,8 @@
   </Configuration>
   <Configuration vehicleName="mf8570">
     <Positions>
-      <Position name="ladderTop" xOffset="-0.17" yOffset="0" zOffset="1.20" />
-      <Position name="ladderBottom" xOffset="0" yOffset="0" zOffset="0.55" />
+      <Position name="ladderTop" xOffset="-0.17" yOffset="0" zOffset="1.45" />
+      <Position name="ladderBottom" xOffset="0" yOffset="0" zOffset="0.65" />
     </Positions>
   </Configuration>
 </Configurations>

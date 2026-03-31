@@ -647,6 +647,9 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
   local maxDoorZ = doorZCandidates.maxDoorZ
   local preferredZ = doorZCandidates.preferredZ
 
+  local leftDoor = { positions.left[1], positions.camera[2], preferredZ }
+  local rightDoor = { positions.right[1], positions.camera[2], preferredZ }
+
   local function mirrorDrivenDoorZ(mirrorPosition)
     if mirrorPosition == nil then
       return nil
@@ -658,36 +661,44 @@ function CabCinematicVehicleAnalyzer:getCabDoorsAnalysis(positions, flags)
     return CabCinematicUtil.clamp(blendedZ, minDoorZ, maxDoorZ)
   end
 
-  local leftZ = mirrorDrivenDoorZ(positions.leftMirror)
-  local rightZ = mirrorDrivenDoorZ(positions.rightMirror)
+  local leftMirrorZ = mirrorDrivenDoorZ(positions.leftMirror)
+  local rightMirrorZ = mirrorDrivenDoorZ(positions.rightMirror)
 
-  if leftZ == nil and rightZ ~= nil then
-    leftZ = rightZ
-  elseif rightZ == nil and leftZ ~= nil then
-    rightZ = leftZ
-  elseif leftZ == nil and rightZ == nil then
-    leftZ = preferredZ
-    rightZ = preferredZ
+  if leftMirrorZ == nil and rightMirrorZ ~= nil then
+    leftDoor[3] = rightMirrorZ
+    rightDoor[3] = rightMirrorZ
+  elseif rightMirrorZ == nil and leftMirrorZ ~= nil then
+    rightDoor[3] = leftMirrorZ
+    leftDoor[3] = leftMirrorZ
+  elseif leftMirrorZ ~= nil and rightMirrorZ ~= nil then
+    leftDoor[3] = leftMirrorZ
+    rightDoor[3] = rightMirrorZ
   end
 
-  if CabCinematicUtil.isVehicleTractor(self.vehicle) and flags.isEntryFromCabSideFront then
-    local frontTargetZ = doorZCandidates.frontZ
-    if positions.accessWheel ~= nil then
-      frontTargetZ = CabCinematicUtil.clamp(math.max(frontTargetZ, positions.accessWheel[3] - 0.1), minDoorZ, maxDoorZ)
-    end
+  if CabCinematicUtil.isVehicleTractor(self.vehicle) then
+    if flags.isEntryFromCabSideFront then
+      local frontTargetZ = doorZCandidates.frontZ
+      if positions.accessWheel ~= nil then
+        frontTargetZ = CabCinematicUtil.clamp(math.max(frontTargetZ, positions.accessWheel[3] - 0.1), minDoorZ, maxDoorZ)
+      end
 
-    -- For front-side tractor entries, keep the chosen side more forward to match real ladder/step access.
-    if flags.isEntryFromCabSideLeft then
-      leftZ = CabCinematicUtil.clamp(leftZ * 0.35 + frontTargetZ * 0.65, minDoorZ, maxDoorZ)
-      rightZ = CabCinematicUtil.clamp(rightZ * 0.60 + frontTargetZ * 0.40, minDoorZ, maxDoorZ)
-    else
-      rightZ = CabCinematicUtil.clamp(rightZ * 0.35 + frontTargetZ * 0.65, minDoorZ, maxDoorZ)
-      leftZ = CabCinematicUtil.clamp(leftZ * 0.60 + frontTargetZ * 0.40, minDoorZ, maxDoorZ)
+      -- For front-side tractor entries, keep the chosen side more forward to match real ladder/step access.
+      if flags.isEntryFromCabSideLeft then
+        leftDoor[3] = CabCinematicUtil.clamp(leftDoor[3] * 0.35 + frontTargetZ * 0.65, minDoorZ, maxDoorZ)
+        rightDoor[3] = CabCinematicUtil.clamp(rightDoor[3] * 0.60 + frontTargetZ * 0.40, minDoorZ, maxDoorZ)
+      else
+        rightDoor[3] = CabCinematicUtil.clamp(rightDoor[3] * 0.35 + frontTargetZ * 0.65, minDoorZ, maxDoorZ)
+        leftDoor[3] = CabCinematicUtil.clamp(leftDoor[3] * 0.60 + frontTargetZ * 0.40, minDoorZ, maxDoorZ)
+      end
+    elseif flags.isEntryFromCabFront then
+      leftDoor[3] = positions.front[3]
+      leftDoor[1] = (positions.left[1] + positions.center[1]) / 2
+      rightDoor[3] = positions.front[3]
+      rightDoor[1] = (positions.right[1] + positions.center[1]) / 2
     end
   end
 
-  local leftDoor = { positions.left[1], positions.camera[2], leftZ }
-  local rightDoor = { positions.right[1], positions.camera[2], rightZ }
+
   local leftDoorSafe = { leftDoor[1] + CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, leftDoor[2], leftDoor[3] }
   local rightDoorSafe = { rightDoor[1] - CabCinematicUtil.VEHICLE_DOOR_SAFE_DISTANCE, rightDoor[2], rightDoor[3] }
 
@@ -732,10 +743,16 @@ end
 --- @param flags table Current flags for reference
 --- @return table Standup position {x, y, z}
 function CabCinematicVehicleAnalyzer:getCabStandupPosition(positions, flags)
-  local standupX = (positions.camera[1] + positions.preferredDoor[1]) / 2
-  local standupY = positions.camera[2] + 0.05
+  -- if doorX is too close to cameraX, we want to have at least 0.35m distance
+  local distX = math.abs(positions.camera[1] - positions.preferredDoor[1])
+  local doorSideFactor = positions.preferredDoor[1] > positions.camera[1] and 1 or -1
+  local standupX = distX > 0.5 and (positions.camera[1] + positions.preferredDoor[1]) / 2 or positions.camera[1] + doorSideFactor * 0.35
+
+  local standupY = positions.camera[2]
+
   local preferredStandupZ = ((positions.steeringWheel[3] + positions.camera[3]) * 0.5) * 1.05
   local standupZ = CabCinematicUtil.clamp(preferredStandupZ, positions.preferredDoor[3], math.max(positions.front[3] - 0.15, positions.preferredDoor[3]))
+
   return { standupX, standupY, standupZ }
 end
 
@@ -872,47 +889,26 @@ function CabCinematicVehicleAnalyzer:getCabMovableLadderTopXZ(positions)
   end
 
   if #nodes > 0 then
-    local xCandidates = {}
-    local zCandidates = {}
-    local xWeights = {}
-    local zWeights = {}
-    local xSeen = {}
-    local zSeen = {}
+    local maxX = -math.huge
+    local minX = math.huge
+    local maxZ = -math.huge
+    local minZ = math.huge
 
     for _, node in ipairs(nodes) do
       local nodeName = getName(node)
       if nodeName ~= nil and nodeName:lower():find("ladder") ~= nil and nodeName:lower():find("joint") == nil then
         local x, _, z = localToLocal(node, self.vehicle.rootNode, 0, 0, 0)
 
-        if not xSeen[x] then
-          xSeen[x] = true
-          table.insert(xCandidates, x)
-          table.insert(xWeights, 1.25)
-        end
-
-        if not zSeen[z] then
-          zSeen[z] = true
-          table.insert(zCandidates, z)
-          table.insert(zWeights, 1.25)
-        end
+        maxX = math.max(maxX, x)
+        minX = math.min(minX, x)
+        maxZ = math.max(maxZ, z)
+        minZ = math.min(minZ, z)
       end
     end
 
-    if #xCandidates > 0 and #zCandidates > 0 then
-      if not xSeen[positions.access[1]] then
-        xSeen[positions.access[1]] = true
-        table.insert(xCandidates, positions.access[1])
-        table.insert(xWeights, 1.0)
-      end
-
-      if not zSeen[positions.access[3]] then
-        zSeen[positions.access[3]] = true
-        table.insert(zCandidates, positions.access[3])
-        table.insert(zWeights, 1.0)
-      end
-
-      local ladderTopX = CabCinematicUtil.weightedAvg(xCandidates, xWeights)
-      local ladderTopZ = CabCinematicUtil.weightedAvg(zCandidates, zWeights)
+    if maxX > -math.huge and minX < math.huge and maxZ > -math.huge and minZ < math.huge then
+      local ladderTopX = (maxX + minX) / 2
+      local ladderTopZ = (maxZ + minZ) / 2
 
       return { ladderTopX = ladderTopX, ladderTopZ = ladderTopZ }
     end
@@ -1055,8 +1051,17 @@ function CabCinematicVehicleAnalyzer:getPreferredAccessPosition(positions, flags
     end
   else
     if flags.isEntryFromCabFront then
-      local bodyworkZ = math.max(positions.accessWheel[3], positions.platformFront and positions.platformFront[3] or 0, positions.front[3])
-      preferredAccess[3] = math.min(positions.access[3], bodyworkZ + bodyworkSafeDistance)
+      if CabCinematicUtil.isVehicleTractor(self.vehicle) then
+        if positions.wheelLeftBack ~= nil and positions.wheelLeftFront ~= nil then
+          local centerEnterZ = (positions.wheelLeftFront[3] + positions.wheelLeftBack[3]) / 2
+          if CabCinematicUtil.isNear(positions.access[3], centerEnterZ, 0.15) then
+            preferredAccess[3] = centerEnterZ
+          end
+        end
+      else
+        local bodyworkZ = math.max(positions.accessWheel[3], positions.platformFront and positions.platformFront[3] or 0, positions.front[3])
+        preferredAccess[3] = math.min(positions.access[3], bodyworkZ + bodyworkSafeDistance)
+      end
     elseif flags.isEntryFromCabRear then
       local bodyworkZ = math.min(positions.accessWheel[3], positions.platformBack and positions.platformBack[3] or 0, positions.back[3])
       preferredAccess[3] = math.max(positions.access[3], bodyworkZ - bodyworkSafeDistance)
