@@ -317,6 +317,10 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
     if vehicle:getIsCabCinematicAnimationOngoing() then
       if g_time - spec.lastInteractionTime > 300 then
         spec.animation:stop()
+        local indoorCamera = vehicle:getIndoorCamera()
+        if indoorCamera ~= nil then
+          indoorCamera:resetCamera()
+        end
       end
       return
     end
@@ -618,8 +622,8 @@ function CabCinematicSpec:drawCabCinematicDebug()
   local textX, textY = 0.005, 0.75
 
   if CabCinematic.debugLevel > 1 then
-      textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("configFileNameClean: %s", self.configFileNameClean))
-      textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("storeCategory: %s", self:getStoreCategory()))
+    textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("configFileNameClean: %s", self.configFileNameClean))
+    textY = DebugUtil.renderTextLine(textX, textY, 0.02, string.format("storeCategory: %s", self:getStoreCategory()))
   end
 
   local analysis = self:getCabCinematicAnalysis()
@@ -672,7 +676,7 @@ function CabCinematicSpec:drawCabCinematicDebug()
         end
       end
     end
-    
+
     if self.spec_cabCinematic.animation then
       self.spec_cabCinematic.animation:drawDebug()
     else
