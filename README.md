@@ -1,4 +1,4 @@
-<img width="220" height="220" src="https://github.com/user-attachments/assets/a26ab65c-534d-4cd5-b782-b50b26e1ec6d" alt="Mod icon" />
+<img width="256" height="256" src="https://github.com/user-attachments/assets/a26ab65c-534d-4cd5-b782-b50b26e1ec6d" alt="Mod icon" />
 
 # FS25_CabCinematic
   
