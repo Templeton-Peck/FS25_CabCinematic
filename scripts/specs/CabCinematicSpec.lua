@@ -42,6 +42,7 @@ function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onUpdate", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onDraw", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", CabCinematicSpec)
+  SpecializationUtil.registerEventListener(vehicleType, "onEnterVehicle", CabCinematicSpec)
 end
 
 --- Initializes the spec when the vehicle is pre loading
@@ -161,6 +162,17 @@ function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForIn
   end
 end
 
+function CabCinematicSpec:onEnterVehicle(isControlling)
+  if isControlling then
+    if self:getIsCabCinematicAnimationOngoing() then
+      if self["spec_FS25_CabView.cabView"] ~= nil then
+        print("Disabling cab view reset on vehicle switch for entering vehicle during cinematic")
+        self["spec_FS25_CabView.cabView"].resetView = false
+      end
+    end
+  end
+end
+
 --- Get vehicle store category (in lowercase), or "unknown" if it cannot be determined
 --- @return string
 function CabCinematicSpec:getStoreCategory()
@@ -240,7 +252,6 @@ function CabCinematicSpec:setCameraResetProtectState(protect)
       indoorCamera.resetCameraOnVehicleSwitch = false
     else
       indoorCamera.resetCameraOnVehicleSwitch = self.spec_cabCinematic.protectedResetCameraState or false
-      self.spec_cabCinematic.protectedResetCameraState = nil
     end
   end
 end
