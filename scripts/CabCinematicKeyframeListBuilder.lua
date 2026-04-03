@@ -234,6 +234,20 @@ function CabCinematicKeyframeListBuilder:buildTractorKeyframes(accessPosition, d
         :climbTo(ladderTop)
         :walkTo(doorSafePosition)
   else
+    if vehicleAnalysis.positions.ladderBottom ~= nil and vehicleAnalysis.positions.ladderTop ~= nil then
+      self
+          :walkTo(vehicleAnalysis.positions.ladderBottom)
+          :climbTo(vehicleAnalysis.positions.ladderTop)
+
+      if configuration ~= nil then
+        for _, waypoint in ipairs(configuration.keyframeWaypoints) do
+          self:addRelative(waypoint.type, waypoint.offsets)
+        end
+      end
+
+      return self:walkTo(doorSafePosition)
+    end
+
     return self:climbTo(doorSafePosition)
   end
 end

@@ -216,7 +216,7 @@ function CabCinematicVehicleAnalyzer:getVehicleSteeringWheelPosition(positions)
     return { positions.camera[1], (positions.characterFoot[2] + positions.camera[2]) / 2, math.max(positions.characterFoot[3], positions.camera[3] + 0.35) }
   end
 
-  return { localToLocal(steeringWheelNode, self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
+  return { localToLocal(getParent(steeringWheelNode), self.vehicle.rootNode, getTranslation(steeringWheelNode)) }
 end
 
 --- Performs raycasts to determine cab bounding box

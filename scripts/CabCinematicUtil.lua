@@ -26,6 +26,8 @@ CabCinematicUtil = {
     SPRAYERS = 'sprayers',
     WINDROWERS = 'combinewindrower',
     SLURRY_TANKS = 'slurrytanks',
+    -- SKID_STEERS = 'skidsteervehicles',
+    -- CARS = 'cars',
   },
   KEYFRAME_OFFSETS = {
     LADDER_LIGHT_SLOPE = 0.6,
@@ -75,9 +77,24 @@ function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, 
 end
 
 function CabCinematicUtil.drawDebugNodeRelativePositions(node, positions)
+  local positionGroups = {}
+  
   for name, position in pairs(positions) do
-    local px, py, pz = localToWorld(node, unpack(position))
-    local text = string.format("%s (%.2f, %.2f, %.2f)", name, position[1], position[2], position[3])
+    local key = string.format("%.2f,%.2f,%.2f", position[1], position[2], position[3])
+    
+    if positionGroups[key] == nil then
+      positionGroups[key] = {
+        position = position,
+        names = {}
+      }
+    end
+    
+    table.insert(positionGroups[key].names, name)
+  end
+  
+  for key, group in pairs(positionGroups) do
+    local px, py, pz = localToWorld(node, unpack(group.position))
+    local text = string.format("%s (%.2f, %.2f, %.2f)", table.concat(group.names, ", "), group.position[1], group.position[2], group.position[3])
     DebugUtil.drawDebugGizmoAtWorldPos(px, py, pz, 0, 1, 0, 0, 1, 0, text)
   end
 end
