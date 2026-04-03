@@ -419,7 +419,6 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:restoreVehicleCharacter()
-      Log:info("Enter animation %s", tostring(vehicle.spec_enterable.enterAnimation ~= nil))
       if vehicle.spec_enterable.enterAnimation ~= nil and vehicle.playAnimation ~= nil then
         vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, 1, nil, true)
       end
@@ -563,7 +562,7 @@ function CabCinematicSpec:getCabCinematicPrerequisiteAnimation()
     if ladder ~= nil and ladder.animName ~= nil then
       return {
         play = function()
-          self:playAnimation(ladder.animName, ladder.animSpeedScale, nil, true)
+          self:playAnimation(ladder.animName, ladder.animSpeedScale, self:getAnimationTime(ladder.animName), true)
         end,
         getIsPlaying = function()
           if self:getIsAIActive() then
