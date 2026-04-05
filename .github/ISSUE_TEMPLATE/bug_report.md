@@ -7,6 +7,11 @@ assignees: Templeton-Peck
 
 ---
 
+### ⚙️ CabCinematic version
+
+- [ ] I'm running the [latest released version](https://github.com/Templeton-Peck/FS25_CabCinematic/releases)
+- [ ] I'm running an older version : `<version here>`
+
 ### 📝 Description
 
 Clearly describe the issue.
