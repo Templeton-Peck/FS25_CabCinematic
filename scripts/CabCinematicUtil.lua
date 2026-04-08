@@ -78,20 +78,20 @@ end
 
 function CabCinematicUtil.drawDebugNodeRelativePositions(node, positions)
   local positionGroups = {}
-  
+
   for name, position in pairs(positions) do
     local key = string.format("%.2f,%.2f,%.2f", position[1], position[2], position[3])
-    
+
     if positionGroups[key] == nil then
       positionGroups[key] = {
         position = position,
         names = {}
       }
     end
-    
+
     table.insert(positionGroups[key].names, name)
   end
-  
+
   for key, group in pairs(positionGroups) do
     local px, py, pz = localToWorld(node, unpack(group.position))
     local text = string.format("%s (%.2f, %.2f, %.2f)", table.concat(group.names, ", "), group.position[1], group.position[2], group.position[3])
@@ -393,6 +393,10 @@ function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)
 end
 
 function CabCinematicUtil.isPlayerInVehicleAccessRange(player, vehicle, range)
+  if not player.mover.isGrounded then
+    return false
+  end
+
   local analysis = vehicle:getCabCinematicAnalysis()
   if analysis == nil then
     return false
