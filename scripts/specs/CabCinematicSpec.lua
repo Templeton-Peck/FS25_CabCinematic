@@ -184,7 +184,7 @@ end
 --- @return boolean
 function CabCinematicSpec:getIsCabCinematicSupported()
   if self:getIndoorCamera() == nil then
-    Log:info("Vehicle without an indoor camera is not supported for CabCinematic")
+    -- Example case : wood logs trailer
     return false
   end
 
@@ -275,6 +275,9 @@ end
 --- @param ... any additional arguments
 function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFunc, ...)
   local vehicle = playerInputComponent.player.targetedVehicle
+  if vehicle ~= nil then
+    Log:info("Player is targeting vehicle %s", tostring(vehicle.configFileNameClean))
+  end
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
     local spec = vehicle.spec_cabCinematic
 

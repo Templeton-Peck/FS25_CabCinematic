@@ -23,7 +23,7 @@ function CabCinematic:startMission()
     if hitNode ~= nil and hitNode ~= 0 and CollisionFlag.getHasGroupFlagSet(hitNode, CollisionFlag.VEHICLE) then
       local vehicle = g_currentMission:getNodeObject(hitNode)
       if vehicle ~= nil then
-        vehicle = vehicle.rootVehicle or vehicle
+        vehicle = vehicle.spec_enterable ~= nil and vehicle or vehicle:getRootVehicle()
 
         if g_currentMission.interactiveVehicleInRange ~= nil then
           g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_NONE
