@@ -55,6 +55,7 @@ function CabCinematicSpec:onPreLoad()
   spec.indoorCamera                 = nil
   spec.analysis                     = nil
   spec.animation                    = nil
+  spec.playerEnterPosition          = nil
   spec.allowStartAnimation          = false
   spec.lastInteractionTime          = -1
   spec.accessNode                   = nil
@@ -107,6 +108,7 @@ function CabCinematicSpec:onDelete()
   spec.indoorCamera = nil
   spec.analysis = nil
   spec.animation = nil
+  spec.playerEnterPosition = nil
   spec.allowStartAnimation = nil
   spec.lastInteractionTime = nil
   spec.accessNode = nil
@@ -274,12 +276,12 @@ end
 --- @param superFunc function The original onInputEnter function
 --- @param ... any additional arguments
 function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFunc, ...)
+  local player = playerInputComponent.player
   local vehicle = playerInputComponent.player.targetedVehicle
-  if vehicle ~= nil then
-    Log:info("Player is targeting vehicle %s", tostring(vehicle.configFileNameClean))
-  end
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
     local spec = vehicle.spec_cabCinematic
+    spec.playerEnterPosition = nil
+    spec.allowStartAnimation = false
 
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(playerInputComponent, ...)
@@ -289,12 +291,11 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
       return
     end
 
-    if not CabCinematicUtil.isOnFootPlayerInFirstPerson(playerInputComponent.player) then
-      spec.allowStartAnimation = false
+    if not CabCinematicUtil.isOnFootPlayerInFirstPerson(player) then
       return superFunc(playerInputComponent, ...)
     end
 
-    if not CabCinematicUtil.isPlayerInVehicleAccessRange(playerInputComponent.player, vehicle, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) then
+    if not CabCinematicUtil.isPlayerInVehicleAccessRange(player, vehicle, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) then
       return
     end
 
@@ -311,6 +312,8 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
       vehicle:invalidateCabCinematicAnalysisCache()
     end
 
+    -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
+    spec.playerEnterPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
     spec.lastInteractionTime = g_time
     spec.allowStartAnimation = true
   end
@@ -325,6 +328,8 @@ end
 function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
   if vehicle.spec_cabCinematic ~= nil then
     local spec = vehicle.spec_cabCinematic
+    spec.allowStartAnimation = false
+    spec.playerEnterPosition = nil
 
     if not vehicle:getIsCabCinematicSupported() then
       return superFunc(vehicle, ...)
@@ -342,7 +347,6 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
     end
 
     if not CabCinematicUtil.isVehicleInFirstPerson(vehicle) then
-      spec.allowStartAnimation = false
       return superFunc(vehicle, ...)
     end
 
@@ -382,17 +386,20 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
     return superFunc(vehicle, unpack(args))
   end
 
-  -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
-  local playerPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
   local keyframeListBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(vehicle)
   if keyframeListBuilder == nil then
     return superFunc(vehicle, unpack(args))
   end
 
+  if vehicle.spec_cabCinematic.playerEnterPosition ~= nil then
+    keyframeListBuilder:adaptFromPosition(vehicle.spec_cabCinematic.playerEnterPosition)
+  end
+
+  vehicle.spec_cabCinematic.allowStartAnimation = false
+  vehicle.spec_cabCinematic.playerEnterPosition = nil
+
   vehicle:setCameraResetProtectState(true)
   vehicle:setEnterAnimationProtectState(true)
-
-  keyframeListBuilder:adaptFromPosition(playerPosition)
 
   CabCinematicUtil.applyPlayerCameraRotationToVehicleCameraRotation(player, vehicle)
 
