@@ -68,9 +68,9 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 
 ## Known bugs
 
-- Conflict with mod FS25_MoreVisualAnimals : No enter animation **(Won't fix)**
+- Conflict with mod FS25_MoreVisualAnimals : No enter animation **(WON'T FIX)**
 - Conflict with mod FS25_CabView : Camera is reset to the front of the vehicle when entering
-- Camera clipping after leaving a vehicle
+- Camera flickering when entering and leaving a vehicle
 
 ## Key bindings
 
