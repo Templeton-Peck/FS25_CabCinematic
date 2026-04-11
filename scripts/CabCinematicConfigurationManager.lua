@@ -121,7 +121,7 @@ end
 --- Loads the configurations from the XML file, first deleting any existing configurations and then registering the XML schema before loading the file.
 function CabCinematicConfigurationManager:load()
   self:deleteConfigurations()
-  self.xmlFileName = Utils.getFilename('resources/Configurations.xml', CabCinematic.dir)
+  self.xmlFileName = Utils.getFilename('resources/configurations.xml', CabCinematic.dir)
   self:registerXmlSchema()
   self.xmlFile = self:loadXmlFile(self.xmlFileName)
 end
