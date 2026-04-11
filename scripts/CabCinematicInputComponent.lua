@@ -4,6 +4,7 @@ CabCinematicInputComponent = {}
 local CabCinematicInputComponent_mt = Class(CabCinematicInputComponent)
 
 CabCinematicInputComponent.INPUT_CONTEXT_NAME = "CAB_CINEMATIC"
+CabCinematicInputComponent.RUN_SPEED_BONUS = 0.65
 
 --- Creates a new CabCinematicInputComponent for the given vehicle.
 --- @param vehicle table The vehicle instance to which this input component belongs.
@@ -125,8 +126,8 @@ function CabCinematicInputComponent:onRunAction(actionName, inputValue, callback
   end
 
   if vehicle:getIsCabCinematicAnimationOngoing() then
-    local speedFactor = inputValue ~= 0 and 1.6 or 1.0
-    vehicle.spec_cabCinematic.animation:setSpeedFactor(speedFactor)
+    local animation = vehicle.spec_cabCinematic.animation
+    animation:setSpeedFactorDelta(inputValue ~= 0 and CabCinematicInputComponent.RUN_SPEED_BONUS or -CabCinematicInputComponent.RUN_SPEED_BONUS)
   end
 end
 

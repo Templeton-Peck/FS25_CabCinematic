@@ -19,6 +19,14 @@ CabCinematicKeyframe.SPEEDS = {
   [CabCinematicKeyframe.TYPES.MOVE_IN_CAB] = 0.95,
 }
 
+CabCinematicKeyframe.SPEED_FACTOR_RESPONSE = {
+  [CabCinematicKeyframe.TYPES.WALK]        = 1.0,
+  [CabCinematicKeyframe.TYPES.CLIMB]       = 0.35,
+  [CabCinematicKeyframe.TYPES.SIT]         = 0.0,
+  [CabCinematicKeyframe.TYPES.SHIFT]       = 0.0,
+  [CabCinematicKeyframe.TYPES.MOVE_IN_CAB] = 0.4,
+}
+
 CabCinematicKeyframe.VIEW_BOBBING = {
   [CabCinematicKeyframe.TYPES.WALK] = {
     verticalAmplitude = 0.01,
@@ -79,19 +87,28 @@ function CabCinematicKeyframe:getDuration()
   return self.distance / self.speed
 end
 
+--- Gets the effective playback factor for this movement type.
+--- @param requestedSpeedFactor number
+--- @return number effectiveSpeedFactor
+function CabCinematicKeyframe:getEffectiveSpeedFactor(requestedSpeedFactor)
+  local response = CabCinematicKeyframe.SPEED_FACTOR_RESPONSE[self.type] or 0.0
+  return 1.0 + ((requestedSpeedFactor - 1.0) * response)
+end
+
 --- Calculates the view bobbing offset for the keyframe at time t.
 --- @param t number The time along the keyframe's duration to calculate the offset for.
 --- @return number horizontalOffset The horizontal offset to apply to the camera.
 --- @return number verticalOffset The vertical offset to apply to the camera.
 --- @return number depthOffset The depth offset to apply to the camera.
-function CabCinematicKeyframe:getViewBobbingOffset(t)
+function CabCinematicKeyframe:getViewBobbingOffset(t, speedFactor)
   if self.distance == 0 then
     return 0, 0, 0
   end
 
   local duration = self:getDuration()
   local progress = t / duration
-  local phase = t * self.bobbingConfig.frequency * 2 * math.pi
+  local bobbingTime = t / (1.0 + math.max((speedFactor or 1.0) - 1.0, 0.0) * 0.35)
+  local phase = bobbingTime * self.bobbingConfig.frequency * 2 * math.pi
 
   local verticalOffset = math.sin(phase) * self.bobbingConfig.verticalAmplitude
   local horizontalOffset = math.sin(phase * 0.5) * self.bobbingConfig.horizontalAmplitude
@@ -106,7 +123,7 @@ end
 --- Calculates the interpolated position along the keyframe's path at time t, including view bobbing offsets.
 --- @param t number The time along the keyframe's duration to calculate the position for.
 --- @return table The interpolated position at time t.
-function CabCinematicKeyframe:getInterpolatedPositionAtTime(t)
+function CabCinematicKeyframe:getInterpolatedPositionAtTime(t, speedFactor)
   if self.distance == 0 then
     return { 0, 0, 0 }
   end
@@ -118,7 +135,7 @@ function CabCinematicKeyframe:getInterpolatedPositionAtTime(t)
   local baseY = self.startPosition[2] + (self.endPosition[2] - self.startPosition[2]) * factor
   local baseZ = self.startPosition[3] + (self.endPosition[3] - self.startPosition[3]) * factor
 
-  local bobX, bobY, bobZ = self:getViewBobbingOffset(t)
+  local bobX, bobY, bobZ = self:getViewBobbingOffset(t, speedFactor)
 
   return { baseX + bobX, baseY + bobY, baseZ + bobZ }
 end

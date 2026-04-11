@@ -129,7 +129,6 @@ function ModSettings:init(name, defaultSettingsFileName, userSettingsFileName)
         userSettingsPath = modSettingsDir .. "/" .. userSettingsFileName,
     }
 
-
     return self;
 end
 

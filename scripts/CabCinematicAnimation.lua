@@ -13,6 +13,11 @@ CabCinematicAnimation.STATES = {
   STALE = "stale",
 }
 
+CabCinematicAnimation.SPEED_INTERPOLATION = {
+  accelerate = 9.0,
+  decelerate = 7.0,
+}
+
 --- Creates a new animation
 --- @param vehicle table The vehicle the animation is associated with
 --- @param keyframes table The keyframes defining the animation
@@ -22,6 +27,7 @@ function CabCinematicAnimation.new(vehicle, keyframes)
   self.vehicle = vehicle
   self.state = CabCinematicAnimation.STATES.IDLE
   self.speedFactor = 1.0
+  self.targetSpeedFactor = 1.0
   self.callbacks = {
     onBeforeStart = function() end,
     onStart = function() end,
@@ -58,14 +64,32 @@ function CabCinematicAnimation:delete()
   self.duration = nil
   self.currentPosition = nil
   self.speedFactor = nil
+  self.targetSpeedFactor = nil
 end
 
---- Sets the animation speed multiplier.
---- @param speedFactor number
+--- Returns the base animation speed factor.
+--- For now this is fixed, but it provides a stable hook for future customization.
+--- @return number
+function CabCinematicAnimation:getBaseSpeedFactor()
+  return 1.0
+end
+
+--- Sets the animation speed multiplier delta.
+--- @param delta number
 --- @return CabCinematicAnimation self for chaining
-function CabCinematicAnimation:setSpeedFactor(speedFactor)
-  self.speedFactor = CabCinematicUtil.clamp(speedFactor, 0.25, 2.0)
+function CabCinematicAnimation:setSpeedFactorDelta(delta)
+  self.targetSpeedFactor = self:getBaseSpeedFactor() + delta
   return self
+end
+
+--- Smoothly approaches the requested speed factor to avoid abrupt time warping.
+--- @param dt number Delta time since last update
+--- @return number currentSpeedFactor
+function CabCinematicAnimation:updateSpeedFactor(dt)
+  local rate = self.targetSpeedFactor > self.speedFactor and CabCinematicAnimation.SPEED_INTERPOLATION.accelerate or CabCinematicAnimation.SPEED_INTERPOLATION.decelerate
+  local blend = math.min((dt / 1000.0) * rate, 1.0)
+  self.speedFactor = self.speedFactor + ((self.targetSpeedFactor - self.speedFactor) * blend)
+  return self.speedFactor
 end
 
 --- Sets "onBeforeStart" callback executed during the animation lifecycle
@@ -170,8 +194,6 @@ end
 --- @param dt number Delta time since last update
 --- @return boolean isFinished whether the animation has finished
 function CabCinematicAnimation:tick(dt)
-  self.timer = self.timer + ((dt / 1000.0) * self.speedFactor)
-
   local accumulatedDuration = 0.0
   for i = 1, self.currentKeyFrameIndex - 1 do
     accumulatedDuration = accumulatedDuration + self.keyframes[i]:getDuration()
@@ -182,19 +204,24 @@ function CabCinematicAnimation:tick(dt)
     return true
   end
 
+  local speedFactor = self:updateSpeedFactor(dt)
+  local effectiveSpeedFactor = currentKeyFrame:getEffectiveSpeedFactor(speedFactor)
+  self.timer = self.timer + ((dt / 1000.0) * effectiveSpeedFactor)
+
   local keyframeEndTime = accumulatedDuration + currentKeyFrame:getDuration()
   if self.timer > keyframeEndTime and self.currentKeyFrameIndex < #self.keyframes then
     self.currentKeyFrameIndex = self.currentKeyFrameIndex + 1
     accumulatedDuration = keyframeEndTime
     currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
+    effectiveSpeedFactor = currentKeyFrame:getEffectiveSpeedFactor(speedFactor)
   end
 
   local keyframeTime = self.timer - accumulatedDuration
-  self.currentPosition = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime)
+  self.currentPosition = currentKeyFrame:getInterpolatedPositionAtTime(keyframeTime, effectiveSpeedFactor)
 
   if CabCinematic.debugLevel > 3 then
-    Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
-      self.timer, self.currentKeyFrameIndex, keyframeTime, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
+    Log:info("Animation tick: timer=%.2f, currentKeyFrameIndex=%d, keyframeTime=%.2f, speedFactor=%.2f, effectiveSpeedFactor=%.2f, currentPosition=(%.2f, %.2f, %.2f)",
+      self.timer, self.currentKeyFrameIndex, keyframeTime, speedFactor, effectiveSpeedFactor, self.currentPosition[1], self.currentPosition[2], self.currentPosition[3])
   end
 
   return self.timer >= self.duration
