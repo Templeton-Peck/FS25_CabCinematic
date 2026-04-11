@@ -5,7 +5,6 @@ local CabCinematicKeyframe_mt = Class(CabCinematicKeyframe)
 
 CabCinematicKeyframe.TYPES = {
   WALK = "walk",
-  RUN = "run",
   CLIMB = "climb",
   SIT = "sit",
   SHIFT = "shift",
@@ -13,8 +12,7 @@ CabCinematicKeyframe.TYPES = {
 }
 
 CabCinematicKeyframe.SPEEDS = {
-  [CabCinematicKeyframe.TYPES.WALK]        = 1.5,
-  [CabCinematicKeyframe.TYPES.RUN]         = 2.25,
+  [CabCinematicKeyframe.TYPES.WALK]        = 1.4,
   [CabCinematicKeyframe.TYPES.CLIMB]       = 0.95,
   [CabCinematicKeyframe.TYPES.SIT]         = 0.85,
   [CabCinematicKeyframe.TYPES.SHIFT]       = 0.75,
@@ -26,11 +24,6 @@ CabCinematicKeyframe.VIEW_BOBBING = {
     verticalAmplitude = 0.01,
     horizontalAmplitude = 0.01,
     frequency = 1.5,
-  },
-  [CabCinematicKeyframe.TYPES.RUN] = {
-    verticalAmplitude = 0.03,
-    horizontalAmplitude = 0.03,
-    frequency = 2.5,
   },
   [CabCinematicKeyframe.TYPES.CLIMB] = {
     verticalAmplitude = 0.045,

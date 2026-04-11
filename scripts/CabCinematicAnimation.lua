@@ -21,6 +21,7 @@ function CabCinematicAnimation.new(vehicle, keyframes)
   local self = setmetatable({}, CabCinematicAnimation_mt)
   self.vehicle = vehicle
   self.state = CabCinematicAnimation.STATES.IDLE
+  self.speedFactor = 1.0
   self.callbacks = {
     onBeforeStart = function() end,
     onStart = function() end,
@@ -31,7 +32,7 @@ function CabCinematicAnimation.new(vehicle, keyframes)
   self.keyframes = keyframes or {}
   self.currentKeyFrameIndex = 1
   self.timer = 0.0
-  self.currentPosition = keyframes[1] ~= nil and keyframes[1].startPosition or { 0, 0, 0 }
+  self.currentPosition = self.keyframes[1] ~= nil and self.keyframes[1].startPosition or { 0, 0, 0 }
 
   self.duration = 0.0
   for _, keyframe in ipairs(self.keyframes) do
@@ -56,6 +57,15 @@ function CabCinematicAnimation:delete()
   self.timer = nil
   self.duration = nil
   self.currentPosition = nil
+  self.speedFactor = nil
+end
+
+--- Sets the animation speed multiplier.
+--- @param speedFactor number
+--- @return CabCinematicAnimation self for chaining
+function CabCinematicAnimation:setSpeedFactor(speedFactor)
+  self.speedFactor = CabCinematicUtil.clamp(speedFactor, 0.25, 2.0)
+  return self
 end
 
 --- Sets "onBeforeStart" callback executed during the animation lifecycle
@@ -160,7 +170,7 @@ end
 --- @param dt number Delta time since last update
 --- @return boolean isFinished whether the animation has finished
 function CabCinematicAnimation:tick(dt)
-  self.timer = self.timer + (dt / 1000.0)
+  self.timer = self.timer + ((dt / 1000.0) * self.speedFactor)
 
   local accumulatedDuration = 0.0
   for i = 1, self.currentKeyFrameIndex - 1 do

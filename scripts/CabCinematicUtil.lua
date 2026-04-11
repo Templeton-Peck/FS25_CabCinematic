@@ -481,20 +481,6 @@ function CabCinematicUtil.applyVehicleCameraRotationToPlayerCameraRotation(vehic
   playerCamera:setRotation(pitch, yaw, 0)
 end
 
-function CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, state)
-  if vehicle.spec_cabCinematic == nil then
-    return
-  end
-
-  local actionEvent = vehicle.spec_cabCinematic.actionEvents[InputAction.CAB_CINEMATIC_PAUSE]
-  if actionEvent == nil or actionEvent.actionEventId == nil then
-    return
-  end
-
-  g_inputBinding:setActionEventTextVisibility(actionEvent.actionEventId, state)
-  g_inputBinding:setActionEventActive(actionEvent.actionEventId, state)
-end
-
 --- Gets all nodes involved in an animation
 --- @param vehicle table The vehicle whose animation to extract nodes from
 --- @param animationName string The name of the animation to extract nodes from

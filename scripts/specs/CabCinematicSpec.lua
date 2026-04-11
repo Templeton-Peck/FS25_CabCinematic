@@ -42,13 +42,11 @@ function CabCinematicSpec.registerEventListeners(vehicleType)
   SpecializationUtil.registerEventListener(vehicleType, "onDelete", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onUpdate", CabCinematicSpec)
   SpecializationUtil.registerEventListener(vehicleType, "onDraw", CabCinematicSpec)
-  SpecializationUtil.registerEventListener(vehicleType, "onRegisterActionEvents", CabCinematicSpec)
 end
 
 --- Initializes the spec when the vehicle is pre loading
 function CabCinematicSpec:onPreLoad()
   local spec                        = {}
-  spec.actionEvents                 = {}
   spec.camera                       = nil
   spec.vehicleAnalyzer              = nil
   spec.storeCategory                = nil
@@ -59,6 +57,7 @@ function CabCinematicSpec:onPreLoad()
   spec.allowStartAnimation          = false
   spec.lastInteractionTime          = -1
   spec.accessNode                   = nil
+  spec.inputComponent               = nil
   spec.protectedResetCameraState    = nil
   spec.protectedEnterAnimationState = nil
   self.spec_cabCinematic            = spec
@@ -69,6 +68,7 @@ function CabCinematicSpec:onLoad()
   local spec           = self.spec_cabCinematic
   spec.camera          = CabCinematicCamera.new(self)
   spec.vehicleAnalyzer = CabCinematicVehicleAnalyzer.new(self)
+  spec.inputComponent  = CabCinematicInputComponent.new(self)
   spec.accessNode      = createTransformGroup("cc_accessNode")
   link(self.rootNode, spec.accessNode)
   setTranslation(spec.accessNode, 0, 0, 0)
@@ -85,7 +85,10 @@ function CabCinematicSpec:onDelete()
   local spec = self.spec_cabCinematic
 
   g_messageCenter:unsubscribeAll(self)
-  self:clearActionEventsTable(spec.actionEvents)
+
+  if spec.inputComponent ~= nil then
+    spec.inputComponent:delete()
+  end
 
   if spec.accessNode ~= nil then
     delete(spec.accessNode)
@@ -112,6 +115,7 @@ function CabCinematicSpec:onDelete()
   spec.allowStartAnimation = nil
   spec.lastInteractionTime = nil
   spec.accessNode = nil
+  spec.inputComponent = nil
   spec.protectedResetCameraState = nil
   spec.protectedEnterAnimationState = nil
 end
@@ -149,20 +153,6 @@ end
 function CabCinematicSpec:onDraw()
   if CabCinematic.debugLevel > 0 then
     self:drawCabCinematicDebug()
-  end
-end
-
--- Registers the input action events for pausing the cab cinematic animation when the vehicle is active for input
-function CabCinematicSpec:onRegisterActionEvents(isActiveForInput, isActiveForInputIgnoreSelection)
-  if self.isClient then
-    local spec = self.spec_cabCinematic
-    self:clearActionEventsTable(spec.actionEvents)
-
-    if self:getIsActiveForInput(true, true) then
-      local _, actionEventId = self:addActionEvent(spec.actionEvents, InputAction.CAB_CINEMATIC_PAUSE, self, CabCinematicSpec.onPlayerPauseCabCinematic, true, true, false, false, nil)
-      g_inputBinding:setActionEventTextPriority(actionEventId, GS_PRIO_NORMAL)
-      g_inputBinding:setActionEventTextVisibility(actionEventId, false)
-    end
   end
 end
 
@@ -336,13 +326,6 @@ function CabCinematicSpec.onPlayerActionInputLeave(vehicle, superFunc, ...)
     end
 
     if vehicle:getIsCabCinematicAnimationOngoing() then
-      if g_time - spec.lastInteractionTime > 300 then
-        spec.animation:stop()
-        local indoorCamera = vehicle:getIndoorCamera()
-        if indoorCamera ~= nil then
-          indoorCamera:resetCamera()
-        end
-      end
       return
     end
 
@@ -411,7 +394,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
     vehicle:setIndoorCameraActive()
     vehicle.spec_cabCinematic.camera:activate()
-    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, true)
+    vehicle.spec_cabCinematic.inputComponent:activate()
 
     g_soundManager:setIsIndoor(false)
     g_currentMission.ambientSoundSystem:setIsIndoor(false)
@@ -425,7 +408,7 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   animation:onEnd(function()
     vehicle:setIndoorCameraActive()
     vehicle:setEnterAnimationProtectState(false)
-    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, false)
+    vehicle.spec_cabCinematic.inputComponent:deactivate()
 
     if (not vehicle:getIsAIActive()) then
       vehicle.spec_enterable:restoreVehicleCharacter()
@@ -477,7 +460,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
     vehicle.spec_cabCinematic.camera:setPosition(unpack(animation.currentPosition))
     vehicle.spec_cabCinematic.camera:activate()
-    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, true)
+    vehicle.spec_cabCinematic.inputComponent:activate()
 
     g_soundManager:setIsIndoor(false)
     g_currentMission.ambientSoundSystem:setIsIndoor(false)
@@ -498,7 +481,7 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
     end
 
     player.camera:switchToPerspective(true)
-    CabCinematicUtil.setVehiclePauseInputActiveState(vehicle, false)
+    vehicle.spec_cabCinematic.inputComponent:deactivate()
 
     superFunc(vehicle, unpack(args))
 
@@ -523,19 +506,6 @@ function CabCinematicSpec:getExitNode(superFunc, ...)
   end
 
   return superFunc(self, ...)
-end
-
---- Callback used to toggle cab cinematic pause state when the corresponding input is triggered
---- @param vehicle table The vehicle instance
-function CabCinematicSpec.onPlayerPauseCabCinematic(vehicle, actionName, inputValue, callbackState, isAnalog)
-  if vehicle:getIsCabCinematicAnimationOngoing() then
-    local animation = vehicle.spec_cabCinematic.animation
-    if inputValue == 0 then
-      animation:resume()
-    else
-      animation:pause()
-    end
-  end
 end
 
 --- Get analyzed vehicle positions and flags, using cached value if available unless force is true
@@ -700,10 +670,12 @@ function CabCinematicSpec:drawCabCinematicDebug()
       self.spec_cabCinematic.animation:drawDebug()
     else
       local keyframeListBuilder = CabCinematicKeyframeListBuilder.prepareBuilderForVehicle(self)
-      local animation = CabCinematicAnimation.new(self, keyframeListBuilder:build())
-      animation:drawDebug()
-      animation:delete()
-      keyframeListBuilder:delete()
+      if keyframeListBuilder ~= nil then
+        local animation = CabCinematicAnimation.new(self, keyframeListBuilder:build())
+        animation:drawDebug()
+        animation:delete()
+        keyframeListBuilder:delete()
+      end
     end
   end
 
