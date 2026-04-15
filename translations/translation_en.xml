@@ -2,5 +2,7 @@
 <l10n>
   <texts>
     <text name="input_CAB_CINEMATIC_PAUSE" text="Pause cab cinematic" />
+    <text name="cc_settings_base_speed_factor_title" text="Cinematic speed" />
+    <text name="cc_settings_base_speed_factor_tooltip" text="Adjusts cinematic camera speed (x0.1 to x2.0)" />
   </texts>
 </l10n>

@@ -1,6 +1,7 @@
 CabCinematic = Mod:init({
   debugLevel = 0,
-  configurationManager = CabCinematicConfigurationManager.new()
+  settings = CabCinematicSettingsManager.new(Mod.title, Mod.settingsDir),
+  configurationManager = CabCinematicConfigurationManager.new(),
 })
 
 CabCinematic:addSpecialization("cabCinematic", function(specializations)
@@ -14,6 +15,7 @@ function CabCinematic:beforeLoadMap()
 end
 
 function CabCinematic:loadMap()
+  self.settings:load()
   self.configurationManager:load()
 end
 
@@ -53,6 +55,8 @@ function CabCinematic:delete()
   removeConsoleCommand("ccInvalidateAnalysis")
   removeConsoleCommand("ccReloadConfigurations")
 
+  self.settings:save()
+  self.settings:delete()
   self.configurationManager:delete()
 end
 
@@ -87,4 +91,17 @@ PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, f
   end
 
   return superFunc(playerCamera, ...)
+end)
+
+InGameMenuSettingsFrame.onFrameOpen = Utils.appendedFunction(InGameMenuSettingsFrame.onFrameOpen, function(settingsFrame)
+  if CabCinematic.settings ~= nil then
+    CabCinematic.settings:initGui(settingsFrame)
+    CabCinematic.settings:updateGui(settingsFrame)
+  end
+end)
+
+InGameMenuSettingsFrame.onFrameClose = Utils.appendedFunction(InGameMenuSettingsFrame.onFrameClose, function(_)
+  if CabCinematic.settings ~= nil then
+    CabCinematic.settings:save()
+  end
 end)

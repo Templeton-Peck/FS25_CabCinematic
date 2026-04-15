@@ -2,5 +2,7 @@
 <l10n>
   <texts>
     <text name="input_CAB_CINEMATIC_PAUSE" text="Metti in pausa la cinematica della cabina" />
+    <text name="cc_settings_base_speed_factor_title" text="Velocità della cinematica" />
+    <text name="cc_settings_base_speed_factor_tooltip" text="Regola la velocità della telecamera cinematica (x0.1 a x2.0)" />
   </texts>
 </l10n>

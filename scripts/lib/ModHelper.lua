@@ -58,7 +58,6 @@ local function getTrueGlobalG()
     return getmetatable(_G).__index
 end
 
-
 -- Set initial values for the global Mod object/"class"
 Mod.dir = g_currentModDirectory
 Mod.settingsDir = g_currentModSettingsDirectory
@@ -81,188 +80,6 @@ Mod.author = getXMLString(modDescXML, "modDesc.author");
 Mod.version = getXMLString(modDescXML, "modDesc.version");
 
 delete(modDescXML);
-
-
--- Helper functions
-local function validateParam(value, typeName, message)
-    local failed = false
-    failed = failed or (value == nil)
-    failed = failed or (typeName ~= nil and type(value) ~= typeName)
-    failed = failed or (type(value) == string and value == "")
-
-    if failed then print(message) end
-
-    return not failed
-end
-
---TODO: replace with a new way of doing this?
-local ModSettings = {};
-ModSettings.__index = ModSettings;
-
-function ModSettings:new(mod)
-    local newModSettings = {};
-    setmetatable(newModSettings, self);
-    self.__index = self;
-    newModSettings.__mod = mod;
-    return newModSettings;
-end
-
-function ModSettings:init(name, defaultSettingsFileName, userSettingsFileName)
-    if not validateParam(name, "string", "Parameter 'name' (#1) is mandatory and must contain a non-empty string") then
-        return;
-    end
-
-    if defaultSettingsFileName == nil or type(defaultSettingsFileName) ~= "string" then
-        self.__mod.printError("Parameter 'defaultSettingsFileName' (#2) is mandatory and must contain a filename");
-        return;
-    end
-
-    --TODO: change to this: g_currentModSettingsDirectory == /Documents/My Games/FarmingSimulator2022/modSettings/MOD_NAME/
-    local modSettingsDir = getUserProfileAppPath() .. "modsSettings"
-
-    self._config = {
-        xmlNodeName = name,
-        modSettingsDir = modSettingsDir,
-        defaultSettingsFileName = defaultSettingsFileName,
-        defaultSettingsPath = self.__mod.dir .. defaultSettingsFileName,
-        userSettingsFileName = userSettingsFileName,
-        userSettingsPath = modSettingsDir .. "/" .. userSettingsFileName,
-    }
-
-    return self;
-end
-
-function ModSettings:load(callback)
-    if not validateParam(callback, "function", "Parameter 'callback' (#1) is mandatory and must contain a valid callback function") then
-        return;
-    end
-
-    local defaultSettingsFile = self._config.defaultSettingsPath;
-    local userSettingsFile = self._config.userSettingsPath;
-    local xmlNodeName = self._config.xmlNodeName or "settings"
-
-    if defaultSettingsFile == "" or userSettingsFile == "" then
-        self.__mod.printError(
-            "Cannot load settings, neither a user settings nor a default settings file was supplied. Nothing to read settings from.");
-        return;
-    end
-
-    local function executeXmlReader(xmlNodeName, fileName, callback)
-        local xmlFile = loadXMLFile(xmlNodeName, fileName)
-
-        if xmlFile == nil then
-            printError("Failed to open/read settings file '" .. fileName .. "'!")
-            return
-        end
-
-        local xmlReader = {
-            xmlFile = xmlFile,
-            xmlNodeName = xmlNodeName,
-
-            getKey = function(self, categoryName, valueName)
-                local xmlKey = self.xmlNodeName
-
-
-                if categoryName ~= nil and categoryName ~= "" then
-                    xmlKey = xmlKey .. "." .. categoryName
-                end
-
-                xmlKey = xmlKey .. "." .. valueName
-
-                return xmlKey
-            end,
-
-            readBool = function(self, categoryName, valueName, defaultValue)
-                return Utils.getNoNil(getXMLBool(self.xmlFile, self:getKey(categoryName, valueName)),
-                    defaultValue or false)
-            end,
-            readFloat = function(self, categoryName, valueName, defaultValue)
-                return Utils.getNoNil(getXMLFloat(self.xmlFile, self:getKey(categoryName, valueName)),
-                    defaultValue or 0.0)
-            end,
-            readString = function(self, categoryName, valueName, defaultValue)
-                return Utils.getNoNil(getXMLString(self.xmlFile, self:getKey(categoryName, valueName)),
-                    defaultValue or "")
-            end,
-
-        }
-        callback(xmlReader);
-    end
-
-    if fileExists(defaultSettingsFile) then
-        executeXmlReader(xmlNodeName, defaultSettingsFile, callback);
-    end
-
-    if fileExists(userSettingsFile) then
-        executeXmlReader(xmlNodeName, userSettingsFile, callback);
-    end
-end
-
-function ModSettings:save(callback)
-    if not validateParam(callback, "function", "Parameter 'callback' (#1) is mandatory and must contain a valid callback function") then
-        return;
-    end
-
-    local userSettingsFile = self._config.userSettingsPath;
-    local xmlNodeName = self._config.xmlNodeName or "settings"
-
-    if userSettingsFile == "" then
-        printError("Missing filename for user settings, cannot save mod settings.");
-        return;
-    end
-
-    if not fileExists(userSettingsFile) then
-        createFolder(self._config.modSettingsDir)
-    end
-
-    local function executeXmlWriter(xmlNodeName, fileName, callback)
-        local xmlFile = createXMLFile(xmlNodeName, fileName, xmlNodeName)
-
-        if xmlFile == nil then
-            printError("Failed to create/write to settings file '" .. fileName .. "'!")
-            return
-        end
-
-        local xmlWriter = {
-            xmlFile = xmlFile,
-            xmlNodeName = xmlNodeName,
-
-            getKey = function(self, categoryName, valueName)
-                local xmlKey = self.xmlNodeName
-
-
-                if categoryName ~= nil and categoryName ~= "" then
-                    xmlKey = xmlKey .. "." .. categoryName
-                end
-
-                xmlKey = xmlKey .. "." .. valueName
-
-                return xmlKey
-            end,
-
-            saveBool = function(self, categoryName, valueName, value)
-                return setXMLBool(self.xmlFile, self:getKey(categoryName, valueName), Utils.getNoNil(value, false))
-            end,
-
-            saveFloat = function(self, categoryName, valueName, value)
-                return setXMLFloat(self.xmlFile, self:getKey(categoryName, valueName), Utils.getNoNil(value, 0.0))
-            end,
-
-            saveString = function(self, categoryName, valueName, value)
-                return setXMLString(self.xmlFile, self:getKey(categoryName, valueName), Utils.getNoNil(value, ""))
-            end,
-
-        }
-        callback(xmlWriter);
-
-        saveXMLFile(xmlFile)
-        delete(xmlFile)
-    end
-
-    executeXmlWriter(xmlNodeName, userSettingsFile, callback);
-
-    return self
-end
 
 function Mod:source(file)
     source(self.dir .. file);
@@ -297,7 +114,7 @@ function Mod:init(properties)
     print(string.format("Load mod: %s (v%s) by %s", newMod.title, newMod.version, newMod.author))
 
     return newMod;
-end --function
+end
 
 ---Check if the game is in multiplayer mode
 ---@return boolean "True if the game is in multiplayer mode, otherwise false"
@@ -366,7 +183,6 @@ function Mod:new(properties)
 
     newMod.dir = g_currentModDirectory;
     newMod.name = g_currentModName
-    newMod.settings = ModSettings:new(newMod);
     newMod.specializations = {}
 
 

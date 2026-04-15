@@ -2,5 +2,8 @@
 <l10n>
   <texts>
     <text name="input_CAB_CINEMATIC_PAUSE" text="Mettre en pause la cinématique" />
+    <text name="cc_settings_title" text="Cab Cinematic" />
+    <text name="cc_settings_base_speed_factor_title" text="Vitesse de la cinématique" />
+    <text name="cc_settings_base_speed_factor_tooltip" text="Ajuste la vitesse de la caméra cinématique (x0.1 à x2.0)" />
   </texts>
 </l10n>

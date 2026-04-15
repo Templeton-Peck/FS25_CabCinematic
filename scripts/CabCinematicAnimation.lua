@@ -26,8 +26,8 @@ function CabCinematicAnimation.new(vehicle, keyframes)
   local self = setmetatable({}, CabCinematicAnimation_mt)
   self.vehicle = vehicle
   self.state = CabCinematicAnimation.STATES.IDLE
-  self.speedFactor = 1.0
-  self.targetSpeedFactor = 1.0
+  self.speedFactor = CabCinematicAnimation.getBaseSpeedFactor()
+  self.targetSpeedFactor = CabCinematicAnimation.getBaseSpeedFactor()
   self.callbacks = {
     onBeforeStart = function() end,
     onStart = function() end,
@@ -67,18 +67,15 @@ function CabCinematicAnimation:delete()
   self.targetSpeedFactor = nil
 end
 
---- Returns the base animation speed factor.
---- For now this is fixed, but it provides a stable hook for future customization.
---- @return number
-function CabCinematicAnimation:getBaseSpeedFactor()
-  return 1.0
+function CabCinematicAnimation.getBaseSpeedFactor()
+  return CabCinematic.settings:getSettingValue(CabCinematicSettingsManager.SETTINGS.BASE_SPEED_FACTOR.id)
 end
 
 --- Sets the animation speed multiplier delta.
 --- @param delta number
 --- @return CabCinematicAnimation self for chaining
 function CabCinematicAnimation:setSpeedFactorDelta(delta)
-  self.targetSpeedFactor = self:getBaseSpeedFactor() + delta
+  self.targetSpeedFactor = CabCinematicAnimation.getBaseSpeedFactor() + delta
   return self
 end
 

@@ -45,7 +45,7 @@ function CabCinematicUtil.printParentNodeHierarchy(node, prefix)
   end
 end
 
-function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, maxDepth, excludeKeys)
+function CabCinematicUtil.printTableRecursively(inputTable, maxDepth, excludeKeys, inputIndent, depth)
   inputIndent = inputIndent or "  "
   depth = depth or 0
   maxDepth = maxDepth or 3
@@ -70,7 +70,7 @@ function CabCinematicUtil.printTableRecursively(inputTable, inputIndent, depth, 
       print(inputIndent .. tostring(i) .. " :: " .. tostring(j))
 
       if type(j) == "table" then
-        CabCinematicUtil.printTableRecursively(j, inputIndent .. "    ", depth + 1, maxDepth, excludeKeys)
+        CabCinematicUtil.printTableRecursively(j, maxDepth, excludeKeys, inputIndent .. "    ", depth + 1)
       end
     end
   end
@@ -532,4 +532,29 @@ end
 --- @return number Result The result of the subtraction, adjusted for the direction.
 function CabCinematicUtil.subByDirection(x1, x2, positiveDir)
   return CabCinematicUtil.addByDirection(x1, -x2, positiveDir)
+end
+
+--- Generate scale options for a numeric range
+--- @param minValue number Minimum value
+--- @param maxValue number Maximum value
+--- @param step number Step size
+--- @param format string Format string for display (e.g., "%.1fx")
+--- @return table options Array of {text, value, state}
+function CabCinematicUtil.generateScaleOptions(minValue, maxValue, step, format)
+  local options = {}
+  local state = 1
+  local value = minValue
+
+  while value <= maxValue + 0.001 do -- Small epsilon for float comparison
+    local roundedValue = math.floor(value * 100 + 0.5) / 100
+    table.insert(options, {
+      text = string.format(format, roundedValue),
+      value = roundedValue,
+      state = state
+    })
+    value = value + step
+    state = state + 1
+  end
+
+  return options
 end
