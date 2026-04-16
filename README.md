@@ -76,6 +76,7 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 
 - `Skip current animation` : Press enter/leave vehicle key to skip the current animation and immediately switch to the vehicle.
 - `Pause/Resume cab cinematic` : Maintain `left alt` to pause/resume the cab cinematic animation when it’s active.
+- `Run` : Maintain run key to increase animation speed temporarily
 
 ## TODO
 
@@ -112,6 +113,12 @@ Following console commands are for testing and debugging purposes.
 - `ccReloadConfigurations` : Reload the vehicle configurations.
 
 ### Frequently asked questions (FAQ)
+
+> **Does it support mods?**
+> *Yes, the mod is designed to support mods*
+
+> **Does it support multiplayer?**
+> *Not yet, but it's planned!*
 
 > **Why are the animations not working for my vehicle?**  
 > *The mod relies on specific vehicle properties to create accurate animations. If a vehicle lacks these properties or has unique configurations, the animations may not work correctly. Please report such vehicles for further investigation.*
