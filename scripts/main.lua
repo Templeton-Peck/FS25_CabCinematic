@@ -20,6 +20,10 @@ function CabCinematic:loadMap()
 end
 
 function CabCinematic:startMission()
+  if g_dedicatedServerInfo ~= nil then
+    return
+  end
+
   g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematicUtil.VEHICLE_TARGET_DISTANCE)
   g_localPlayer.targeter:addFilterToTargetType(CabCinematic, function(hitNode)
     if hitNode ~= nil and hitNode ~= 0 and CollisionFlag.getHasGroupFlagSet(hitNode, CollisionFlag.VEHICLE) then
@@ -42,6 +46,10 @@ function CabCinematic:startMission()
 end
 
 function CabCinematic:draw()
+  if g_dedicatedServerInfo ~= nil then
+    return
+  end
+
   if self.debugLevel > 0 then
     local vehicle = g_localPlayer.targetedVehicle
     if vehicle ~= nil and vehicle.drawCabCinematicDebug ~= nil then
@@ -69,6 +77,11 @@ function CabCinematic:onDebugConsoleCommand(level)
 end
 
 function CabCinematic:onInvalidateAnalysisConsoleCommand()
+  if g_dedicatedServerInfo ~= nil then
+    Log:info("Command not available on a dedicated server")
+    return
+  end
+
   local vehicle = g_localPlayer.targetedVehicle or g_localPlayer:getCurrentVehicle()
   if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
     self:onReloadConfigurationsConsoleCommand()
@@ -84,24 +97,30 @@ function CabCinematic:onReloadConfigurationsConsoleCommand()
   Log:info("Reloaded vehicle configurations")
 end
 
-PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, function(playerCamera, superFunc, ...)
-  local vehicle = playerCamera.player:getCurrentVehicle()
-  if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil and vehicle:getIsCabCinematicAnimationOngoing() then
-    return
-  end
+-- The hooks below touch client-only classes (player camera / in-game GUI).
+-- A dedicated server has no local player and does not use these classes the
+-- same way, so skip registering them there to avoid a nil-value error on
+-- server start.
+if g_dedicatedServerInfo == nil then
+  PlayerCamera.makeCurrent = Utils.overwrittenFunction(PlayerCamera.makeCurrent, function(playerCamera, superFunc, ...)
+    local vehicle = playerCamera.player:getCurrentVehicle()
+    if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil and vehicle:getIsCabCinematicAnimationOngoing() then
+      return
+    end
 
-  return superFunc(playerCamera, ...)
-end)
+    return superFunc(playerCamera, ...)
+  end)
 
-InGameMenuSettingsFrame.onFrameOpen = Utils.appendedFunction(InGameMenuSettingsFrame.onFrameOpen, function(settingsFrame)
-  if CabCinematic.settings ~= nil then
-    CabCinematic.settings:initGui(settingsFrame)
-    CabCinematic.settings:updateGui(settingsFrame)
-  end
-end)
+  InGameMenuSettingsFrame.onFrameOpen = Utils.appendedFunction(InGameMenuSettingsFrame.onFrameOpen, function(settingsFrame)
+    if CabCinematic.settings ~= nil then
+      CabCinematic.settings:initGui(settingsFrame)
+      CabCinematic.settings:updateGui(settingsFrame)
+    end
+  end)
 
-InGameMenuSettingsFrame.onFrameClose = Utils.appendedFunction(InGameMenuSettingsFrame.onFrameClose, function(_)
-  if CabCinematic.settings ~= nil then
-    CabCinematic.settings:save()
-  end
-end)
+  InGameMenuSettingsFrame.onFrameClose = Utils.appendedFunction(InGameMenuSettingsFrame.onFrameClose, function(_)
+    if CabCinematic.settings ~= nil then
+      CabCinematic.settings:save()
+    end
+  end)
+end
