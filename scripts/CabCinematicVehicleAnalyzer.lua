@@ -30,13 +30,45 @@ function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
 end
 
 --- Gets the vehicle exit position relative to vehicle root
---- @return table Position {x, y, z}
-function CabCinematicVehicleAnalyzer:getVehicleExitPosition()
-  local exitNode = self.vehicle:getExitNode()
-  if exitNode ~= nil and exitNode ~= 0 then
-    return { localToLocal(getParent(exitNode), self.vehicle.rootNode, getTranslation(exitNode)) }
+--- @param characterFootPosition table Character foot position {x, y, z}, used as a fallback reference
+--- @return table position, boolean isFallback
+function CabCinematicVehicleAnalyzer:getVehicleExitPosition(characterFootPosition)
+  -- We intentionally read the base Enterable exit node directly instead of calling
+  -- vehicle:getExitNode(), which can dispatch into other specializations (e.g. a passenger
+  -- seat) that provide a *contextual* exit node and assume a player is already seated. That
+  -- assumption doesn't hold here since this analysis can run before anyone has entered, and on
+  -- some vehicles it errors as a result. We just need a stable reference position for the
+  -- vehicle's own (driver) exit point, which is exactly what this field holds by default.
+  local exitNode = self.vehicle.spec_enterable ~= nil and self.vehicle.spec_enterable.exitNode or nil
+
+  if exitNode == nil or exitNode == 0 then
+    -- Fall back to the normal call chain in case some vehicle doesn't expose the field the
+    -- usual way, still guarded in case that chain is the one causing trouble.
+    local ok, result = pcall(function()
+      return self.vehicle:getExitNode()
+    end)
+    if ok then
+      exitNode = result
+    end
   end
-  return { 0, 0, 0 }
+
+  if exitNode ~= nil and exitNode ~= 0 then
+    return { localToLocal(getParent(exitNode), self.vehicle.rootNode, getTranslation(exitNode)) }, false
+  end
+
+  -- Last resort: no valid exit node could be determined at all (analysis-time call into
+  -- another specialization failed). Falling back to the vehicle root (0,0,0) would place the
+  -- reference point at the chassis center, which can be far from the cab and produce a broken
+  -- animation path. The character's feet position (from the seat's own IK targets, unrelated
+  -- to getExitNode) is a much closer real-world approximation of where a driver would stand.
+  -- This is still centered (close to X=0) though, so callers should correct its X using a
+  -- properly off-center reference (e.g. accessWheel) once one is available; isFallback=true
+  -- signals that this correction is needed.
+  if characterFootPosition ~= nil then
+    return { characterFootPosition[1], characterFootPosition[2], characterFootPosition[3] }, true
+  end
+
+  return { 0, 0, 0 }, true
 end
 
 --- Gets analysis of a pneumatic wheel
@@ -1078,16 +1110,17 @@ function CabCinematicVehicleAnalyzer:analyze()
   local debugPositions = {}
   local debugHits = {}
 
-  -- Base positions
   local positions = {
     root = { localToLocal(getParent(self.vehicle.rootNode), self.vehicle.rootNode, getTranslation(self.vehicle.rootNode)) },
     camera = self:getVehicleIndoorCameraPosition(),
-    exit = self:getVehicleExitPosition()
   }
 
   positions.seat = { positions.camera[1], positions.camera[2], positions.camera[3] }
   positions.characterFoot = self:getCabCharacterFootPosition(positions)
   positions.steeringWheel = self:getVehicleSteeringWheelPosition(positions)
+
+  local exit, exitIsFallback = self:getVehicleExitPosition(positions.characterFoot)
+  positions.exit = exit
 
   -- Wheel analysis
   local wheelsAnalysis = self:getWheelsAnalysis(positions)
@@ -1096,6 +1129,26 @@ function CabCinematicVehicleAnalyzer:analyze()
 
   -- Access wheel position
   positions.accessWheel = self:getCabAccessWheelPosition(positions)
+
+  -- getVehicleExitPosition's fallback above (used when getExitNode() is unreliable, see its
+  -- own comments) is centered on the seat/pedals (X close to 0), which breaks the
+  -- front/side/rear/left/right entry classification further down (it needs an off-center X
+  -- to tell which side the vehicle is entered from). For tractors, real-world convention (and
+  -- this mod's own door logic) overwhelmingly uses the left-hand door, so default to that side
+  -- directly instead of trying to derive it from other analysis (like accessWheel), which can
+  -- disagree with the door analysis and produce an inconsistent, zig-zagging path.
+  if exitIsFallback then
+    if CabCinematicUtil.isVehicleTractor(self.vehicle) then
+      -- Positive X consistently corresponds to the vehicle's left side in this analyzer's own
+      -- convention (see e.g. getCabAnalysis's left/right positions), so +1.1 approximates a
+      -- typical cab half-width offset toward the left-hand door. The Y value must be near
+      -- ground/step level, not seat height (characterFoot's Y is ~1.5, seat/pedal height,
+      -- which otherwise leaves the player standing near the cab roof after exiting).
+      positions.exit = { 1.8, positions.root[2] + 0.4, positions.exit[3] + 0.15 }
+    elseif positions.accessWheel ~= nil then
+      positions.exit = { positions.accessWheel[1], positions.root[2] + 0.4, positions.exit[3] + 0.15 }
+    end
+  end
 
   -- Cab analysis
   local cabAnalysis = self:getCabAnalysis(positions)

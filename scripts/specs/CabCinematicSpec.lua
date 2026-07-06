@@ -23,6 +23,18 @@ function CabCinematicSpec.registerOverwrittenFunctions(vehicleType)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "doLeaveVehicle", CabCinematicSpec.doLeaveVehicle)
   SpecializationUtil.registerOverwrittenFunction(vehicleType, "getExitNode", CabCinematicSpec.getExitNode)
 
+  -- The functions below are registered on shared/global classes (not per vehicle instance).
+  -- registerOverwrittenFunctions runs once for every vehicle TYPE that includes this
+  -- specialization, so without this guard the same global function would get wrapped
+  -- again and again (once per supported vehicle type), stacking dozens of redundant
+  -- layers on top of each other. That's wasteful and can cause unexpected side effects
+  -- (e.g. with other specializations hooking the same functions, like passenger seats),
+  -- especially noticeable in multiplayer. Only patch these once, ever.
+  if CabCinematicSpec.globalFunctionsPatched then
+    return
+  end
+  CabCinematicSpec.globalFunctionsPatched = true
+
   -- Entering/leaving overwriting
   PlayerInputComponent.onInputEnter = Utils.overwrittenFunction(PlayerInputComponent.onInputEnter, CabCinematicSpec.onPlayerActionInputEnter)
   Enterable.actionEventLeave = Utils.overwrittenFunction(Enterable.actionEventLeave, CabCinematicSpec.onPlayerActionInputLeave)
@@ -52,6 +64,7 @@ function CabCinematicSpec:onPreLoad()
   spec.storeCategory                = nil
   spec.indoorCamera                 = nil
   spec.analysis                     = nil
+  spec.analysisFailed                = false
   spec.animation                    = nil
   spec.playerEnterPosition          = nil
   spec.allowStartAnimation          = false
@@ -65,8 +78,17 @@ end
 
 --- Initializes the spec when the vehicle is loaded
 function CabCinematicSpec:onLoad()
-  local spec           = self.spec_cabCinematic
-  spec.camera          = CabCinematicCamera.new(self)
+  local spec = self.spec_cabCinematic
+
+  -- A dedicated server never renders anything and has no use for an actual engine camera.
+  -- Creating one anyway (as before) registers it globally with g_cameraManager on every
+  -- single supported vehicle, purely wasted overhead on a server, and risks interfering
+  -- with other systems that track vehicles by camera index (e.g. passenger seats). Only
+  -- create the real camera on clients / listen-server hosts that actually render.
+  if g_dedicatedServerInfo == nil then
+    spec.camera = CabCinematicCamera.new(self)
+  end
+
   spec.vehicleAnalyzer = CabCinematicVehicleAnalyzer.new(self)
   spec.inputComponent  = CabCinematicInputComponent.new(self)
   spec.accessNode      = createTransformGroup("cc_accessNode")
@@ -265,47 +287,78 @@ end
 --- @param playerInputComponent table The PlayerInputComponent instance
 --- @param superFunc function The original onInputEnter function
 --- @param ... any additional arguments
-function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFunc, ...)
-  local player = playerInputComponent.player
-  local vehicle = playerInputComponent.player.targetedVehicle
-  if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
-    local spec = vehicle.spec_cabCinematic
-    spec.playerEnterPosition = nil
-    spec.allowStartAnimation = false
+function CabCinematicSpec.decideOnPlayerActionInputEnter(vehicle, player)
+  local spec = vehicle.spec_cabCinematic
+  spec.playerEnterPosition = nil
+  spec.allowStartAnimation = false
 
-    if not vehicle:getIsCabCinematicSupported() then
-      return superFunc(playerInputComponent, ...)
-    end
+  if not vehicle:getIsCabCinematicSupported() then
+    return "call_super"
+  end
 
-    if vehicle:getIsCabCinematicAnimationOngoing() then
-      return
-    end
+  if vehicle:getIsCabCinematicAnimationOngoing() then
+    return "swallow"
+  end
 
-    if not CabCinematicUtil.isOnFootPlayerInFirstPerson(player) then
-      return superFunc(playerInputComponent, ...)
-    end
+  if not CabCinematicUtil.isOnFootPlayerInFirstPerson(player) then
+    return "call_super"
+  end
 
-    if not CabCinematicUtil.isPlayerInVehicleAccessRange(player, vehicle, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) then
-      return
-    end
+  -- If the analysis is unavailable (never computed yet, or permanently failed, see
+  -- getCabCinematicAnalysis), treat this vehicle as unsupported and let the normal game
+  -- entering take over, instead of relying on isPlayerInVehicleAccessRange below: that
+  -- function also returns false when there's no analysis, which would otherwise be
+  -- mistaken for "player is just too far away" and swallow the input forever.
+  if vehicle:getCabCinematicAnalysis() == nil then
+    return "call_super"
+  end
 
-    local prerequisiteAnimation = vehicle:getCabCinematicPrerequisiteAnimation()
-    if prerequisiteAnimation ~= nil then
-      if not prerequisiteAnimation.getIsFinished() then
-        if not prerequisiteAnimation.getIsPlaying() then
-          prerequisiteAnimation.play()
-        end
+  if not CabCinematicUtil.isPlayerInVehicleAccessRange(player, vehicle, CabCinematicUtil.VEHICLE_INTERACT_DISTANCE) then
+    return "swallow"
+  end
 
-        return
+  local prerequisiteAnimation = vehicle:getCabCinematicPrerequisiteAnimation()
+  if prerequisiteAnimation ~= nil then
+    if not prerequisiteAnimation.getIsFinished() then
+      if not prerequisiteAnimation.getIsPlaying() then
+        prerequisiteAnimation.play()
       end
 
-      vehicle:invalidateCabCinematicAnalysisCache()
+      return "swallow"
     end
 
-    -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
-    spec.playerEnterPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
-    spec.lastInteractionTime = g_time
-    spec.allowStartAnimation = true
+    vehicle:invalidateCabCinematicAnalysisCache()
+  end
+
+  -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
+  spec.playerEnterPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
+  spec.lastInteractionTime = g_time
+  spec.allowStartAnimation = true
+
+  return "call_super"
+end
+
+function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFunc, ...)
+  local player = playerInputComponent.player
+  if player == nil then
+    return superFunc(playerInputComponent, ...)
+  end
+
+  local vehicle = player.targetedVehicle
+  if vehicle ~= nil and vehicle.spec_cabCinematic ~= nil then
+    -- Wrapped in pcall: an error anywhere in this decision chain (e.g. triggered by another
+    -- specialization's collision/trigger code while analyzing the vehicle, see
+    -- getCabCinematicAnalysis) must never block the player from entering the vehicle at all.
+    local ok, result = pcall(CabCinematicSpec.decideOnPlayerActionInputEnter, vehicle, player)
+
+    if not ok then
+      Log:warning("Cab cinematic enter check failed for '%s', falling back to normal entering. (%s)", tostring(vehicle:getFullName()), tostring(result))
+      return superFunc(playerInputComponent, ...)
+    end
+
+    if result == "swallow" then
+      return
+    end
   end
 
   return superFunc(playerInputComponent, ...)
@@ -515,8 +568,27 @@ function CabCinematicSpec:getCabCinematicAnalysis()
     return self.spec_cabCinematic.analysis
   end
 
+  if self.spec_cabCinematic.analysisFailed then
+    return nil
+  end
+
   if self:getIsCabCinematicSupported() then
-    self.spec_cabCinematic.analysis = self.spec_cabCinematic.vehicleAnalyzer:analyze()
+    -- The analysis raycasts through the cab to detect its boundaries. On some vehicles this
+    -- raycast can intersect other specializations' collision/trigger geometry (e.g. a
+    -- passenger seat) and cause an error inside their code, unrelated to this mod itself.
+    -- Guard against that so a single problematic vehicle can never break entering into it,
+    -- or spam errors on every attempt; that vehicle simply won't get the cinematic animation.
+    local ok, result = pcall(function()
+      return self.spec_cabCinematic.vehicleAnalyzer:analyze()
+    end)
+
+    if not ok then
+      Log:warning("Could not analyze '%s' for cab cinematic, disabling it for this vehicle. (%s)", tostring(self:getFullName()), tostring(result))
+      self.spec_cabCinematic.analysisFailed = true
+      return nil
+    end
+
+    self.spec_cabCinematic.analysis = result
     return self.spec_cabCinematic.analysis
   end
 

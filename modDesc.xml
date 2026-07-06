@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="107" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
-  <author>TempletonPeck</author>
-  <version>0.2.7.0</version>
+  <author>TempletonPeck &amp; Nozem_Oil_1982</author>
+  <version>0.2.7.1</version>
 
   <title>
     <en>Cab Cinematic</en>
@@ -20,6 +20,8 @@
   </description>
 
   <iconFilename>icon.dds</iconFilename>
+
+  <multiplayer supported="true" />
 
   <l10n filenamePrefix="translations/translation" />
 
