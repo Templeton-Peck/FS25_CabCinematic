@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="107" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
+<modDesc xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" descVersion="110" xsi:noNamespaceSchemaLocation="https://validation.gdn.giants-software.com/xml/fs25/modDesc.xsd">
   <author>TempletonPeck</author>
   <version>0.2.7.0</version>
 
