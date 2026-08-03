@@ -417,6 +417,8 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true
 
+    CabCinematic.compatibility:onEnterAnimationBeforeStart(vehicle)
+
     vehicle:setIndoorCameraActive()
     vehicle.spec_cabCinematic.camera:activate()
     vehicle.spec_cabCinematic.inputComponent:activate()
@@ -441,6 +443,8 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
         vehicle:playAnimation(vehicle.spec_enterable.enterAnimation, 1, nil, true)
       end
     end
+
+    CabCinematic.compatibility:onEnterAnimationEnd(vehicle)
 
     g_currentMission.isPlayerFrozen = false
     vehicle:setCameraResetProtectState(false)
@@ -486,6 +490,8 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true
 
+    CabCinematic.compatibility:onLeaveAnimationBeforeStart(vehicle)
+
     vehicle.spec_cabCinematic.camera:setPosition(unpack(animation.currentPosition))
     vehicle.spec_cabCinematic.camera:activate()
     vehicle.spec_cabCinematic.inputComponent:activate()
@@ -514,6 +520,8 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
     superFunc(vehicle, unpack(args))
 
     CabCinematicUtil.applyVehicleCameraRotationToPlayerCameraRotation(vehicle, player)
+
+    CabCinematic.compatibility:onLeaveAnimationEnd(vehicle)
 
     g_currentMission.isPlayerFrozen = false
     -- g_cameraManager:setActiveCamera(player.camera.firstPersonCamera)

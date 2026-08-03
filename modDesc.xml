@@ -50,6 +50,8 @@
     <sourceFile filename="scripts/CabCinematicKeyframe.lua" />
     <sourceFile filename="scripts/CabCinematicKeyframeListBuilder.lua" />
     <sourceFile filename="scripts/CabCinematicAnimation.lua" />
+    <sourceFile filename="scripts/CabCinematicCompatibility.lua" />
+    <sourceFile filename="scripts/compatibility/CabViewCompatibility.lua" />
     <sourceFile filename="scripts/main.lua" />
   </extraSourceFiles>
 </modDesc>

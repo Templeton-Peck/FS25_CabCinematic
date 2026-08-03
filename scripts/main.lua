@@ -2,7 +2,10 @@ CabCinematic = Mod:init({
   debugLevel = 0,
   settings = CabCinematicSettingsManager.new(Mod.title, Mod.settingsDir),
   configurationManager = CabCinematicConfigurationManager.new(),
+  compatibility = CabCinematicCompatibility.new(),
 })
+
+CabCinematic.compatibility:register(CabViewCompatibility)
 
 CabCinematic:addSpecialization("cabCinematic", function(specializations)
   return SpecializationUtil.hasSpecialization(Enterable, specializations)
@@ -20,6 +23,8 @@ function CabCinematic:loadMap()
 end
 
 function CabCinematic:startMission()
+  self.compatibility:load()
+
   g_localPlayer.targeter:addTargetType(CabCinematic, CollisionFlag.VEHICLE, 0.1, CabCinematicUtil.VEHICLE_TARGET_DISTANCE)
   g_localPlayer.targeter:addFilterToTargetType(CabCinematic, function(hitNode)
     if hitNode ~= nil and hitNode ~= 0 and CollisionFlag.getHasGroupFlagSet(hitNode, CollisionFlag.VEHICLE) then
@@ -58,6 +63,7 @@ function CabCinematic:delete()
   self.settings:save()
   self.settings:delete()
   self.configurationManager:delete()
+  self.compatibility:delete()
 end
 
 function CabCinematic:onDebugConsoleCommand(level)
