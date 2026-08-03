@@ -380,15 +380,24 @@ end
 --- Uses RealisticFirstPerson eye height when that mod is active and enabled.
 --- @return number The player's eyesight height in meters
 function CabCinematicUtil.getPlayerEyesightHeight()
-  local realisticFirstPersonMod = ModHelper.getModEnvironment("FS25_RealisticFirstPerson")
-  if realisticFirstPersonMod ~= nil then
-    local RFP = realisticFirstPersonMod["RealisticFirstPerson"]
-    if RFP ~= nil then
-      return RFP:getEyeHeight()
-    end
+  local RealisticFirstPerson = ModHelper.getModClass("FS25_RealisticFirstPerson", "RealisticFirstPerson")
+  if RealisticFirstPerson ~= nil then
+    return RealisticFirstPerson:getEyeHeight()
   end
-  
+
   return 1.78
+end
+
+--- Get the player's seated eye offset from the ground.
+--- Uses RealisticFirstPerson seated eye offset when that mod is active and enabled.
+--- @return number The player's seated eye offset in meters
+function CabCinematicUtil.getPlayerSeatedEyeOffset()
+  local RealisticFirstPerson = ModHelper.getModClass("FS25_RealisticFirstPerson", "RealisticFirstPerson")
+  if RealisticFirstPerson ~= nil then
+    return RealisticFirstPerson:getSeatedOffset()
+  end
+
+  return 0.0
 end
 
 function CabCinematicUtil.syncVehicleCameraFovY(vehicleCamera)

@@ -513,7 +513,11 @@ end
 --- Builds a cache key for vehicle analysis.
 --- @return string
 function CabCinematicSpec.getAnalysisCacheKey()
-  return string.format("key:%.4f", CabCinematicUtil.getPlayerEyesightHeight())
+  return string.format(
+    "eyesight:%.4f|seated:%.4f",
+    CabCinematicUtil.getPlayerEyesightHeight(),
+    CabCinematicUtil.getPlayerSeatedEyeOffset()
+  )
 end
 
 --- Get analyzed vehicle positions and flags, using cached value if available unless force is true

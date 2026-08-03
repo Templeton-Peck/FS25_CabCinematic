@@ -356,6 +356,18 @@ function ModHelper.getModEnvironment(name)
     return getTrueGlobalG()[name]
 end
 
+function ModHelper.getModClass(modName, className)
+    if ModHelper.isModActive(modName) == false then
+        return nil
+    end
+    
+    local mod = ModHelper.getModEnvironment(modName)
+    if mod == nil then
+        return nil
+    end
+    return mod[className]
+end
+
 ---comment
 ---@param scope integer|string
 ---@param trueG boolean
@@ -367,7 +379,7 @@ function ModHelper.getfenv(scope, trueG)
         local __g = getTrueGlobalG()
         local tempObject = __g ~= nil and __g[scope]
         if tempObject == nil and type(scope) == "string" then
-            tempObject = __g ~= nil and __g["FS22_" .. scope]
+            tempObject = __g ~= nil and __g["FS25_" .. scope]
         end
         return tempObject
     end

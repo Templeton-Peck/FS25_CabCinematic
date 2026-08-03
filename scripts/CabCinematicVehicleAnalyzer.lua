@@ -1085,7 +1085,7 @@ function CabCinematicVehicleAnalyzer:analyze()
     exit = self:getVehicleExitPosition()
   }
 
-  positions.seat = { positions.camera[1], positions.camera[2], positions.camera[3] }
+  positions.seat = { positions.camera[1], positions.camera[2] + CabCinematicUtil.getPlayerSeatedEyeOffset(), positions.camera[3] }
   positions.characterFoot = self:getCabCharacterFootPosition(positions)
   positions.steeringWheel = self:getVehicleSteeringWheelPosition(positions)
 
