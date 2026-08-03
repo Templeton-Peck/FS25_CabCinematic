@@ -380,13 +380,14 @@ end
 --- Uses RealisticFirstPerson eye height when that mod is active and enabled.
 --- @return number The player's eyesight height in meters
 function CabCinematicUtil.getPlayerEyesightHeight()
-  if ModHelper.isModActive("FS25_RealisticFirstPerson")
-      and RealisticFirstPerson ~= nil
-      and RealisticFirstPerson.enabled
-      and RealisticFirstPerson.getEyeHeight ~= nil then
-    return RealisticFirstPerson:getEyeHeight()
+  local realisticFirstPersonMod = ModHelper.getModEnvironment("FS25_RealisticFirstPerson")
+  if realisticFirstPersonMod ~= nil then
+    local RFP = realisticFirstPersonMod["RealisticFirstPerson"]
+    if RFP ~= nil then
+      return RFP:getEyeHeight()
+    end
   end
-
+  
   return 1.78
 end
 
