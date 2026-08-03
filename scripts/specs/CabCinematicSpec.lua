@@ -448,6 +448,12 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
     g_currentMission.isPlayerFrozen = false
     vehicle:setCameraResetProtectState(false)
+
+    -- getIsActiveForInput is false while frozen, so Enterable skips some registration.
+    -- requestActionEventUpdate removes events immediately, so we need to rebuild them on the same frame.
+    vehicle:requestActionEventUpdate()
+    local rootVehicle = vehicle.rootVehicle or vehicle
+    rootVehicle:updateActionEvents()
   end)
 
   vehicle.spec_cabCinematic.animation = animation
