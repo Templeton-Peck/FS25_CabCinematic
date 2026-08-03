@@ -304,8 +304,12 @@ function CabCinematicSpec.onPlayerActionInputEnter(playerInputComponent, superFu
       vehicle:invalidateCabCinematicAnalysisCache()
     end
 
-    -- We capture player positions to adapt (shortcut or expand) the animation based on where the player is entering from.
-    spec.playerEnterPosition = { localToLocal(player.camera.cameraRootNode, vehicle.rootNode, getTranslation(player.camera.cameraRootNode)) }
+    -- We capture player camera position to adapt (shortcut or expand) the animation based on where the player is entering from.
+    local cameraNode = player.camera.firstPersonCamera
+    if cameraNode == nil or cameraNode == 0 then
+      cameraNode = player.camera.cameraRootNode
+    end
+    spec.playerEnterPosition = { localToLocal(cameraNode, vehicle.rootNode, 0, 0, 0) }
     spec.lastInteractionTime = g_time
     spec.allowStartAnimation = true
   end
