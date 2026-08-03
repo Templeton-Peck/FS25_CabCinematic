@@ -376,9 +376,17 @@ function CabCinematicUtil.isVehicleTelehandler(vehicle)
   return vehicle:getStoreCategory() == CabCinematicUtil.SUPPORTED_VEHICLE_CATEGORIES.TELELOADERS
 end
 
---- Get the player's eyesight height from the ground
+--- Get the player's eyesight height from the ground.
+--- Uses RealisticFirstPerson eye height when that mod is active and enabled.
 --- @return number The player's eyesight height in meters
 function CabCinematicUtil.getPlayerEyesightHeight()
+  if ModHelper.isModActive("FS25_RealisticFirstPerson")
+      and RealisticFirstPerson ~= nil
+      and RealisticFirstPerson.enabled
+      and RealisticFirstPerson.getEyeHeight ~= nil then
+    return RealisticFirstPerson:getEyeHeight()
+  end
+
   return 1.78
 end
 

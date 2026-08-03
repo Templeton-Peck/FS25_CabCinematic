@@ -72,6 +72,10 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 - Conflict with mod FS25_CabView : Camera is reset to the front of the vehicle when entering
 - Camera flickering when entering and leaving a vehicle
 
+## Mod compatibility
+
+- FS25_RealisticFirstPerson : **OK**
+
 ## Key bindings
 
 - `Skip current animation` : Press enter/leave vehicle key to skip the current animation and immediately switch to the vehicle.
@@ -90,13 +94,13 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 
 ### V1.1
 
-- [ ] Track IR support
 - [ ] Full Interactive Control (IC) support
 - [ ] Passenger mode support
 
 ### V2
 
 - [ ] Sounds
+- [ ] Track IR support
 - [ ] Horse support
 - [ ] Bike support
 

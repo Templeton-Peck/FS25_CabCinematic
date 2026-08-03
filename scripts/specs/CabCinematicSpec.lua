@@ -52,6 +52,7 @@ function CabCinematicSpec:onPreLoad()
   spec.storeCategory                = nil
   spec.indoorCamera                 = nil
   spec.analysis                     = nil
+  spec.analysisCacheKey             = nil
   spec.animation                    = nil
   spec.playerEnterPosition          = nil
   spec.allowStartAnimation          = false
@@ -110,6 +111,7 @@ function CabCinematicSpec:onDelete()
   spec.storeCategory = nil
   spec.indoorCamera = nil
   spec.analysis = nil
+  spec.analysisCacheKey = nil
   spec.animation = nil
   spec.playerEnterPosition = nil
   spec.allowStartAnimation = nil
@@ -508,16 +510,30 @@ function CabCinematicSpec:getExitNode(superFunc, ...)
   return superFunc(self, ...)
 end
 
+--- Builds a cache key for vehicle analysis.
+--- @return string
+function CabCinematicSpec.getAnalysisCacheKey()
+  return string.format("key:%.4f", CabCinematicUtil.getPlayerEyesightHeight())
+end
+
 --- Get analyzed vehicle positions and flags, using cached value if available unless force is true
 --- @return table|nil analysis
 function CabCinematicSpec:getCabCinematicAnalysis()
-  if self.spec_cabCinematic.analysis ~= nil then
-    return self.spec_cabCinematic.analysis
+  local spec = self.spec_cabCinematic
+  local cacheKey = CabCinematicSpec.getAnalysisCacheKey()
+
+  if spec.analysis ~= nil and spec.analysisCacheKey ~= cacheKey then
+    self:invalidateCabCinematicAnalysisCache()
+  end
+
+  if spec.analysis ~= nil then
+    return spec.analysis
   end
 
   if self:getIsCabCinematicSupported() then
-    self.spec_cabCinematic.analysis = self.spec_cabCinematic.vehicleAnalyzer:analyze()
-    return self.spec_cabCinematic.analysis
+    spec.analysis = spec.vehicleAnalyzer:analyze()
+    spec.analysisCacheKey = cacheKey
+    return spec.analysis
   end
 
   return nil
@@ -526,6 +542,7 @@ end
 --- Invalidates the cached vehicle analysis, forcing them to be re-analyzed when next requested
 function CabCinematicSpec:invalidateCabCinematicAnalysisCache()
   self.spec_cabCinematic.analysis = nil
+  self.spec_cabCinematic.analysisCacheKey = nil
 end
 
 --- Tells whether a cinematic animation is currently ongoing
