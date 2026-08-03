@@ -8,6 +8,8 @@ CabCinematicCompatibility.HOOKS = {
   "onLeaveAnimationBeforeStart",
   "onEnterAnimationEnd",
   "onLeaveAnimationEnd",
+  "onEnterAnimationUpdate",
+  "onEnterAnimationSeat",
 }
 
 --- Creates a new compatibility registry.
@@ -57,7 +59,7 @@ end
 --- Dispatches a lifecycle hook to all active adapters that implement it.
 --- @param hookName string Hook name from CabCinematicCompatibility.HOOKS
 --- @param vehicle table Vehicle instance
-local function dispatch(self, hookName, vehicle)
+local function dispatch(self, hookName, vehicle, dt)
   if self.active == nil or vehicle == nil then
     return
   end
@@ -65,7 +67,7 @@ local function dispatch(self, hookName, vehicle)
   for _, adapter in ipairs(self.active) do
     local hook = adapter[hookName]
     if hook ~= nil then
-      hook(vehicle)
+      hook(vehicle, dt)
     end
   end
 end
@@ -88,4 +90,15 @@ end
 --- @param vehicle table
 function CabCinematicCompatibility:onLeaveAnimationEnd(vehicle)
   dispatch(self, "onLeaveAnimationEnd", vehicle)
+end
+
+--- @param vehicle table
+--- @param dt number
+function CabCinematicCompatibility:onEnterAnimationUpdate(vehicle, dt)
+  dispatch(self, "onEnterAnimationUpdate", vehicle, dt)
+end
+
+--- @param vehicle table
+function CabCinematicCompatibility:onEnterAnimationSeat(vehicle)
+  dispatch(self, "onEnterAnimationSeat", vehicle)
 end

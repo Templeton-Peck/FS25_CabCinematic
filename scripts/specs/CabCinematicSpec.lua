@@ -126,29 +126,31 @@ end
 --- Updates the cab cinematic animation and camera if an animation is ongoing
 --- @param dt number Delta time since last update
 function CabCinematicSpec:onUpdate(dt)
-  if not self:getIsCabCinematicAnimationOngoing() then
-    return
-  end
-
   local spec = self.spec_cabCinematic
 
-  if spec.animation:getIsStale() then
-    spec.animation:delete()
-    spec.animation = nil
-    return
-  else
-    spec.animation:update(dt)
+  if self:getIsCabCinematicAnimationOngoing() then
+    if spec.animation:getIsStale() then
+      spec.animation:delete()
+      spec.animation = nil
+    else
+      spec.animation:update(dt)
+    end
   end
 
-  --- Always update camera to let player look around freely
-  if spec.camera ~= nil then
-    local indoorCamera = self:getIndoorCamera()
-    if indoorCamera ~= nil then
-      spec.camera:setRotation(indoorCamera.rotX, indoorCamera.rotY, indoorCamera.rotZ)
-    end
+  -- After keyframe callbacks (e.g. seat) so clamp applies before cinematic camera reads rot.
+  CabCinematic.compatibility:onEnterAnimationUpdate(self, dt)
 
-    spec.camera:setPosition(unpack(spec.animation.currentPosition))
-    spec.camera:update(dt)
+  if self:getIsCabCinematicAnimationOngoing() and spec.animation ~= nil and not spec.animation:getIsStale() then
+    --- Always update camera to let player look around freely
+    if spec.camera ~= nil then
+      local indoorCamera = self:getIndoorCamera()
+      if indoorCamera ~= nil then
+        spec.camera:setRotation(indoorCamera.rotX, indoorCamera.rotY, indoorCamera.rotZ)
+      end
+
+      spec.camera:setPosition(unpack(spec.animation.currentPosition))
+      spec.camera:update(dt)
+    end
   end
 end
 
@@ -413,6 +415,12 @@ function CabCinematicSpec:onPlayerEnterVehicle(superFunc, ...)
 
   local animation = CabCinematicAnimation.new(vehicle, keyframeListBuilder:build())
   keyframeListBuilder:delete()
+
+  animation:onKeyframe(function(_, animVehicle, keyframe)
+    if keyframe.type == CabCinematicKeyframe.TYPES.SIT then
+      CabCinematic.compatibility:onEnterAnimationSeat(animVehicle)
+    end
+  end)
 
   animation:onBeforeStart(function()
     g_currentMission.isPlayerFrozen = true

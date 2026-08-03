@@ -34,6 +34,7 @@ function CabCinematicAnimation.new(vehicle, keyframes)
     onPause = function() end,
     onBeforeEnd = function() end,
     onEnd = function() end,
+    onKeyframe = function() end,
   }
   self.keyframes = keyframes or {}
   self.currentKeyFrameIndex = 1
@@ -129,6 +130,16 @@ function CabCinematicAnimation:onEnd(callback)
   return self
 end
 
+--- Sets "onKeyframe" callback executed when the animation enters a new keyframe
+--- (including the first one when playback starts).
+--- Callback signature: function(dt, vehicle, keyframe)
+--- @param callback function The callback function
+--- @return CabCinematicAnimation self for chaining
+function CabCinematicAnimation:onKeyframe(callback)
+  self.callbacks.onKeyframe = callback
+  return self
+end
+
 function CabCinematicAnimation:stop()
   self.state = CabCinematicAnimation.STATES.BEFORE_END
   return self
@@ -187,6 +198,16 @@ function CabCinematicAnimation:getIsStale()
   return self.state == CabCinematicAnimation.STATES.STALE
 end
 
+--- Returns the keyframe currently being played, or nil
+--- @return CabCinematicKeyframe|nil
+function CabCinematicAnimation:getCurrentKeyframe()
+  if self.keyframes == nil or self.currentKeyFrameIndex == nil then
+    return nil
+  end
+
+  return self.keyframes[self.currentKeyFrameIndex]
+end
+
 --- Runs the current animation tick
 --- @param dt number Delta time since last update
 --- @return boolean isFinished whether the animation has finished
@@ -211,6 +232,7 @@ function CabCinematicAnimation:tick(dt)
     accumulatedDuration = keyframeEndTime
     currentKeyFrame = self.keyframes[self.currentKeyFrameIndex]
     effectiveSpeedFactor = currentKeyFrame:getEffectiveSpeedFactor(speedFactor)
+    self.callbacks.onKeyframe(dt, self.vehicle, currentKeyFrame)
   end
 
   local keyframeTime = self.timer - accumulatedDuration
@@ -240,6 +262,12 @@ function CabCinematicAnimation:update(dt)
   if self.state == CabCinematicAnimation.STATES.BEFORE_START then
     self.callbacks.onStart(dt, self.vehicle)
     self.state = CabCinematicAnimation.STATES.STARTED
+
+    local firstKeyframe = self:getCurrentKeyframe()
+    if firstKeyframe ~= nil then
+      self.callbacks.onKeyframe(dt, self.vehicle, firstKeyframe)
+    end
+
     return
   end
 
