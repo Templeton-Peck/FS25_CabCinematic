@@ -9,6 +9,7 @@ CabCinematicKeyframe.TYPES = {
   SIT = "sit",
   SHIFT = "shift",
   MOVE_IN_CAB = "moveInCab",
+  STRAIGHTEN = "straighten",
 }
 
 CabCinematicKeyframe.SPEEDS = {
@@ -17,6 +18,7 @@ CabCinematicKeyframe.SPEEDS = {
   [CabCinematicKeyframe.TYPES.SIT]         = 0.85,
   [CabCinematicKeyframe.TYPES.SHIFT]       = 0.75,
   [CabCinematicKeyframe.TYPES.MOVE_IN_CAB] = 0.95,
+  [CabCinematicKeyframe.TYPES.STRAIGHTEN]  = 0.5,
 }
 
 CabCinematicKeyframe.SPEED_FACTOR_RESPONSE = {
@@ -25,6 +27,7 @@ CabCinematicKeyframe.SPEED_FACTOR_RESPONSE = {
   [CabCinematicKeyframe.TYPES.SIT]         = 0.0,
   [CabCinematicKeyframe.TYPES.SHIFT]       = 0.0,
   [CabCinematicKeyframe.TYPES.MOVE_IN_CAB] = 0.4,
+  [CabCinematicKeyframe.TYPES.STRAIGHTEN]  = 0.0,
 }
 
 CabCinematicKeyframe.VIEW_BOBBING = {
@@ -51,6 +54,11 @@ CabCinematicKeyframe.VIEW_BOBBING = {
   [CabCinematicKeyframe.TYPES.MOVE_IN_CAB] = {
     verticalAmplitude = 0.02,
     horizontalAmplitude = 0.01,
+    frequency = 1.0,
+  },
+  [CabCinematicKeyframe.TYPES.STRAIGHTEN] = {
+    verticalAmplitude = 0.0,
+    horizontalAmplitude = 0.0,
     frequency = 1.0,
   },
 }

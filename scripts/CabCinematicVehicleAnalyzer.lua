@@ -17,12 +17,29 @@ function CabCinematicVehicleAnalyzer:delete()
   self.vehicle = nil
 end
 
---- Gets the indoor camera position relative to vehicle root
+--- Gets the current indoor camera position relative to vehicle root (includes lean/offsets).
 --- @return table Position {x, y, z}
 function CabCinematicVehicleAnalyzer:getVehicleIndoorCameraPosition()
   local camera = self.vehicle:getIndoorCamera()
   if camera ~= nil and camera.cameraPositionNode ~= nil and camera.cameraPositionNode ~= 0 then
     local dx, dy, dz = getTranslation(camera.cameraPositionNode)
+    return { localToLocal(getParent(camera.cameraPositionNode), self.vehicle.rootNode, dx, dy, dz) }
+  end
+
+  return { 0, 0, 0 }
+end
+
+--- Gets the indoor camera default/original position relative to vehicle root.
+--- @return table Position {x, y, z}
+function CabCinematicVehicleAnalyzer:getVehicleIndoorOriginCameraPosition()
+  local camera = self.vehicle:getIndoorCamera()
+  if camera ~= nil and camera.cameraPositionNode ~= nil and camera.cameraPositionNode ~= 0 then
+    local dx, dy, dz
+    if camera.origTransX ~= nil then
+      dx, dy, dz = camera.origTransX, camera.origTransY, camera.origTransZ
+    else
+      dx, dy, dz = getTranslation(camera.cameraPositionNode)
+    end
     return { localToLocal(getParent(camera.cameraPositionNode), self.vehicle.rootNode, dx, dy, dz) }
   end
 
@@ -1081,7 +1098,7 @@ function CabCinematicVehicleAnalyzer:analyze()
   -- Base positions
   local positions = {
     root = { localToLocal(getParent(self.vehicle.rootNode), self.vehicle.rootNode, getTranslation(self.vehicle.rootNode)) },
-    camera = self:getVehicleIndoorCameraPosition(),
+    camera = self:getVehicleIndoorOriginCameraPosition(),
     exit = self:getVehicleExitPosition()
   }
 

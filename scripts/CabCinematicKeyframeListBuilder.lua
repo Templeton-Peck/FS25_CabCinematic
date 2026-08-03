@@ -145,6 +145,32 @@ function CabCinematicKeyframeListBuilder:reverse()
   return self
 end
 
+--- Adapts builder to straighten from a camera offset before the first waypoint.
+--- Used after reverse() so the first waypoint is the seat: inserts a STRAIGHTEN
+--- segment from the live (offset) position back to that seat. No-op below 2 cm.
+--- Unlike prepend(), this never merges nearby positions so small lean offsets stay intact.
+--- @param offset table Camera offset {x, y, z} relative to the authoritative seat origin
+--- @return CabCinematicKeyframeListBuilder self for method chaining
+function CabCinematicKeyframeListBuilder:straightenFrom(offset)
+  if offset == nil or #self.waypoints == 0 then
+    return self
+  end
+
+  if MathUtil.vector3Length(offset[1], offset[2], offset[3]) <= 0.02 then
+    return self
+  end
+
+  local first = self.waypoints[1]
+  table.insert(self.waypoints, 1, {
+    first[1] + offset[1],
+    first[2] + offset[2],
+    first[3] + offset[3],
+  })
+  table.insert(self.types, 1, CabCinematicKeyframe.TYPES.STRAIGHTEN)
+
+  return self
+end
+
 --- Adapts builder to start from the given position by finding which segment the position falls between.
 --- If position is between waypoints[i] and waypoints[i+1], all waypoints before i+1 are removed
 --- and position is inserted before waypoints[i+1]. If not between any segment, position is inserted before the first waypoint.

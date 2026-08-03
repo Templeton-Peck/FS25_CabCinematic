@@ -69,12 +69,12 @@ The animations are smooth, seamless, and designed to fit naturally into the game
 ## Known bugs
 
 - Conflict with mod FS25_MoreVisualAnimals : No enter animation **(WON'T FIX)**
-- Conflict with mod FS25_CabView : Camera is reset to the front of the vehicle when entering
 - Camera flickering when entering and leaving a vehicle
 
 ## Mod compatibility
 
-- FS25_RealisticFirstPerson : **OK**
+- [FS25_RealisticFirstPerson](https://www.farming-simulator.com/mod.php?mod_id=332533&title=fs2025) : ✅
+- [FS25_CabView](https://www.farming-simulator.com/mod.php?mod_id=303900&title=fs2025) : ✅
 
 ## Key bindings
 

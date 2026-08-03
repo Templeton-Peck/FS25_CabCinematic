@@ -8,6 +8,7 @@ function CabCinematicSpec.registerFunctions(vehicleType)
   SpecializationUtil.registerFunction(vehicleType, "getStoreCategory", CabCinematicSpec.getStoreCategory)
   SpecializationUtil.registerFunction(vehicleType, "getIsCabCinematicSupported", CabCinematicSpec.getIsCabCinematicSupported)
   SpecializationUtil.registerFunction(vehicleType, "getIndoorCamera", CabCinematicSpec.getIndoorCamera)
+  SpecializationUtil.registerFunction(vehicleType, "getIndoorCameraOffset", CabCinematicSpec.getIndoorCameraOffset)
   SpecializationUtil.registerFunction(vehicleType, "setIndoorCameraActive", CabCinematicSpec.setIndoorCameraActive)
   SpecializationUtil.registerFunction(vehicleType, "setCameraResetProtectState", CabCinematicSpec.setCameraResetProtectState)
   SpecializationUtil.registerFunction(vehicleType, "setEnterAnimationProtectState", CabCinematicSpec.setEnterAnimationProtectState)
@@ -224,6 +225,24 @@ function CabCinematicSpec:setIndoorCameraActive()
       end
     end
   end
+end
+
+--- Returns the delta between live indoor camera position and the default camera position
+--- expressed in vehicle rootNode space. Used to straighten up lean/offset before leave animations.
+--- @return table offset {x, y, z}
+function CabCinematicSpec:getIndoorCameraOffset()
+  local analyzer = self.spec_cabCinematic.vehicleAnalyzer
+  if analyzer == nil then
+    return { 0, 0, 0 }
+  end
+
+  local live = analyzer:getVehicleIndoorCameraPosition()
+  local origin = analyzer:getVehicleIndoorOriginCameraPosition()
+  return {
+    live[1] - origin[1],
+    live[2] - origin[2],
+    live[3] - origin[3],
+  }
 end
 
 --- Protects or restores the indoor camera reset on vehicle switch state
@@ -457,7 +476,10 @@ function CabCinematicSpec:doLeaveVehicle(superFunc, ...)
 
   self:setCameraResetProtectState(true)
 
-  local animation = CabCinematicAnimation.new(vehicle, keyframeListBuilder:reverse():build())
+  local animation = CabCinematicAnimation.new(vehicle, keyframeListBuilder
+      :reverse()
+      :straightenFrom(vehicle:getIndoorCameraOffset())
+      :build())
 
   keyframeListBuilder:delete()
 
