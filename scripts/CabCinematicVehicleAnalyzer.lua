@@ -3,6 +3,10 @@
 CabCinematicVehicleAnalyzer = {}
 local CabCinematicVehicleAnalyzer_mt = Class(CabCinematicVehicleAnalyzer)
 
+CabCinematicVehicleAnalyzer.ACCESS_WHEEL_Z_CLEARANCE = 0.2
+CabCinematicVehicleAnalyzer.ACCESS_WHEEL_MATCH_TOLERANCE = 0.01
+CabCinematicVehicleAnalyzer.ACCESS_WHEEL_MAX_TREAD_SPAN = 2.5
+
 --- Creates a new vehicle analyzer instance
 --- @param vehicle table The vehicle to analyze
 --- @return CabCinematicVehicleAnalyzer
@@ -489,6 +493,116 @@ function CabCinematicVehicleAnalyzer:getWheelsAnalysis(positions)
   return result
 end
 
+--- Builds entry-direction flags from the current access position
+--- @param positions table Current positions for reference
+--- @param access table Access position {x, y, z}
+--- @return table Entry flags
+function CabCinematicVehicleAnalyzer:getVehicleAccessEntryFlags(positions, access)
+  local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
+  local isEntryLeft = access[1] >= positions.root[1]
+  local isEntryRight = not isEntryLeft
+  local isEntryFromCabFront = access[3] >= positions.front[3] and math.abs(positions.accessWheel[1]) > math.abs(access[1])
+  local isEntryFromCabSide = not isEntryFromCabFront and math.abs(positions.accessWheel[1]) < math.abs(access[1])
+  local isEntryFromCabRear = not isEntryFromCabFront and not isEntryFromCabSide
+  local isEntryFromCabSideLeft = isEntryFromCabSide and MathUtil.round(access[1] - positions.center[1], 2) > 0.01
+  local isEntryFromCabSideRight = isEntryFromCabSide and MathUtil.round(access[1] - positions.center[1], 2) < -0.01
+  local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(access[3] - middleZ, 2) >= 0.35
+  local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(access[3] - middleZ, 2) <= -0.35
+  local isEntryFromCabSideCenter = isEntryFromCabSide and not isEntryFromCabSideFront and not isEntryFromCabSideRear
+
+  return {
+    isEntryLeft = isEntryLeft,
+    isEntryRight = isEntryRight,
+    isEntryFromCabFront = isEntryFromCabFront,
+    isEntryFromCabSide = isEntryFromCabSide,
+    isEntryFromCabRear = isEntryFromCabRear,
+    isEntryFromCabSideLeft = isEntryFromCabSideLeft,
+    isEntryFromCabSideRight = isEntryFromCabSideRight,
+    isEntryFromCabSideFront = isEntryFromCabSideFront,
+    isEntryFromCabSideRear = isEntryFromCabSideRear,
+    isEntryFromCabSideCenter = isEntryFromCabSideCenter
+  }
+end
+
+--- If point Z is inside the access-wheel tire longitudinally, push it outside via the matched tread edge.
+--- Mutates point[3] in place. No-op when accessWheel cannot be matched or Z is outside the tire.
+--- @param positions table Current positions for reference
+--- @param point table Position {x, y, z} to clamp
+function CabCinematicVehicleAnalyzer:clampAccessZOutsideWheel(positions, point)
+  local accessWheel = positions.accessWheel
+  if accessWheel == nil or point == nil then
+    return
+  end
+
+  local tolerance = CabCinematicVehicleAnalyzer.ACCESS_WHEEL_MATCH_TOLERANCE
+  local clearance = CabCinematicVehicleAnalyzer.ACCESS_WHEEL_Z_CLEARANCE
+  local corners = {
+    {
+      sidewall = positions.wheelLeftFrontSidewall,
+      treadFront = positions.wheelLeftFrontTreadFront,
+      treadBack = positions.wheelLeftFrontTreadBack
+    },
+    {
+      sidewall = positions.wheelRightFrontSidewall,
+      treadFront = positions.wheelRightFrontTreadFront,
+      treadBack = positions.wheelRightFrontTreadBack
+    },
+    {
+      sidewall = positions.wheelLeftBackSidewall,
+      treadFront = positions.wheelLeftBackTreadFront,
+      treadBack = positions.wheelLeftBackTreadBack
+    },
+    {
+      sidewall = positions.wheelRightBackSidewall,
+      treadFront = positions.wheelRightBackTreadFront,
+      treadBack = positions.wheelRightBackTreadBack
+    }
+  }
+
+  local matchedIsTreadFront = nil
+  local treadFrontZ = nil
+  local treadBackZ = nil
+
+  for _, corner in ipairs(corners) do
+    if corner.sidewall ~= nil and corner.treadFront ~= nil and corner.treadBack ~= nil then
+      local matchesSidewallX = CabCinematicUtil.isNear(accessWheel[1], corner.sidewall[1], tolerance)
+      if matchesSidewallX then
+        if CabCinematicUtil.isNear(accessWheel[3], corner.treadFront[3], tolerance) then
+          matchedIsTreadFront = true
+          treadFrontZ = corner.treadFront[3]
+          treadBackZ = corner.treadBack[3]
+          break
+        elseif CabCinematicUtil.isNear(accessWheel[3], corner.treadBack[3], tolerance) then
+          matchedIsTreadFront = false
+          treadFrontZ = corner.treadFront[3]
+          treadBackZ = corner.treadBack[3]
+          break
+        end
+      end
+    end
+  end
+
+  if matchedIsTreadFront == nil then
+    return
+  end
+
+  -- Crawler tracks report treadFront/Back across the whole belt; clamping would drag access to the belt tip.
+  if (treadFrontZ - treadBackZ) > CabCinematicVehicleAnalyzer.ACCESS_WHEEL_MAX_TREAD_SPAN then
+    return
+  end
+
+  local z = point[3]
+  if z <= treadBackZ or z >= treadFrontZ then
+    return
+  end
+
+  if matchedIsTreadFront then
+    point[3] = accessWheel[3] + clearance
+  else
+    point[3] = accessWheel[3] - clearance
+  end
+end
+
 --- Analyzes the vehicle to determine the access position and related flags
 --- @param positions table Current positions for reference
 --- @return table Analysis analysis with positions and flags
@@ -512,33 +626,17 @@ function CabCinematicVehicleAnalyzer:getVehicleAccessAnalysis(positions)
     configuration:overridePositions(result.positions)
   end
 
-  local middleZ = (positions.steeringWheel[3] + positions.camera[3]) / 2
-  local isEntryLeft = access[1] >= positions.root[1]
-  local isEntryRight = not isEntryLeft
-  local isEntryFromCabFront = access[3] >= positions.front[3] and math.abs(positions.accessWheel[1]) > math.abs(access[1])
-  local isEntryFromCabSide = not isEntryFromCabFront and math.abs(positions.accessWheel[1]) < math.abs(access[1])
-  local isEntryFromCabRear = not isEntryFromCabFront and not isEntryFromCabSide
-  local isEntryFromCabSideLeft = isEntryFromCabSide and MathUtil.round(access[1] - positions.center[1], 2) > 0.01
-  local isEntryFromCabSideRight = isEntryFromCabSide and MathUtil.round(access[1] - positions.center[1], 2) < -0.01
-  local isEntryFromCabSideFront = isEntryFromCabSide and MathUtil.round(access[3] - middleZ, 2) >= 0.35
-  local isEntryFromCabSideRear = isEntryFromCabSide and MathUtil.round(access[3] - middleZ, 2) <= -0.35
-  local isEntryFromCabSideCenter = isEntryFromCabSide and not isEntryFromCabSideFront and not isEntryFromCabSideRear
+  access = result.positions.access
 
+  local flags = self:getVehicleAccessEntryFlags(positions, access)
+  if flags.isEntryFromCabSide then
+    self:clampAccessZOutsideWheel(positions, access)
+    flags = self:getVehicleAccessEntryFlags(positions, access)
+  end
 
   return {
     positions = result.positions,
-    flags = {
-      isEntryLeft = isEntryLeft,
-      isEntryRight = isEntryRight,
-      isEntryFromCabFront = isEntryFromCabFront,
-      isEntryFromCabSide = isEntryFromCabSide,
-      isEntryFromCabRear = isEntryFromCabRear,
-      isEntryFromCabSideLeft = isEntryFromCabSideLeft,
-      isEntryFromCabSideRight = isEntryFromCabSideRight,
-      isEntryFromCabSideFront = isEntryFromCabSideFront,
-      isEntryFromCabSideRear = isEntryFromCabSideRear,
-      isEntryFromCabSideCenter = isEntryFromCabSideCenter
-    }
+    flags = flags
   }
 end
 
@@ -1083,6 +1181,10 @@ function CabCinematicVehicleAnalyzer:getPreferredAccessPosition(positions, flags
       local bodyworkZ = math.min(positions.accessWheel[3], positions.platformBack and positions.platformBack[3] or 0, positions.back[3])
       preferredAccess[3] = math.max(positions.access[3], bodyworkZ - bodyworkSafeDistance)
     end
+  end
+
+  if flags.isEntryFromCabSide then
+    self:clampAccessZOutsideWheel(positions, preferredAccess)
   end
 
   return preferredAccess
