@@ -31,6 +31,12 @@ function CabCinematic:startMission()
       local vehicle = g_currentMission:getNodeObject(hitNode)
       if vehicle ~= nil then
         vehicle = vehicle.spec_enterable ~= nil and vehicle or vehicle:getRootVehicle()
+        g_localPlayer.targetedVehicle = vehicle
+
+        -- Non-enterable vehicles (pallets, etc.) must not take the interaction slot: they would show a blank E prompt that does nothing (#52)
+        if vehicle.spec_enterable == nil then
+          return true
+        end
 
         if g_currentMission.interactiveVehicleInRange ~= nil then
           g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_NONE
@@ -38,7 +44,6 @@ function CabCinematic:startMission()
 
         g_currentMission.interactiveVehicleInRange = vehicle
         g_currentMission.interactiveVehicleInRange.interactionFlag = Vehicle.INTERACTION_FLAG_ENTERABLE
-        g_localPlayer.targetedVehicle = vehicle
       end
     end
 
